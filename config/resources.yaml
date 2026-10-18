@@ -1,7 +1,7 @@
 profiles:
   group_session: {cpu: 2, memory_gb: 8, nvidia_gpu: 0}
   group_streamlit: {cpu: 1, memory_gb: 2, nvidia_gpu: 0}
-  shared_vllm: {cpu: 16, memory_gb: 64, nvidia_gpu: 1, gpu_type: NVIDIA H200 NVL}
+  shared_vllm: {cpu: 16, memory_gb: 64, nvidia_gpu: 1, gpu_type_by_environment: {sandbox-l40s: NVIDIA L40S, bni-h200: NVIDIA H200 NVL}}
   shared_qdrant: {cpu: 4, memory_gb: 16, nvidia_gpu: 0}
   shared_phoenix: {cpu: 4, memory_gb: 16, nvidia_gpu: 0}
   shared_litellm: {cpu: 2, memory_gb: 4, nvidia_gpu: 0}

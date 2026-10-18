@@ -1,1 +1,4 @@
+# Profile: gpu-h200 (BNI, NVIDIA H200 NVL). CAI VALIDATION PENDING.
+# Intended pins come from the vllm 0.29.0 package metadata. Final pins are confirmed by Lab 00 in the
+# BNI PBJ NVIDIA GPU runtime. This profile is NOT validated on macOS.
 vllm==0.29.0

@@ -1,0 +1,33 @@
+name: bni-h200
+description: BNI CAI PBJ Python 3.10 runtime with one NVIDIA H200 NVL. Production-like workshop environment.
+lab_mode: cai
+python: "3.10"
+gpu_profile: h200
+gpu_dependency_profile: gpu-h200
+dependency_profiles_validated_locally: [participant, rag, observability, gateway, guardrails, dev-test]
+data_mode: "impala_gssapi or impala_ldap or csv (explicit choice, no fallback)"
+# Names only. Values come from the environment; none are stored in this repository.
+required_env:
+  participant: [GROUP_ID, DATA_MODE, VLLM_BASE_URL, VLLM_API_KEY, QDRANT_URL, EMBEDDING_MODEL_PATH, PHOENIX_ENDPOINT]
+  trainer: [MODEL_PATH, GPU_PROFILE, SERVED_MODEL_NAME, SERVICE_AUTH_MODE, QDRANT_BINARY, QDRANT_STORAGE_PATH, PHOENIX_WORKING_DIR, LITELLM_CONFIG, LITELLM_MASTER_KEY, CAI_API_BASE_URL, CAI_API_KEY]
+# MANDATORY: must PASS in this environment. SKIPPED: not applicable here and reported as SKIPPED.
+# OPTIONAL: run when available. SKIPPED is never a FAILED result.
+checks:
+  unit_tests: MANDATORY
+  lint: MANDATORY
+  profile_isolation: MANDATORY
+  local_smoke: MANDATORY
+  local_acceptance: MANDATORY
+  notebooks_local: OPTIONAL
+  lab_environment_gpu: MANDATORY
+  cuda_torch: MANDATORY
+  vllm_serving: MANDATORY
+  nfs_model: MANDATORY
+  impala_live: MANDATORY
+  qdrant_server_live: MANDATORY
+  phoenix_server_live: MANDATORY
+  litellm_proxy_live: MANDATORY
+  cai_api_dry_run: MANDATORY
+  cai_api_live: MANDATORY
+  streamlit_waves: MANDATORY
+  ten_group_concurrency: MANDATORY

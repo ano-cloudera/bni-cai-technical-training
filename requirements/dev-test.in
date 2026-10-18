@@ -1,4 +1,10 @@
+# Profile: dev-test (local development and CI only; never installed in a CAI Application).
+# Superset of rag (which includes participant) and the Phoenix server plus test tooling, so that every local lab
+# runs end to end. This composite exists only for local development and CI.
+-r rag.in
+-r observability.in
 pytest>=8,<10
 ruff>=0.8,<1
 nbformat>=5.10,<6
 nbclient>=0.10,<1
+ipykernel>=6.29,<8

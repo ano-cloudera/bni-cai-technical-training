@@ -1,1 +1,2 @@
-litellm>=1.90,<2
+# Profile: gateway (standalone). LiteLLM proxy Application. The proxy extra provides uvicorn and FastAPI.
+litellm[proxy]>=1.90,<2

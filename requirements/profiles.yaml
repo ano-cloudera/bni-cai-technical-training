@@ -1,47 +1,101 @@
-schema_version: 1
+schema_version: 2
 python: "3.10"
+# Install exactly ONE profile per Python environment. Every profile is a standalone, fully resolved lock.
+# Profiles that need participant libraries include them in their own .in file; they are never layered.
+constraints: requirements/constraints.txt
+compile_command: >-
+  uv pip compile requirements/<profile>.in -c requirements/constraints.txt
+  --python-version 3.10 --universal --no-annotate -o requirements/<profile>.lock
 profiles:
   participant:
     input: requirements/participant.in
     lock: requirements/participant.lock
     runtime: PBJ JupyterLab Standard
-    validation_status: local-tested
+    used_by: [group Streamlit Application, labs 00-06 and 08-12 (lab 09 sends traces to the shared Phoenix)]
+    notes: Contains the OpenTelemetry/OpenInference trace CLIENT libraries only; no Phoenix server.
+    local_validation: isolated-venv-pip-check-and-smoke
+    cai_validation: pending
+    validation_status: cai-validation-pending
   rag:
-    input: requirements/rag-profile.in
-    lock: requirements/rag-profile.lock
+    input: requirements/rag.in
+    lock: requirements/rag.lock
     runtime: PBJ JupyterLab Standard
-    validation_status: local-tested
+    used_by: [lab 07, glossary indexing, bni-qdrant launcher]
+    includes: [participant]
+    cpu_only_torch_strategy: cai-validation-pending
+    live_qdrant_server: cai-validation-pending
+    local_validation: isolated-venv-pip-check-and-smoke
+    cai_validation: pending
+    validation_status: cai-validation-pending
   observability:
     input: requirements/observability.in
     lock: requirements/observability.lock
     runtime: PBJ JupyterLab Standard
-    validation_status: cai-validation-required
+    used_by: [bni-phoenix Application]
+    isolation: Phoenix SERVER only. Must not install or constrain CrewAI, OpenAI, or any participant library.
+    local_validation: isolated-venv-pip-check-and-smoke
+    cai_validation: pending
+    validation_status: cai-validation-pending
   gateway:
     input: requirements/gateway.in
     lock: requirements/gateway.lock
     runtime: PBJ JupyterLab Standard
-    validation_status: cai-validation-required
+    used_by: [bni-litellm Application]
+    notes: Needs LITELLM_MASTER_KEY at start; see docs/troubleshooting.md.
+    local_validation: isolated-venv-pip-check-and-smoke
+    cai_validation: pending
+    validation_status: cai-validation-pending
   guardrails:
     input: requirements/guardrails.in
     lock: requirements/guardrails.lock
     runtime: PBJ JupyterLab Standard
-    validation_status: cai-validation-required
+    used_by: [optional lab 11 extensions]
+    local_validation: isolated-venv-pip-check-and-smoke
+    cai_validation: pending
+    validation_status: cai-validation-pending
   gpu-l40s:
     input: requirements/gpu-l40s.in
     lock: requirements/gpu-l40s.lock
     runtime: PBJ JupyterLab NVIDIA GPU
+    used_by: [bni-vllm-qwen35-9b Application in the sandbox]
     gpu: NVIDIA L40S
     vllm_version: "0.29.0"
-    validation_status: sandbox-validation-required
+    local_validation: not-applicable-on-macos
+    cai_validation: pending
+    validation_status: cai-validation-pending
+    compatibility:
+      source: vllm 0.29.0 package metadata on PyPI (intended, not observed)
+      vllm: "0.29.0"
+      torch: "2.13.0"
+      transformers: ">=5.10.4"
+      cuda_wheel_family: cu13
+      python: ">=3.10,<3.15"
+      confirmed_by: Lab 00 in the CAI sandbox
   gpu-h200:
     input: requirements/gpu-h200.in
     lock: requirements/gpu-h200.lock
     runtime: PBJ JupyterLab NVIDIA GPU
+    used_by: [bni-vllm-qwen35-9b Application at BNI]
     gpu: NVIDIA H200 NVL
     vllm_version: "0.29.0"
-    validation_status: bni-validation-required
+    local_validation: not-applicable-on-macos
+    cai_validation: pending
+    validation_status: cai-validation-pending
+    compatibility:
+      source: vllm 0.29.0 package metadata on PyPI (intended, not observed)
+      vllm: "0.29.0"
+      torch: "2.13.0"
+      transformers: ">=5.10.4"
+      cuda_wheel_family: cu13
+      python: ">=3.10,<3.15"
+      confirmed_by: Lab 00 in the BNI PBJ GPU runtime
   dev-test:
     input: requirements/dev-test.in
     lock: requirements/dev-test.lock
     runtime: local-only
-    validation_status: local-tested
+    used_by: [local development, CI, local acceptance]
+    includes: [rag, observability]
+    notes: Local-only composite of the rag (with participant) and Phoenix server profiles; never installed in CAI.
+    local_validation: isolated-venv-pip-check-and-smoke
+    cai_validation: not-applicable
+    validation_status: local-only

@@ -1,3 +1,4 @@
+# Profile: participant (standalone). Labs 00-06, 08, 10-12 and the group Streamlit Application.
 pydantic>=2.10,<3
 PyYAML>=6,<7
 pandas>=2.2,<3
@@ -13,3 +14,10 @@ streamlit>=1.40,<2
 python-dotenv>=1,<2
 huggingface-hub>=1,<2
 safetensors>=0.5,<1
+# Trace clients only (lab 09 and instrumented Applications). The Phoenix server is the separate observability profile.
+# openinference-instrumentation-crewai 0.1.x calls wrapt 1.x APIs (wrap_function_wrapper(module=...)); wrapt 2.x breaks it.
+wrapt>=1.16,<2
+opentelemetry-sdk>=1.28,<2
+opentelemetry-exporter-otlp-proto-http>=1.28,<2
+openinference-instrumentation-crewai>=0.1,<1
+openinference-instrumentation-openai>=0.1,<1

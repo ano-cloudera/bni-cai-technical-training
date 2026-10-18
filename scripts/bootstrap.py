@@ -8,7 +8,6 @@ from pathlib import Path
 
 import yaml
 
-
 ROOT = Path(__file__).resolve().parents[1]
 PROFILES_FILE = ROOT / "requirements" / "profiles.yaml"
 
@@ -41,7 +40,8 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(command))
         return 0
     subprocess.run(command, cwd=ROOT, check=True)
-    subprocess.run([sys.executable, "-m", "pip", "install", "--no-deps", "--editable", "."], cwd=ROOT, check=True)
+    editable = [sys.executable, "-m", "pip", "install", "--no-deps", "--editable", "."]
+    subprocess.run(editable, cwd=ROOT, check=True)
     return 0
 
 

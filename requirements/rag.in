@@ -1,2 +1,4 @@
--r base.lock
+# Profile: rag (standalone, includes participant). Lab 07 and glossary indexing.
+-r participant.in
+qdrant-client>=1.12,<2
 sentence-transformers>=3.2,<6

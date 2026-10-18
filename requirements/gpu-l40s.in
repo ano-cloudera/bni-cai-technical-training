@@ -1,1 +1,4 @@
+# Profile: gpu-l40s (sandbox, NVIDIA L40S). CAI VALIDATION PENDING.
+# Intended pins come from the vllm 0.29.0 package metadata. Final pins are confirmed by Lab 00 in the
+# CAI sandbox PBJ NVIDIA GPU runtime. This profile is NOT validated on macOS.
 vllm==0.29.0

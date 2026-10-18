@@ -1,20 +1,33 @@
+# GPU compatibility intent. Every entry is CAI validation pending until Lab 00 records observed values.
 profiles:
   pbj-python310-l40s:
-    status: sandbox-validation-required
+    status: cai-validation-pending
+    environment: sandbox-l40s
     python: "3.10"
     gpu: NVIDIA L40S
     driver: discover-at-runtime
-    cuda: discover-at-runtime
-    vllm: "0.29.0"
+    cuda_runtime: discover-at-runtime
+    intended:
+      vllm: "0.29.0"
+      torch: "2.13.0"
+      transformers: ">=5.10.4"
+      cuda_wheel_family: cu13
+    intended_source: vllm 0.29.0 package metadata on PyPI
     model: Qwen3.5-9B BF16
-    notes: Validate the exact PBJ runtime identifier, torch build, CUDA runtime, and model startup in the sandbox.
+    notes: Confirm the PBJ runtime identifier, driver, torch CUDA build, and model startup with Lab 00 in the sandbox.
   pbj-python310-h200:
-    status: bni-validation-required
+    status: cai-validation-pending
+    environment: bni-h200
     python: "3.10"
     gpu: NVIDIA H200 NVL
-    driver: "595.58.03 observed"
-    cuda: "13.2 reported by driver"
-    vllm: "0.29.0 candidate"
+    driver: discover-at-runtime
+    cuda_runtime: discover-at-runtime
+    previously_reported: {driver: "595.58.03", driver_cuda: "13.2", note: "Reported earlier; not re-observed by this repository"}
+    intended:
+      vllm: "0.29.0"
+      torch: "2.13.0"
+      transformers: ">=5.10.4"
+      cuda_wheel_family: cu13
+    intended_source: vllm 0.29.0 package metadata on PyPI
     model: Qwen3.5-9B BF16
-    notes: Confirm torch CUDA compatibility and vLLM startup in the BNI PBJ GPU Runtime before the workshop.
-
+    notes: Previously reported driver values are unverified. Confirm with Lab 00 in the BNI PBJ GPU runtime.

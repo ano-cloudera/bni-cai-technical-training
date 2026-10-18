@@ -21,6 +21,10 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["live: requires configured Cloudera AI services"]
+filterwarnings = [
+    "ignore::DeprecationWarning:authlib.*",
+    "ignore:.*authlib.*:Warning",
+]
 
 [tool.ruff]
 target-version = "py310"

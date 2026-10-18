@@ -1,2 +1,13 @@
-# Base constraints are compiled for Python 3.10. GPU versions are added only after target PBJ validation.
-
+# Shared alignment constraints. Applied with `-c` when profiles are compiled.
+# Only libraries whose versions must match across separate Application environments belong here:
+#   - crewai, openai: the lab clients and the CrewAI workflow must behave identically everywhere.
+#   - pydantic, PyYAML, httpx: used directly by the bni_training package in every profile.
+# Do not add anything else. Profiles are never installed together in one environment.
+crewai==1.15.27
+openai==2.54.0
+pydantic==2.12.5
+PyYAML==6.0.3
+httpx==0.28.1
+# onnxruntime (pulled in transitively by CrewAI) publishes no CPython 3.10 wheel for macOS arm64 from 1.24
+# onward. Capping it keeps every lock installable both in the Linux PBJ runtime and on a local Python 3.10 Mac.
+onnxruntime>=1.23,<1.24

@@ -1,1 +1,3 @@
+# gpu-h200: CAI VALIDATION PENDING. Intended pin only; not a resolved lock and not validated on macOS.
+# Resolve on the target PBJ NVIDIA GPU runtime, run Lab 00, then replace with the frozen matrix.
 vllm==0.29.0

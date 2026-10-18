@@ -1,0 +1,33 @@
+name: local-macos
+description: Developer laptop without an NVIDIA GPU. Validates code, locks, mocks, and local Qdrant only. Never evidence of CAI readiness.
+lab_mode: local
+python: "3.10"
+gpu_profile: null
+gpu_dependency_profile: null
+dependency_profiles_validated_locally: [participant, rag, observability, gateway, guardrails, dev-test]
+data_mode: "csv"
+# Names only. Values come from the environment; none are stored in this repository.
+required_env:
+  participant: [GROUP_ID, DATA_MODE, VLLM_BASE_URL]
+  trainer: []
+# MANDATORY: must PASS in this environment. SKIPPED: not applicable here and reported as SKIPPED.
+# OPTIONAL: run when available. SKIPPED is never a FAILED result.
+checks:
+  unit_tests: MANDATORY
+  lint: MANDATORY
+  profile_isolation: MANDATORY
+  local_smoke: MANDATORY
+  local_acceptance: MANDATORY
+  notebooks_local: MANDATORY
+  lab_environment_gpu: SKIPPED
+  cuda_torch: SKIPPED
+  vllm_serving: SKIPPED
+  nfs_model: SKIPPED
+  impala_live: SKIPPED
+  qdrant_server_live: SKIPPED
+  phoenix_server_live: OPTIONAL
+  litellm_proxy_live: OPTIONAL
+  cai_api_dry_run: MANDATORY
+  cai_api_live: SKIPPED
+  streamlit_waves: SKIPPED
+  ten_group_concurrency: SKIPPED

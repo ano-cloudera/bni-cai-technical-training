@@ -1,7 +1,0 @@
-# Resolve and lock this profile inside the validated PBJ Python 3.10 H200 runtime.
-torch
-transformers
-vllm
-huggingface-hub
-safetensors
-

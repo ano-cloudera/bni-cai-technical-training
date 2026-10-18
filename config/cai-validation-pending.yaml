@@ -1,0 +1,40 @@
+# Items that local macOS validation cannot prove. Each stays `pending` until the evidence below is recorded from
+# the CAI sandbox (L40S) or the BNI environment (H200). Do not change a status without that evidence.
+schema_version: 1
+items:
+  - id: gpu-dependency-matrix
+    status: cai-validation-pending
+    covers: [gpu-l40s, gpu-h200]
+    intended: {vllm: "0.29.0", torch: "2.13.0", transformers: ">=5.10.4", cuda_wheel_family: cu13}
+    intended_source: vllm 0.29.0 package metadata on PyPI (not observed)
+    evidence_needed: Lab 00 output in each PBJ NVIDIA GPU runtime, then the frozen lock file
+    validated_in: [sandbox-l40s, bni-h200]
+  - id: cpu-only-torch-linux-rag
+    status: cai-validation-pending
+    covers: [rag]
+    question: The PyPI Linux torch wheel pulls the CUDA runtime wheels (several GB). Decide whether Linux RAG sessions need a CPU-only torch wheel.
+    evidence_needed: Install size, import time and bge-m3 CPU embedding time in a PBJ Standard session
+    validated_in: [sandbox-l40s]
+  - id: live-qdrant-server
+    status: cai-validation-pending
+    covers: [lab 07, deployments/cai/qdrant/app.py]
+    verified_locally: qdrant-client local mode and the exact REST request body only
+    evidence_needed: Lab 07 --mode cai against the shared Qdrant Application, ten group partitions, restart persistence
+    validated_in: [sandbox-l40s, bni-h200]
+  - id: vllm-qwen-model-loading
+    status: cai-validation-pending
+    covers: [deployments/cai/vllm/app.py, labs 01-03]
+    evidence_needed: Qwen3.5-9B BF16 loaded from NFS with TP=1, /health, /v1/models, streaming and non-streaming chat, concurrency
+    validated_in: [sandbox-l40s, bni-h200]
+  - id: cai-api-v2-fields
+    status: cai-validation-pending
+    covers: [automation/cai_api_v2]
+    verified_locally: dry-run plan only; no API call has been made
+    evidence_needed: Comparison with the target /api/v2/swagger.html, runtime identifier from the target catalog, operator-approved live dry run
+    validated_in: [sandbox-l40s, bni-h200]
+  - id: live-impala-authentication
+    status: cai-validation-pending
+    covers: [impala_gssapi, impala_ldap]
+    verified_locally: explicit-mode behavior and no silent CSV fallback, with an unreachable host
+    evidence_needed: GSSAPI or LDAP login and the lab 05 query against the customer Impala
+    validated_in: [bni-h200]

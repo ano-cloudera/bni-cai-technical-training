@@ -6,7 +6,8 @@ applications:
     script: deployments/cai/vllm/app.py
     kernel: python3
     runtime_selector: {editor: JupyterLab, kernel: Python 3.10, edition: NVIDIA GPU}
-    dependency_profile: gpu-h200
+    # One profile per environment; the operator selects it, nothing is layered. CAI validation pending.
+    dependency_profile_by_environment: {sandbox-l40s: gpu-l40s, bni-h200: gpu-h200}
     resources: {cpu: 16, memory_gb: 64, nvidia_gpu: 1}
     authentication: authenticated
     health_path: /health

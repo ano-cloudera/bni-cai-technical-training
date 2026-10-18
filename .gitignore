@@ -15,3 +15,4 @@ wheelhouse/*.whl
 local-inventory.json
 *.log
 
+.DS_Store

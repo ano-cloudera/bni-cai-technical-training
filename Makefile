@@ -1,8 +1,12 @@
-.PHONY: test lint smoke package
+.PHONY: test lint smoke package profiles notebooks
 test:
 	PYTHONPATH=src:. pytest -q
 lint:
-	ruff check src automation scripts tests
+	ruff check src automation scripts tests deployments apps data
+profiles:
+	python scripts/validate_profiles.py
+notebooks:
+	python scripts/execute_notebooks.py
 smoke:
 	bash scripts/smoke_test.sh
 package:

@@ -1,5 +1,10 @@
-arize-phoenix>=20,<21
-arize-phoenix-otel>=0.17,<1
-openinference-instrumentation-crewai>=0.1,<1
-openinference-instrumentation-openai>=0.1,<1
-opentelemetry-sdk>=1.28,<2
+# Profile: observability (standalone, Phoenix SERVER only). Used by the bni-phoenix Application.
+# It must not install or constrain CrewAI, OpenAI, or any participant library; the clients that send traces
+# live in the participant profile (OpenTelemetry exporter + OpenInference instrumentors).
+arize-phoenix>=12,<13
+# arize-phoenix 12.x imports phoenix.evals.models, which was removed in arize-phoenix-evals 3.x.
+arize-phoenix-evals>=2.8,<3
+# strawberry-graphql 0.287.x (pinned by arize-phoenix 12.35) cannot import graphql-core 3.3.
+graphql-core>=3.2,<3.3
+# Newer Phoenix (20.x) is no longer blocked by CrewAI now that the server is isolated; moving to it is a
+# separate, CAI-validated change (Python 3.10 support of the newest 20.x releases must be re-checked).
