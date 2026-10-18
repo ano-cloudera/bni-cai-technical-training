@@ -1,0 +1,2 @@
+"""Synthetic workshop data package."""
+

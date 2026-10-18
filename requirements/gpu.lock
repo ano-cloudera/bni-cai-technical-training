@@ -1,0 +1,4 @@
+# TARGET_VALIDATION_REQUIRED
+# Run scripts/00_environment_check.py in the BNI PBJ Python 3.10 GPU Runtime.
+# Then resolve torch, transformers, vllm, huggingface-hub, and safetensors in that exact runtime.
+

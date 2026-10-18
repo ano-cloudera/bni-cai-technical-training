@@ -1,0 +1,17 @@
+training_label: bni-cai-training-2026
+shared_project: bni-ai-training-shared
+groups:
+  - {group_id: group_01, project: bni-ai-training-g01, application: bni-credit-insight-g01}
+  - {group_id: group_02, project: bni-ai-training-g02, application: bni-credit-insight-g02}
+  - {group_id: group_03, project: bni-ai-training-g03, application: bni-credit-insight-g03}
+  - {group_id: group_04, project: bni-ai-training-g04, application: bni-credit-insight-g04}
+  - {group_id: group_05, project: bni-ai-training-g05, application: bni-credit-insight-g05}
+  - {group_id: group_06, project: bni-ai-training-g06, application: bni-credit-insight-g06}
+  - {group_id: group_07, project: bni-ai-training-g07, application: bni-credit-insight-g07}
+  - {group_id: group_08, project: bni-ai-training-g08, application: bni-credit-insight-g08}
+  - {group_id: group_09, project: bni-ai-training-g09, application: bni-credit-insight-g09}
+  - {group_id: group_10, project: bni-ai-training-g10, application: bni-credit-insight-g10}
+max_concurrent_applications: 5
+day1_core_shared_applications: 2
+max_concurrent_group_applications: 3
+

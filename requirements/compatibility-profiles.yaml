@@ -1,0 +1,20 @@
+profiles:
+  pbj-python310-l40s:
+    status: sandbox-validation-required
+    python: "3.10"
+    gpu: NVIDIA L40S
+    driver: discover-at-runtime
+    cuda: discover-at-runtime
+    vllm: "0.29.0"
+    model: Qwen3.5-9B BF16
+    notes: Validate the exact PBJ runtime identifier, torch build, CUDA runtime, and model startup in the sandbox.
+  pbj-python310-h200:
+    status: bni-validation-required
+    python: "3.10"
+    gpu: NVIDIA H200 NVL
+    driver: "595.58.03 observed"
+    cuda: "13.2 reported by driver"
+    vllm: "0.29.0 candidate"
+    model: Qwen3.5-9B BF16
+    notes: Confirm torch CUDA compatibility and vLLM startup in the BNI PBJ GPU Runtime before the workshop.
+

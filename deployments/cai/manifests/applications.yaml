@@ -1,0 +1,52 @@
+schema_version: 1
+applications:
+  - key: vllm
+    name: bni-vllm-qwen35-9b
+    subdomain: bni-vllm-qwen35-9b
+    script: deployments/cai/vllm/app.py
+    kernel: python3
+    runtime_selector: {editor: JupyterLab, kernel: Python 3.10, edition: NVIDIA GPU}
+    dependency_profile: gpu-h200
+    resources: {cpu: 16, memory_gb: 64, nvidia_gpu: 1}
+    authentication: authenticated
+    health_path: /health
+  - key: qdrant
+    name: bni-qdrant
+    subdomain: bni-qdrant
+    script: deployments/cai/qdrant/app.py
+    kernel: python3
+    runtime_selector: {editor: JupyterLab, kernel: Python 3.10, edition: Standard}
+    dependency_profile: rag
+    resources: {cpu: 4, memory_gb: 16, nvidia_gpu: 0}
+    authentication: authenticated
+    health_path: /readyz
+  - key: phoenix
+    name: bni-phoenix
+    subdomain: bni-phoenix
+    script: deployments/cai/phoenix/app.py
+    kernel: python3
+    runtime_selector: {editor: JupyterLab, kernel: Python 3.10, edition: Standard}
+    dependency_profile: observability
+    resources: {cpu: 4, memory_gb: 16, nvidia_gpu: 0}
+    authentication: authenticated
+    health_path: /healthz
+  - key: litellm
+    name: bni-litellm
+    subdomain: bni-litellm
+    script: deployments/cai/litellm/app.py
+    kernel: python3
+    runtime_selector: {editor: JupyterLab, kernel: Python 3.10, edition: Standard}
+    dependency_profile: gateway
+    resources: {cpu: 2, memory_gb: 4, nvidia_gpu: 0}
+    authentication: authenticated
+    health_path: /health/liveliness
+  - key: streamlit-group
+    name: bni-credit-insight-gXX
+    subdomain: bni-credit-insight-gXX
+    script: deployments/cai/streamlit/app.py
+    kernel: python3
+    runtime_selector: {editor: JupyterLab, kernel: Python 3.10, edition: Standard}
+    dependency_profile: participant
+    resources: {cpu: 1, memory_gb: 2, nvidia_gpu: 0}
+    authentication: authenticated
+    health_path: /_stcore/health

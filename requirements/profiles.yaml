@@ -1,0 +1,47 @@
+schema_version: 1
+python: "3.10"
+profiles:
+  participant:
+    input: requirements/participant.in
+    lock: requirements/participant.lock
+    runtime: PBJ JupyterLab Standard
+    validation_status: local-tested
+  rag:
+    input: requirements/rag-profile.in
+    lock: requirements/rag-profile.lock
+    runtime: PBJ JupyterLab Standard
+    validation_status: local-tested
+  observability:
+    input: requirements/observability.in
+    lock: requirements/observability.lock
+    runtime: PBJ JupyterLab Standard
+    validation_status: cai-validation-required
+  gateway:
+    input: requirements/gateway.in
+    lock: requirements/gateway.lock
+    runtime: PBJ JupyterLab Standard
+    validation_status: cai-validation-required
+  guardrails:
+    input: requirements/guardrails.in
+    lock: requirements/guardrails.lock
+    runtime: PBJ JupyterLab Standard
+    validation_status: cai-validation-required
+  gpu-l40s:
+    input: requirements/gpu-l40s.in
+    lock: requirements/gpu-l40s.lock
+    runtime: PBJ JupyterLab NVIDIA GPU
+    gpu: NVIDIA L40S
+    vllm_version: "0.29.0"
+    validation_status: sandbox-validation-required
+  gpu-h200:
+    input: requirements/gpu-h200.in
+    lock: requirements/gpu-h200.lock
+    runtime: PBJ JupyterLab NVIDIA GPU
+    gpu: NVIDIA H200 NVL
+    vllm_version: "0.29.0"
+    validation_status: bni-validation-required
+  dev-test:
+    input: requirements/dev-test.in
+    lock: requirements/dev-test.lock
+    runtime: local-only
+    validation_status: local-tested

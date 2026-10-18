@@ -1,0 +1,10 @@
+seed: 20261011
+scale: 1.0
+row_counts:
+  branch_master: 50
+  product_master: 10
+  customers: 10000
+  loan_applications: 25000
+  loan_accounts: 15000
+  repayment_transactions: 180000
+

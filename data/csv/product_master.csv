@@ -1,0 +1,11 @@
+product_id,product_name,product_type
+PRD01,Synthetic Loan Product 01,Mortgage
+PRD02,Synthetic Loan Product 02,SME
+PRD03,Synthetic Loan Product 03,Commercial
+PRD04,Synthetic Loan Product 04,Vehicle
+PRD05,Synthetic Loan Product 05,Consumer
+PRD06,Synthetic Loan Product 06,Mortgage
+PRD07,Synthetic Loan Product 07,SME
+PRD08,Synthetic Loan Product 08,Commercial
+PRD09,Synthetic Loan Product 09,Vehicle
+PRD10,Synthetic Loan Product 10,Consumer

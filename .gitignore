@@ -1,0 +1,17 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.superpowers/
+build/
+dist/
+wheelhouse/*.whl
+*.keytab
+*.pem
+*.crt
+local-inventory.json
+*.log
+

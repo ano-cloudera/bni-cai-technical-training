@@ -1,0 +1,9 @@
+name: bni-synthetic-credit-insight-final
+llm_endpoint_env: VLLM_BASE_URL
+llm_api_key_env: VLLM_API_KEY
+model: qwen3.5-9b
+publish_count: 1
+tools:
+  - synthetic_credit_portfolio_query
+  - synthetic_banking_glossary_retrieval
+

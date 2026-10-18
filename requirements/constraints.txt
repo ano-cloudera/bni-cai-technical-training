@@ -1,0 +1,2 @@
+# Base constraints are compiled for Python 3.10. GPU versions are added only after target PBJ validation.
+

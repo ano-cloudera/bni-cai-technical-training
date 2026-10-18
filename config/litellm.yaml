@@ -1,0 +1,19 @@
+model_list:
+  - model_name: qwen-primary
+    litellm_params:
+      model: openai/qwen3.5-9b
+      api_base: os.environ/VLLM_BASE_URL
+      api_key: os.environ/VLLM_API_KEY
+  - model_name: training-fallback
+    litellm_params:
+      model: openai/training-fallback
+      api_base: os.environ/MOCK_FALLBACK_BASE_URL
+      api_key: workshop-only
+router_settings:
+  routing_strategy: simple-shuffle
+  num_retries: 2
+  timeout: 60
+litellm_settings:
+  drop_params: true
+  request_timeout: 60
+

@@ -1,0 +1,15 @@
+pydantic>=2.10,<3
+PyYAML>=6,<7
+pandas>=2.2,<3
+duckdb>=1.1,<2
+sqlglot>=25,<30
+httpx>=0.27,<1
+openai>=1.50,<3
+crewai>=1,<2
+impyla>=0.19,<1
+thrift-sasl>=0.4,<1
+pure-sasl>=0.6,<1
+streamlit>=1.40,<2
+python-dotenv>=1,<2
+huggingface-hub>=1,<2
+safetensors>=0.5,<1

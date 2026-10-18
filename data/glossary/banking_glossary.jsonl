@@ -1,0 +1,6 @@
+{"chunk_id":"glossary-001","title":"Outstanding Balance","document_type":"glossary","source":"synthetic-workshop","text":"Outstanding balance is the synthetic principal exposure remaining on active loan accounts."}
+{"chunk_id":"glossary-002","title":"DPD 30","document_type":"glossary","source":"synthetic-workshop","text":"DPD 30 identifies a synthetic account that is at least 30 days past its scheduled due date."}
+{"chunk_id":"glossary-003","title":"Delinquency Rate","document_type":"glossary","source":"synthetic-workshop","text":"Delinquency rate is the number of accounts with DPD of at least 30 divided by the number of accounts in the selected portfolio."}
+{"chunk_id":"glossary-004","title":"Approval Rate","document_type":"glossary","source":"synthetic-workshop","text":"Approval rate is approved synthetic applications divided by all decided synthetic applications in the selected period."}
+{"chunk_id":"glossary-005","title":"Portfolio Review","document_type":"policy","source":"synthetic-workshop","text":"Portfolio review means analytical review of aggregate synthetic trends. It is not an individual lending decision."}
+

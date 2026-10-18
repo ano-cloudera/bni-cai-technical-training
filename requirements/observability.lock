@@ -1,0 +1,5 @@
+arize-phoenix==20.10.0
+arize-phoenix-otel==0.17.1
+openinference-instrumentation-crewai==0.1.22
+openinference-instrumentation-openai==0.1.41
+opentelemetry-sdk==1.45.1

@@ -1,0 +1,20 @@
+{
+  "hashes": {
+    "branch_master": "499fc1f34b26e27a8b6deff35fcf817292328ec75459949414cd70a8bf9bb455",
+    "customers": "720831ce580809b9ce3291fe8b115b02b6c2318dee1565008325b90c7e55fb93",
+    "loan_accounts": "1c2cf9bf213ac852ef21e0ea59bf85b96d8f41ca930ae94f1326295468c401e7",
+    "loan_applications": "cfd7f185064bc30aeaa2da196542ef41b444d44d4a9ed85fe84908f8c6e48e4f",
+    "product_master": "37dc192b476865718c4e404ad58ae2ade2acbef779bca35ad287abf2e76c37e6",
+    "repayment_transactions": "d2f86d8839ae8ffbaf7a1b98667c406f247687924ae98e3c16936c10490be49b"
+  },
+  "row_counts": {
+    "branch_master": 50,
+    "customers": 10000,
+    "loan_accounts": 15000,
+    "loan_applications": 25000,
+    "product_master": 10,
+    "repayment_transactions": 180000
+  },
+  "scale": 1.0,
+  "seed": 20261011
+}

@@ -1,0 +1,20 @@
+version: 1
+dataset: credit_portfolio
+base_table: loan_accounts
+allowed_tables: [loan_accounts, branch_master, product_master, loan_applications, repayment_transactions]
+dimensions:
+  region: {column: region, description: Synthetic operating region}
+  branch_id: {column: branch_id, description: Synthetic branch identifier}
+  product_id: {column: product_id, description: Synthetic loan product}
+  customer_segment: {column: customer_segment, description: Synthetic portfolio segment}
+  risk_band: {column: risk_band, description: Synthetic risk band}
+metrics:
+  outstanding_balance: {expression: SUM(outstanding_balance), description: Total current principal exposure}
+  account_count: {expression: COUNT(*), description: Number of loan accounts}
+  delinquency_rate: {expression: AVG(CASE WHEN dpd >= 30 THEN 1.0 ELSE 0.0 END), description: Share of accounts at least 30 days past due}
+synonyms:
+  exposure: outstanding_balance
+  balance: outstanding_balance
+  delinquent: delinquency_rate
+  overdue: delinquency_rate
+
