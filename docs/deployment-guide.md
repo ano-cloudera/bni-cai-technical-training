@@ -2,13 +2,13 @@
 
 ## Shared project
 
-Create `bni-ai-training-shared` and deploy the Applications below. Use environment variables for secrets and environment-specific paths.
+Create `bni-ai-training-shared` and deploy the Applications below. Each Application installs exactly one standalone dependency profile (`docs/dependency-profiles.md`); profiles are never layered. Runtime profiles (`local-macos`, `sandbox-l40s`, `bni-h200`) are described in `docs/runtime-profiles.md`. Use environment variables for secrets and environment-specific paths.
 
 | Application | CAI Script | Dependency profile | Baseline |
 |---|---|---|---|
 | `bni-vllm-qwen35-9b` | `deployments/cai/vllm/app.py` | `gpu-l40s` or `gpu-h200` | 16 vCPU, 64 GB, 1 GPU |
-| `bni-qdrant` | `deployments/cai/qdrant/app.py` | `rag` | 4 vCPU, 16 GB |
-| `bni-phoenix` | `deployments/cai/phoenix/app.py` | `observability` | 4 vCPU, 16 GB |
+| `bni-qdrant` | `deployments/cai/qdrant/app.py` | `rag` (the launcher itself needs only the standard library) | 4 vCPU, 16 GB |
+| `bni-phoenix` | `deployments/cai/phoenix/app.py` | `observability` (Phoenix server only; no CrewAI) | 4 vCPU, 16 GB |
 | `bni-litellm` | `deployments/cai/litellm/app.py` | `gateway` | 2 vCPU, 4 GB |
 
 The vLLM model is loaded from `MODEL_PATH` on NFS. Keep tensor parallel size one. For each group project, select `deployments/cai/streamlit/app.py` using 1 vCPU and 2 GB.

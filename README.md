@@ -5,14 +5,16 @@ This repository is an English, ready-to-adapt workshop bundle for Cloudera AI 1.
 ## Start here
 
 ```bash
-cp .env.example .env
+cp config/profiles/<runtime-profile>.env.example .env   # local-macos, sandbox-l40s, or bni-h200
 set -a; source .env; set +a
-python scripts/bootstrap.py participant
-python scripts/00_environment_check.py
-python scripts/05_impala_ask_data.py
+python scripts/bootstrap.py participant                  # one standalone dependency profile per environment
+python scripts/00_environment_check.py --mode cai        # use --mode local on a laptop without a GPU
+python scripts/05_impala_ask_data.py --mode cai
 ```
 
-The default path is CSV. Set `GROUP_ID` to the assigned value from `group_01` through `group_10`. Trainers provision the shared Applications before participant labs, but start only the services required by the current module. Do not exceed five active CAI Applications in total.
+The exact CAI Workbench sequence is in `docs/cai-workbench-clean-clone.md`. Every lab supports `--mode local`
+(mocks or local services, complete code path, GPU/CAI/Impala/NFS steps reported as `SKIPPED`) and `--mode cai`
+(real services, no mocks, missing prerequisites are a `FAIL`). The default path is CSV. Set `GROUP_ID` to the assigned value from `group_01` through `group_10`. Trainers provision the shared Applications before participant labs, but start only the services required by the current module. Do not exceed five active CAI Applications in total.
 
 ## Repository paths
 
@@ -29,10 +31,17 @@ The default path is CSV. Set `GROUP_ID` to the assigned value from `group_01` th
 ## Local verification
 
 ```bash
+python scripts/bootstrap.py dev-test                      # inside a Python 3.10 virtual environment
+PYTHONPATH=src:. pytest -q
+ruff check src automation scripts tests deployments apps data
 bash scripts/smoke_test.sh
 python scripts/acceptance_test.py --mode local --report build/acceptance-local.md
+python scripts/validate_profiles.py                       # every non-GPU profile in its own temporary venv
+python scripts/execute_notebooks.py                       # notebooks 00-12 in local mode
 ```
 
+Local validation is **not** CAI readiness. See `docs/runtime-profiles.md` for which checks are PASS, SKIPPED, or
+mandatory in `local-macos`, `sandbox-l40s`, and `bni-h200`, and `docs/dependency-profiles.md` for the profile design.
 GPU serving remains environment-dependent until the exact PBJ GPU Runtime matrix is validated. Run lab 00 first, pin the working CUDA, PyTorch, Transformers, and vLLM versions, then build the offline wheelhouse inside the same runtime family.
 
 ## CAI Application rule
@@ -40,5 +49,3 @@ GPU serving remains environment-dependent until the exact PBJ GPU Runtime matrix
 Select the matching `deployments/cai/<service>/app.py` file in the CAI Application `Script` field. Use kernel `python3` and the approved PBJ Python 3.10 JupyterLab runtime. Do not use a shell script as the Application entrypoint.
 
 The workshop limit is five active CAI Applications in total. During the Day 1 group UI rotation, keep vLLM and Qdrant active and run at most three group Streamlit Applications. Stop the group wave before starting Phoenix. LiteLLM is started for the Day 2 gateway lab.
-
-# bni-cai-technical-training

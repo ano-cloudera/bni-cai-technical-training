@@ -5,7 +5,17 @@ import json
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
-EXCLUDED_PARTS = {".git", ".venv", "dist", "build", ".pytest_cache", ".ruff_cache", "__pycache__", ".superpowers", "superpowers"}
+EXCLUDED_PARTS = {
+    ".git",
+    ".venv",
+    "dist",
+    "build",
+    ".pytest_cache",
+    ".ruff_cache",
+    "__pycache__",
+    ".superpowers",
+    "superpowers",
+}
 EXCLUDED_SUFFIXES = {".pyc", ".keytab", ".pem", ".crt", ".safetensors", ".bin"}
 
 
@@ -19,8 +29,8 @@ def approved(path: Path) -> bool:
 
 def build_release(root: Path, dist: Path, version: str) -> Path:
     state = (root / "PROJECT_STATE.md").read_text()
-    if "ready_for_cai_validation" not in state and "cai_validated" not in state:
-        raise RuntimeError("Acceptance status is not ready")
+    if "local_validation_passed" not in state and "cai_validated" not in state:
+        raise RuntimeError("Local validation has not passed; update PROJECT_STATE.md after a validated run")
     entries = []
     for line in (root / "packaging/manifest.txt").read_text().splitlines():
         if not line.strip():

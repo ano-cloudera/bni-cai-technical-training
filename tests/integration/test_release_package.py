@@ -11,7 +11,7 @@ def test_local_acceptance_requires_python_cai_entrypoints() -> None:
     result = local_checks(Path("."))
     checks = {item["name"]: item["passed"] for item in result["checks"]}
     assert checks["python_cai_entrypoints"] is True
-    assert result["status"] == "ready_for_cai_validation"
+    assert result["status"] == "local_validation_passed"
 
 
 def test_release_zip_is_clean_and_complete(tmp_path: Path) -> None:

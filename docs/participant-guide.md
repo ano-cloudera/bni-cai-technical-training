@@ -8,8 +8,8 @@ Forty participants work in ten groups of four. Rotate Driver, LLM Engineer, Data
 
 1. Open the assigned `bni-ai-training-gNN` project and a Python 3.10 PBJ JupyterLab session.
 2. Copy `.env.example` to an untracked `.env`, set only trainer-supplied values, then export it with `set -a; source .env; set +a`.
-3. Run `python scripts/bootstrap.py participant` or the approved offline equivalent.
-4. Run notebook 00 and confirm the expected environment output.
+3. Run `python scripts/bootstrap.py participant` or the approved offline equivalent. Lab 07 needs the `rag` profile in its own environment. Lab 09 only sends traces, which the `participant` profile supports; the Phoenix server runs as the shared Application.
+4. Set `LAB_MODE=cai` (real services) or `LAB_MODE=local` (mocks, no cluster). Run notebook 00 and confirm the expected environment output.
 5. Follow notebooks in numerical order. Lab 02 is trainer-led.
 
 CSV mode is always explicit: `DATA_MODE=csv`. Impala modes are `impala_gssapi` and `impala_ldap`. An authentication failure does not switch modes automatically.
