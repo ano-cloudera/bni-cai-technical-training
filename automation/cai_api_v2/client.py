@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import base64
 import json
 import ssl
-import base64
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen

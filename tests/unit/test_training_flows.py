@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
 import json
+from pathlib import Path
 
 import pytest
 
@@ -12,7 +12,9 @@ from bni_training.rag import retrieve_group_documents
 from bni_training.semantic import SemanticCatalog, compile_question
 
 
-def test_directory_manifest_hashes_model_files_in_streams(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_directory_manifest_hashes_model_files_in_streams(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     (tmp_path / "config.json").write_text("{}")
     (tmp_path / "model.safetensors").write_bytes(b"a" * 1024 * 1024)
 
@@ -55,17 +57,18 @@ def test_qdrant_retrieval_always_filters_by_group() -> None:
     class Client:
         def query_points(self, **kwargs):
             calls.append(kwargs)
-            return {"points": [{"payload": {"text": "Synthetic glossary"}}]}
+            return {"points": []}
 
-    result = retrieve_group_documents(
+    retrieve_group_documents(
         Client(),
         collection_name="bni_training_knowledge",
         query_vector=[0.1, 0.2],
         group_id="group_03",
         limit=3,
     )
-    assert result["points"][0]["payload"]["text"] == "Synthetic glossary"
-    assert calls[0]["query_filter"]["must"][0]["match"]["value"] == "group_03"
+    condition = calls[0]["query_filter"].must[0]
+    assert condition.key == "group_id"
+    assert condition.match.value == "group_03"
 
 
 def test_notebooks_are_step_by_step_not_script_wrappers() -> None:

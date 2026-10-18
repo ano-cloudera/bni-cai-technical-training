@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from bni_training.rag import build_group_filter
+from bni_training.rag import search_group
 
 
 class KnowledgeRetrievalTool:
@@ -10,12 +10,6 @@ class KnowledgeRetrievalTool:
         self.embed = embed
 
     def search(self, group_id: str, query: str, limit: int = 5):
-        tenant_filter = build_group_filter(group_id)
-        vector = self.embed(query)
-        return self.client.search(
-            collection_name=self.collection,
-            query_vector=vector,
-            query_filter=tenant_filter,
-            limit=limit,
-            with_payload=True,
+        return search_group(
+            self.client, group_id, query, self.embed, limit=limit, collection_name=self.collection
         )

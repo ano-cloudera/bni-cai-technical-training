@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import sqlite3
+import threading
 import time
 from pathlib import Path
 
@@ -13,7 +14,9 @@ class CsvBackend:
         self.data_dir = Path(data_dir)
         if not self.data_dir.exists():
             raise FileNotFoundError(f"CSV_DATA_DIR does not exist: {self.data_dir}")
-        self._connection = sqlite3.connect(":memory:")
+        # CrewAI runs tools on worker threads, so the connection must be usable across threads.
+        self._connection = sqlite3.connect(":memory:", check_same_thread=False)
+        self._lock = threading.Lock()
         self._load_csv_files()
 
     def _load_csv_files(self) -> None:
@@ -33,13 +36,15 @@ class CsvBackend:
 
     def execute(self, sql: str, timeout_seconds: int = 30) -> QueryResult:
         start = time.perf_counter()
-        cursor = self._connection.execute(sql)
-        rows = [list(row) for row in cursor.fetchall()]
-        columns = [item[0] for item in cursor.description or []]
+        with self._lock:
+            cursor = self._connection.execute(sql)
+            rows = [list(row) for row in cursor.fetchall()]
+            columns = [item[0] for item in cursor.description or []]
         return QueryResult(
             columns=columns, rows=rows, row_count=len(rows), elapsed_ms=(time.perf_counter() - start) * 1000
         )
 
     def healthcheck(self) -> HealthStatus:
-        self._connection.execute("SELECT 1")
+        with self._lock:
+            self._connection.execute("SELECT 1")
         return HealthStatus(healthy=True, service="csv", detail=str(self.data_dir))

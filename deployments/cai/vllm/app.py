@@ -6,7 +6,6 @@ from collections.abc import Mapping
 from bni_training.model_artifact import validate_model_path
 from deployments.cai.common import http_ready, resolve_cai_port, run_supervised
 
-
 GPU_PROFILES = {
     "l40s": {"gpu_memory_utilization": "0.82", "max_model_len": "8192", "max_num_seqs": "16"},
     "h200": {"gpu_memory_utilization": "0.75", "max_model_len": "8192", "max_num_seqs": "32"},

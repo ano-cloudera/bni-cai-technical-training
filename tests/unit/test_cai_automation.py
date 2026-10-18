@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from automation.cai_api_v2.deploy import application_body, deployment_waves, reconcile_applications
 from automation.cai_api_v2.cli import build_parser
+from automation.cai_api_v2.deploy import application_body, deployment_waves, reconcile_applications
 
 
 def test_application_body_contains_python_script_and_runtime() -> None:

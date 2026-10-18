@@ -10,9 +10,8 @@ import yaml
 from .cleanup import cleanup_plan
 from .client import CaiApiClient
 from .config import load_environment
-from .deploy import reconcile_applications
-from .deploy import deployment_waves
-from .discovery import application_items, by_name, project_items
+from .deploy import deployment_waves, reconcile_applications
+from .discovery import application_items, project_items
 from .inventory import read_inventory, write_inventory
 from .models import WorkshopSpec
 from .project_files import approved_project_files

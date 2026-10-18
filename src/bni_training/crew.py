@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import asyncio
+import contextvars
+from concurrent.futures import ThreadPoolExecutor
+
 from bni_training.schemas import AgentAnswer
 
 
@@ -63,7 +67,7 @@ def build_crewai_crew(data_tool, llm_client):
         verbose=True,
     )
     task1 = Task(
-        description="Answer the participant question using the structured data tool.",
+        description="Answer the participant question: {question}. Use the structured data tool.",
         expected_output="Structured facts and SQL",
         agent=analyst,
     )
@@ -73,3 +77,40 @@ def build_crewai_crew(data_tool, llm_client):
         agent=narrator,
     )
     return Crew(agents=[analyst, narrator], tasks=[task1, task2], process=Process.sequential, verbose=True)
+
+
+def kickoff_blocking(crew, inputs: dict | None = None):
+    """Run ``crew.kickoff`` from sync code, including inside a Jupyter kernel.
+
+    CrewAI refuses a synchronous kickoff while an asyncio loop is running in the calling thread, and every
+    JupyterLab kernel has one. In that case the kickoff runs on a worker thread that keeps the caller's
+    context variables, so tracing attributes set by the caller still reach the spans.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return crew.kickoff(inputs=inputs)
+    context = contextvars.copy_context()
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(context.run, lambda: crew.kickoff(inputs=inputs)).result()
+
+
+class RecordingDataTool:
+    """Wrap a data tool and record each query so a lab can prove the agent really called it."""
+
+    def __init__(self, inner):
+        self.inner = inner
+        self.calls: list[dict] = []
+
+    def query(self, question: str):
+        sql, result = self.inner.query(question)
+        self.calls.append({"question": question, "sql": sql, "row_count": result.row_count})
+        return sql, result
+
+
+def run_crewai_question(data_tool, llm_client, question: str) -> dict:
+    """Run the two-agent CrewAI workflow for one question and report which tools were called."""
+    recorder = RecordingDataTool(data_tool)
+    crew = build_crewai_crew(recorder, llm_client)
+    output = kickoff_blocking(crew, {"question": question})
+    return {"answer": str(output), "tool_calls": recorder.calls}
