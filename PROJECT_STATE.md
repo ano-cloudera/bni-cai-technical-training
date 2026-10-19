@@ -170,6 +170,10 @@ Not run and not claimed: a live Qdrant server (only local mode and a captured RE
   `PHOENIX_COLLECTOR_ENDPOINT`, `PHOENIX_UI_URL`, `LITELLM_BASE_URL`, and
   `WORKSHOP_PORTAL_URL`. Regression after this milestone: 724 tests passed; scoped Ruff and generated
   notebook synchronization passed. This does not validate 40 real CAI Sessions or change CAI readiness.
+- Final redesign validation on 2026-10-19: `scripts/smoke_test.sh` passed (including 724 tests),
+  local acceptance reported `local_validation_passed` with 21/21 checks, and explicit nbclient
+  execution passed for all 13 canonical notebooks. Path audit, stripped-notebook hygiene, scoped Ruff,
+  and authoring/template synchronization passed. No CAI API call, deployment, or push was performed.
 
 ## Environment-dependent validation (pending, not claimed)
 
