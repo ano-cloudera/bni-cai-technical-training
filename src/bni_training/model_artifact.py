@@ -11,6 +11,8 @@ def hash_file(path: str | Path, chunk_size: int = 1024 * 1024) -> str:
 
 
 def validate_model_path(path: str | Path) -> Path:
+    if not str(path).strip():
+        raise ValueError("MODEL_PATH is not set; point it at the existing local model directory (NFS)")
     model = Path(path)
     required = [model / "config.json"]
     if not model.is_dir() or any(not item.exists() for item in required):
