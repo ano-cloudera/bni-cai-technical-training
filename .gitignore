@@ -16,3 +16,5 @@ local-inventory.json
 *.log
 
 .DS_Store
+workshop/runtime/
+group.env

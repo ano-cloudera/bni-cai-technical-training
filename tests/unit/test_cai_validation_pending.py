@@ -21,7 +21,8 @@ def items() -> dict:
 
 def test_every_cai_only_item_is_registered_and_pending() -> None:
     registered = items()
-    assert set(registered) == REQUIRED
+    assert REQUIRED <= set(registered)
+    assert "workshop-portal-capacity" in registered
     for item in registered.values():
         assert item["status"] == "cai-validation-pending", item["id"]
         assert item["evidence_needed"].strip() and item["validated_in"], item["id"]

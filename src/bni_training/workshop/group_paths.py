@@ -1,0 +1,71 @@
+"""The single write gate for group files. Application-layer validation, not OS-level isolation."""
+
+from __future__ import annotations
+
+import os
+import re
+import unicodedata
+from collections.abc import Mapping
+from pathlib import Path
+
+from .group_registry import REPO_ROOT
+
+RUNTIME_ENV = "WORKSHOP_RUNTIME_DIR"
+_SEGMENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+_FILENAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
+MAX_OUTPUT_BYTES = 1_000_000
+
+
+class UnsafePathError(ValueError):
+    """A path segment or resolved path would leave its permitted directory."""
+
+
+def runtime_root(env: Mapping[str, str] | None = None) -> Path:
+    value = (os.environ if env is None else env).get(RUNTIME_ENV)
+    return Path(value) if value else REPO_ROOT / "workshop" / "runtime"
+
+
+def check_segment(value: str, *, pattern: re.Pattern = _SEGMENT, label: str = "path segment") -> str:
+    if not isinstance(value, str) or unicodedata.normalize("NFC", value) != value:
+        raise UnsafePathError(f"Invalid {label}")
+    if value in {"", ".", ".."} or not pattern.fullmatch(value) or ".." in value:
+        raise UnsafePathError(f"Invalid {label}: {value!r}")
+    return value
+
+
+def check_filename(value: str) -> str:
+    return check_segment(value, pattern=_FILENAME, label="file name")
+
+
+def safe_join(base: Path, *segments: str) -> Path:
+    """Join validated segments under ``base`` and prove the result stays inside it.
+
+    Rejects traversal, absolute paths, separators, NUL bytes, odd Unicode, and any symlink component.
+    """
+    base = Path(base)
+    resolved_base = base.resolve()
+    current = base
+    for segment in segments:
+        check_segment(segment)
+        current = current / segment
+        if current.is_symlink():
+            raise UnsafePathError(f"Symlinks are not allowed in group paths: {segment}")
+    resolved = current.resolve()
+    try:
+        resolved.relative_to(resolved_base)
+    except ValueError as exc:
+        raise UnsafePathError("Path escapes its permitted directory") from exc
+    return resolved
+
+
+def group_workspace(root: Path, group_id: str) -> Path:
+    """Directory a group may write to. ``group_id`` must already be validated by the registry."""
+    return safe_join(Path(root), "groups", group_id)
+
+
+def session_output_dir(root: Path, group_id: str, session_id: str) -> Path:
+    return safe_join(group_workspace(root, group_id), "output", session_id)
+
+
+def session_tmp_dir(root: Path, group_id: str, session_id: str) -> Path:
+    return safe_join(group_workspace(root, group_id), "tmp", session_id)

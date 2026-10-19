@@ -38,3 +38,9 @@ items:
     verified_locally: explicit-mode behavior and no silent CSV fallback, with an unreachable host
     evidence_needed: GSSAPI or LDAP login and the lab 05 query against the customer Impala
     validated_in: [bni-h200]
+  - id: workshop-portal-capacity
+    status: cai-validation-pending
+    covers: [apps/workshop-portal, deployments/cai/workshop-portal, src/bni_training/workshop/portal]
+    verified_locally: isolation tests, the 3-slot inference gate, and 40 concurrent in-process sessions with a mock LLM
+    evidence_needed: About 40 real browsers on one 4 vCPU / 8-16 GB Application; queue and timeout behavior against the real shared vLLM or LiteLLM endpoint; whether CAI exposes the user identity
+    validated_in: [sandbox-l40s, bni-h200]
