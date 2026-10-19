@@ -136,6 +136,20 @@ Python 3.10.22, macOS arm64, no NVIDIA GPU. GPU, CUDA, vLLM, NFS and CAI checks 
 
 Not run and not claimed: a live Qdrant server (only local mode and a captured REST request), real vLLM, real Impala, any CAI call.
 
+## Educational notebook redesign milestones
+
+- Labs 06-08 now use direct educational authoring sources and generated stripped templates. Lab 08
+  executes the request-bound, group-scoped data tool before CrewAI orchestration, displays the user
+  question, generated SQL, bounded result rows, Analyst output, and Reviewer output, and passes the
+  same evidence sequentially to both agents. It does not claim that a mutable CrewAI recorder
+  captured the call.
+- Local execution of notebooks 06, 07, and 08 passed through `scripts/execute_notebooks.py` on
+  2026-10-19. The Lab 08 execution test also verified the explicit tool-execution marker and the
+  evidence hand-off to both agent requests.
+- Regression at this milestone: 713 tests passed; Ruff passed for `src`, `tests`, `scripts`, and
+  `apps`; generated notebook templates match their authoring sources. This is local validation only
+  and does not change any CAI-pending status.
+
 ## Environment-dependent validation (pending, not claimed)
 
 Registered in `config/cai-validation-pending.yaml`; every item is `cai-validation-pending`: GPU dependency matrix, CPU-only torch strategy for Linux RAG sessions, live Qdrant server, vLLM and Qwen model loading, CAI API v2 fields, live Impala authentication.

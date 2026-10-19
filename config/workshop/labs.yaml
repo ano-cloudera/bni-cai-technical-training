@@ -113,7 +113,7 @@ labs:
     expected: Your documents are indexed and retrieved; every hit carries your group_id; locally this uses an in-memory store.
   - id: "08"
     key: agent_workflow
-    title: Agent Workflow
+    title: Multi-Agent Workflow
     audience: [participant]
     trainer_only: false
     script: scripts/08_agent_workflow.py

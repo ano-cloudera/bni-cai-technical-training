@@ -6,6 +6,7 @@ duckdb>=1.1,<2
 sqlglot>=25,<30
 httpx>=0.27,<1
 openai>=1.50,<3
+qdrant-client>=1.12,<2
 crewai>=1,<2
 impyla>=0.19,<1
 thrift-sasl>=0.4,<1

@@ -11,7 +11,7 @@ nbformat = pytest.importorskip("nbformat")
 
 from bni_training.lab_registry import canonical_labs  # noqa: E402
 from bni_training.workshop.workspace_manager import WorkspaceManager  # noqa: E402
-from scripts.execute_notebooks import execute  # noqa: E402
+from scripts.execute_notebooks import execute, output_text  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -71,3 +71,25 @@ def test_every_generated_group_copy_matches_its_template(tmp_path) -> None:
             ).read_bytes() == template
     assert not [p for p in runtime.rglob("*.csv")], "the dataset is never copied"
     assert os.listdir(runtime / "groups") and len(os.listdir(runtime / "groups")) == 10
+
+
+def test_lab_08_execution_exposes_tool_evidence_and_both_agent_outputs(tmp_path) -> None:
+    notebook = ROOT / "notebooks/templates/08_agent_workflow.ipynb"
+
+    result = execute(notebook, tmp_path, "local", 600)
+
+    assert result["result"] == "PASS", result
+    executed = nbformat.read(tmp_path / notebook.name, as_version=4)
+    rendered_output = "\n".join(
+        output_text(cell) for cell in executed.cells if cell.cell_type == "code"
+    )
+    for label in (
+        "User question:",
+        "Generated SQL:",
+        "Returned rows:",
+        "Analyst output:",
+        "Reviewer output:",
+        "'tool_executed': True",
+        "'evidence_passed_to_both_agents': True",
+    ):
+        assert label in rendered_output

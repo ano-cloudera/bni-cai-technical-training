@@ -79,6 +79,9 @@ def test_lab_status_has_the_executor_contract(capsys: pytest.CaptureFixture[str]
         ("03", "llm_api_testing", ("payload", "max_tokens", "429"), False),
         ("04", "csv_data_access", ("run_sql", "SELECT", "RestrictedTableError"), False),
         ("05", "semantic_layer", ("SemanticModel", ".plan(", "planned.sql"), False),
+        ("06", "crewai_tools", ("@tool", "Agent(", "Task(", "Crew("), False),
+        ("07", "qdrant_rag", ("HashingEmbedder", "group_filter_json", "search_group"), False),
+        ("08", "agent_workflow", ("analyst_agent", "reviewer_agent", "Process.sequential"), False),
     ],
 )
 def test_migrated_notebooks_are_authored_as_direct_lessons(
@@ -111,3 +114,19 @@ def test_migrated_notebooks_are_authored_as_direct_lessons(
     assert "module.main(" not in rendered
     if not trainer_only:
         assert "# EXERCISE" in rendered
+
+
+def test_lab_08_explicitly_executes_and_hands_off_group_scoped_evidence() -> None:
+    source = (
+        ROOT / "notebooks" / "authoring" / "08_agent_workflow.py"
+    ).read_text(encoding="utf-8")
+
+    assert "bound_tool = context.data_tool().bind(context.request())" in source
+    assert "evidence_sql, evidence_result = bound_tool.query(question)" in source
+    assert 'print("Generated SQL:", evidence_sql)' in source
+    assert 'print("Returned rows:", evidence_rows)' in source
+    assert "evidence_sql in analyst_task.description" in source
+    assert "evidence_sql in reviewer_task.description" in source
+    assert "evidence_request_count = sum(evidence_sql in text for text in request_texts)" in source
+    assert "assert evidence_request_count >= 2" in source
+    assert "recording_tool.calls" not in source

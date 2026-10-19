@@ -18,7 +18,7 @@ from bni_training.lab_registry import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-EDUCATIONAL_NOTEBOOKS = {"00", "01", "02", "03", "04", "05"}  # removed after full migration
+EDUCATIONAL_NOTEBOOKS = {"00", "01", "02", "03", "04", "05", "06", "07", "08"}
 EXPECTED = {
     "00": ("Environment Validation", {"trainer", "participant"}, False, "00_environment_validation"),
     "01": ("Model Artifact Validation", {"trainer"}, True, "01_model_artifact_validation"),
@@ -28,7 +28,7 @@ EXPECTED = {
     "05": ("Semantic Layer", {"participant"}, False, "05_semantic_layer"),
     "06": ("CrewAI Tools", {"participant"}, False, "06_crewai_tools"),
     "07": ("Qdrant RAG", {"participant"}, False, "07_qdrant_rag"),
-    "08": ("Agent Workflow", {"participant"}, False, "08_agent_workflow"),
+    "08": ("Multi-Agent Workflow", {"participant"}, False, "08_agent_workflow"),
     "09": ("Phoenix Monitoring", {"participant", "trainer"}, False, "09_phoenix_monitoring"),
     "10": ("LiteLLM Routing", {"participant", "trainer"}, False, "10_litellm_routing"),
     "11": ("Input and Output Guardrails", {"participant"}, False, "11_guardrails"),
