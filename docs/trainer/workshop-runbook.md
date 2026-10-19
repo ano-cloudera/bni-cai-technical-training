@@ -10,10 +10,16 @@ Status: everything below passes locally. Nothing has run on Cloudera AI; each CA
 2. **Check the dataset**: `python scripts/validate_dataset.py` (21 checks, ends in `RESULT: PASS`).
 3. **Dry-run the plan** (no API call, single project by default):
    `python -m automation.cai_api_v2.cli --config config/env.sandbox-l40s.example.yaml plan --output build/cai-plan.json`
+3b. **Shared vLLM (sandbox L40S, validated in a Session only).** Run lab 01 once (model download and validation,
+   trainer only), then start the Application with `MODEL_PATH`, `GPU_PROFILE=l40s` and the platform port. Without
+   `nvcc` the launcher sets `VLLM_USE_FLASHINFER_SAMPLER=0`. Checked in the sandbox: `/health`, `/v1/models`, chat,
+   streaming, three concurrent requests. Not yet validated: the Application deployment, access from another
+   Session, H200.
 4. **Prepare the ten group-driver workspaces** (the default):
    ```bash
    python scripts/prepare_group_workspaces.py            # dry run: lists what would be created
    python scripts/prepare_group_workspaces.py --mode group_driver --apply
+   # for CAI add: --lab-mode cai --vllm-base-url <shared Application URL> (writes LAB_MODE, VLLM_BASE_URL, VLLM_MODEL)
    python scripts/validate_group_workspaces.py --mode group_driver
    ```
    Running it again is safe: unchanged files are left alone and participant-edited notebooks are never overwritten

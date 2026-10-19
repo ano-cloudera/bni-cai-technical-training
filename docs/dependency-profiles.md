@@ -65,7 +65,9 @@ enough: `arize-phoenix` passed `pip check` while failing to import (see below). 
 
 ## GPU profiles (CAI validation pending)
 
-`gpu-l40s` and `gpu-h200` hold the intended pin only. The intended matrix comes from the `vllm` 0.29.0 package
+The inputs now also declare PyYAML, packaging, requests, certifi, urllib3, cachetools and cloudpickle (missing in
+the sandbox L40S validation); the locks are still stubs and regeneration is pending (`lock_status:
+pending-regeneration` in `requirements/profiles.yaml`). `gpu-l40s` and `gpu-h200` hold the intended pin only. The intended matrix comes from the `vllm` 0.29.0 package
 metadata on PyPI and is recorded in `requirements/profiles.yaml` and `requirements/compatibility-profiles.yaml`:
 
 | Item | Intended value | Source |

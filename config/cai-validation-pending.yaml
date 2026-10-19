@@ -24,7 +24,8 @@ items:
   - id: vllm-qwen-model-loading
     status: cai-validation-pending
     covers: [deployments/cai/vllm/app.py, labs 01-03]
-    evidence_needed: Qwen3.5-9B BF16 loaded from NFS with TP=1, /health, /v1/models, streaming and non-streaming chat, concurrency
+    sandbox_evidence: PASS in a CAI sandbox Session on one L40S (Qwen3.5-9B, bfloat16, max_model_len 8192, gpu_memory_utilization 0.82; /health, /v1/models, chat, streaming, 3 concurrent requests, Lab 03 cai mode). Required workaround VLLM_USE_FLASHINFER_SAMPLER=0 without nvcc.
+    evidence_needed: The same as a deployed CAI Application (not a Session) with the platform port, access from a different Session, and the H200 at BNI
     validated_in: [sandbox-l40s, bni-h200]
   - id: cai-api-v2-fields
     status: cai-validation-pending
@@ -80,3 +81,9 @@ items:
     verified_locally: 40 synthetic participants over ten groups, anonymous participant_01 through participant_04 labels, capacity of four per group, roster errors
     evidence_needed: The trainer's real roster format and how participants are told their group
     validated_in: [bni-h200]
+  - id: gpu-lock-regeneration
+    status: cai-validation-pending
+    covers: [requirements/gpu-l40s.lock, requirements/gpu-h200.lock]
+    verified_locally: the .in files declare PyYAML, packaging, requests, certifi, urllib3, cachetools and cloudpickle
+    evidence_needed: Locks resolved on the target PBJ GPU runtime (CUDA package index) after the sandbox findings; H200 not validated
+    validated_in: [sandbox-l40s, bni-h200]

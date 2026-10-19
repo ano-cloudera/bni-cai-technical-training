@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased (fix/cai-vllm-runtime-validation)
+
+- CAI sandbox L40S findings applied: GPU inputs declare PyYAML, packaging, requests, certifi, urllib3, cachetools
+  and cloudpickle (locks pending regeneration); the vLLM Application launcher validates `MODEL_PATH`, never
+  downloads, uses `CDSW_APP_PORT` (fallback 8101), `VLLM_HOST`, `VLLM_MODEL` and turns the FlashInfer sampler off
+  without `nvcc`; Qwen3.5 workshop requests disable thinking; generated `group.env` carries `LAB_MODE`,
+  `GROUP_WORKSPACE`, `VLLM_BASE_URL` and `VLLM_MODEL` (`--lab-mode`, `--vllm-base-url`).
+
 ## Unreleased (feature/single-project-csv-workshop)
 
 - Deterministic synthetic banking dataset in `data/raw` (100 branches, 10,000 customers, about 19,000 accounts,

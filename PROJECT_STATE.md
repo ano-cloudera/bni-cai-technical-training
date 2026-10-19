@@ -31,6 +31,42 @@ Plan and handoff: `docs/plans/2026-10-19-educational-notebook-redesign.md` (plan
 - A folder is not a CAI Session. Real Session capacity (40 concurrent CPU Sessions), concurrent writes on the project
   filesystem and the participant dependency profile for notebooks 07 and 09 remain `cai-validation-pending`.
 
+## CAI sandbox L40S validation (shared vLLM)
+
+Real evidence from a CAI sandbox Session (Python 3.10, NVIDIA L40S, torch 2.13.0+cu130, CUDA 13.0 as reported by
+PyTorch, transformers 5.20.1, vLLM 0.29.0, Qwen/Qwen3.5-9B on NFS). This is partial evidence for one environment.
+It is **not** CAI readiness.
+
+PASS:
+
+- Python 3.10 CAI environment and L40S GPU detection.
+- Qwen3.5-9B download and model artifact validation (51 files); configuration recognized as `qwen3_5`.
+- vLLM model load (about 17.66 GiB of weights) on one L40S with `dtype=bfloat16`, `max_model_len=8192`,
+  `gpu_memory_utilization=0.82`, served name `qwen3.5-9b`.
+- `/health`, `/v1/models`, non-streaming chat, streaming chat and three concurrent requests.
+- Lab 03 in CAI mode against the real vLLM endpoint, with group-specific output written.
+
+Required runtime workaround: `VLLM_USE_FLASHINFER_SAMPLER=0` when `nvcc` is unavailable (the PBJ Runtime has no
+`nvcc` or `/usr/local/cuda`, so FlashInfer sampling failed JIT compilation).
+
+Findings applied in the hotfix branch `fix/cai-vllm-runtime-validation`:
+
+- `PyYAML`, `packaging`, `requests`, `certifi`, `urllib3`, `cachetools` and `cloudpickle` were missing from the GPU
+  environment. They are now declared in `requirements/gpu-*.in`; the GPU locks are still intent-only stubs and
+  their regeneration is **pending**.
+- The Application launcher reads the port from `CDSW_APP_PORT` (8101 only as a Session fallback; 8100 was
+  unavailable in the Session), validates `MODEL_PATH` before startup, never downloads the model, defaults the
+  FlashInfer sampler off without `nvcc`, and logs its non-secret configuration.
+- Qwen3.5 thinking mode used the token budget and exposed thinking text. Workshop requests now send
+  `chat_template_kwargs.enable_thinking=false` for Qwen3.5 (Lab 03 shows the payload and why).
+- Lab 03 needed `LAB_MODE`, `GROUP_ID` and `GROUP_WORKSPACE` set by hand. Generated group workspaces now write them
+  (plus `VLLM_BASE_URL` and `VLLM_MODEL`) and the Lab 03 notebook loads `group.env` itself. Other notebooks still
+  need the same loading step.
+
+PENDING (not validated): full local regression and clean-clone validation after this hotfix; CAI Application
+deployment; access from a different CAI Session; the live shared Application URL; H200 validation in BNI; CrewAI
+against the deployed Application; Qdrant; Phoenix; the Workshop Portal. No CAI readiness is claimed.
+
 ## Single-project CSV workshop branch (local only, not pushed)
 
 Branch `feature/single-project-csv-workshop`, cut from the unmodified tag `v0.2.0-rc1`. `main`, the tag and the legacy

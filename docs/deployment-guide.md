@@ -11,7 +11,13 @@ Create `bni-ai-training-shared` and deploy the Applications below. Each Applicat
 | `bni-phoenix` | `deployments/cai/phoenix/app.py` | `observability` (Phoenix server only; no CrewAI) | 4 vCPU, 16 GB |
 | `bni-litellm` | `deployments/cai/litellm/app.py` | `gateway` | 2 vCPU, 4 GB |
 
-The vLLM model is loaded from `MODEL_PATH` on NFS. Keep tensor parallel size one. For each group project, select `deployments/cai/streamlit/app.py` using 1 vCPU and 2 GB.
+The vLLM launcher (`deployments/cai/vllm/app.py`) reads `MODEL_PATH` (any existing NFS path; it fails before startup
+if the directory has no `config.json` or `.safetensors` files and it never downloads or modifies the model),
+`CDSW_APP_PORT` (the platform port; 8101 only as a Session fallback, never hard-code a port), `VLLM_HOST` (default
+`0.0.0.0`), `VLLM_MODEL` or `SERVED_MODEL_NAME` (default `qwen3.5-9b`), `VLLM_DTYPE`, `MAX_MODEL_LEN` and
+`GPU_MEMORY_UTILIZATION` (L40S validated: bfloat16, 8192, 0.82). Without `nvcc` it sets
+`VLLM_USE_FLASHINFER_SAMPLER=0` unless you set it explicitly. Application deployment itself is
+`cai-validation-pending`. The vLLM model is loaded from `MODEL_PATH` on NFS. Keep tensor parallel size one. For each group project, select `deployments/cai/streamlit/app.py` using 1 vCPU and 2 GB.
 
 The global limit is five active Applications. For the Day 1 final UI exercise, keep vLLM and Qdrant active and rotate group Applications in four waves: groups 01-03, 04-06, 07-09, and 10. Stop the active group wave before starting Phoenix. Start LiteLLM only for the Day 2 gateway module.
 
