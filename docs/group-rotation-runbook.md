@@ -1,5 +1,8 @@
 # Group Application Rotation
 
+> **Legacy multi-project guide.** This page describes the rc1 `multi_project` topology. The default workshop
+> design is `single_project`; see `docs/trainer/`, `docs/participant/` and `docs/architecture/single-project-topology.md`.
+
 The CAI environment is planned for a maximum of five active Applications in total.
 
 ## Day 1 group UI exercise

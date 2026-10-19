@@ -19,7 +19,9 @@ class OpenAICompatibleClient:
     def _headers(self) -> dict[str, str]:
         return {"Authorization": f"Bearer {self._api_key}", "Content-Type": "application/json"}
 
-    def chat(self, messages: list[dict], temperature: float = 0.0, max_tokens: int = 512) -> dict:
+    def chat(
+        self, messages: list[dict], temperature: float = 0.0, max_tokens: int = 512, timeout: float = 90
+    ) -> dict:
         payload = {
             "model": self.model,
             "messages": messages,
@@ -33,7 +35,7 @@ class OpenAICompatibleClient:
             data=json.dumps(payload).encode(),
             headers=self._headers(),
         )
-        with urlopen(request, timeout=90) as response:
+        with urlopen(request, timeout=timeout) as response:
             return json.load(response)
 
     def stream_chat(

@@ -10,12 +10,21 @@ except ModuleNotFoundError:
     from secret_scan import scan_tree
 
 
+def path_audit(root: Path) -> tuple[bool, list]:
+    from bni_training.path_audit import audit
+
+    return audit(root)
+
+
 def local_checks(root: Path) -> dict:
-    expected_scripts = [next(root.joinpath("scripts").glob(f"{i:02d}_*.py"), None) for i in range(13)]
-    expected_notebooks = [next(root.joinpath("notebooks").glob(f"{i:02d}_*.ipynb"), None) for i in range(13)]
+    import yaml
+
+    labs = yaml.safe_load(root.joinpath("config/workshop/labs.yaml").read_text())["labs"]
+    expected_scripts = [root.joinpath(lab["script"]) for lab in labs]
+    expected_notebooks = [root.joinpath(lab["notebook"]) for lab in labs]
     checks = [
-        {"name": "lab_scripts", "passed": all(expected_scripts)},
-        {"name": "lab_notebooks", "passed": all(expected_notebooks)},
+        {"name": "lab_scripts", "passed": len(labs) == 13 and all(p.is_file() for p in expected_scripts)},
+        {"name": "lab_notebooks", "passed": all(p.is_file() for p in expected_notebooks)},
         {"name": "synthetic_manifest", "passed": root.joinpath("data/csv/manifest.json").is_file()},
         {
             "name": "python_cai_entrypoints",
@@ -56,9 +65,11 @@ def local_checks(root: Path) -> dict:
         },
         {
             "name": "labs_support_local_and_cai_modes",
-            "passed": all(
-                "run_lab(" in script.read_text()
-                for script in root.joinpath("scripts").glob("[0-1][0-9]_*.py")
+            "passed": all("run_lab(" in script.read_text() for script in expected_scripts)
+            and all(
+                "delegate(" in root.joinpath(legacy).read_text()
+                for lab in labs
+                for legacy in lab.get("legacy_scripts", [])
             ),
         },
         {
@@ -74,8 +85,60 @@ def local_checks(root: Path) -> dict:
                 if cell["cell_type"] == "code"
             ),
         },
+        {
+            "name": "synthetic_dataset_and_manifests",
+            "passed": all(
+                root.joinpath(f"data/raw/{name}.csv").is_file()
+                for name in ["branches", "customers", "accounts", "transactions", "loans"]
+            )
+            and all(
+                root.joinpath(f"data/manifests/{name}.json").is_file()
+                for name in ["dataset_manifest", "checksums"]
+            ),
+        },
+        {
+            "name": "group_dataset_bundles",
+            "passed": all(
+                root.joinpath(f"data/scenarios/{name}.yaml").is_file()
+                for name in ["dataset_bundles", "group_assignments", "sample_questions"]
+            ),
+        },
+        {
+            "name": "semantic_layer",
+            "passed": all(
+                root.joinpath(f"semantic/{name}").is_file()
+                for name in [
+                    "README.md",
+                    "data_dictionary.yaml",
+                    "relationships.yaml",
+                    "metrics.yaml",
+                    "business_terms.yaml",
+                ]
+            ),
+        },
+        {
+            "name": "workshop_portal_entrypoint",
+            "passed": root.joinpath("deployments/cai/workshop-portal/app.py").is_file()
+            and root.joinpath("apps/workshop-portal/app.py").is_file(),
+        },
         {"name": "no_env_file", "passed": not root.joinpath(".env").exists()},
         {"name": "secret_scan", "passed": not scan_tree(root)},
+        {"name": "no_real_local_paths_tracked", "passed": path_audit(root)[0]},
+        {
+            "name": "workspace_lifecycle_scripts",
+            "passed": all(
+                root.joinpath(f"scripts/{name}.py").is_file()
+                for name in [
+                    "prepare_group_workspaces",
+                    "validate_group_workspaces",
+                    "assign_participants",
+                    "reset_group_workspace",
+                    "check_group_isolation",
+                    "check_shared_services",
+                    "archive_group_outputs",
+                ]
+            ),
+        },
         {"name": "model_weights_excluded", "passed": not any(root.rglob("*.safetensors"))},
     ]
     return {

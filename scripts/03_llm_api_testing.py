@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import os
 import sys
 from urllib.error import URLError
 
-from bni_training.labs import require_env, run_lab
+from bni_training.labs import run_lab, shared_llm_settings
 from bni_training.llm_client import OpenAICompatibleClient
 from bni_training.mock_llm import MockOpenAIServer
 
@@ -19,14 +18,10 @@ def exercise(client: OpenAICompatibleClient, report) -> None:
         report.failed("health", f"/health unreachable: {exc}")
     models = [item["id"] for item in client.health()["data"]]
     (report.passed if client.model in models else report.failed)("models", f"served models: {models}")
-    reply = client.chat([{"role": "user", "content": "Reply with: workshop endpoint ready"}], max_tokens=32)
-    text = reply["choices"][0]["message"]["content"]
+    prompt = [{"role": "user", "content": "Reply with: workshop endpoint ready"}]
+    text = client.chat(prompt, max_tokens=32)["choices"][0]["message"]["content"]
     (report.passed if text else report.failed)("chat_non_streaming", text[:80])
-    streamed = "".join(
-        client.stream_chat(
-            [{"role": "user", "content": "Reply with: workshop endpoint ready"}], max_tokens=32
-        )
-    )
+    streamed = "".join(client.stream_chat(prompt, max_tokens=32))
     (report.passed if streamed.strip() else report.failed)("chat_streaming", streamed.strip()[:80])
 
 
@@ -38,16 +33,13 @@ def body(args, report):
             "real_vllm_endpoint", "Local mode tests the client against an in-process mock, not vLLM"
         )
         return
-    env = require_env(["VLLM_BASE_URL"])
-    client = OpenAICompatibleClient(
-        env["VLLM_BASE_URL"], os.getenv("VLLM_API_KEY", ""), os.getenv("SERVED_MODEL_NAME", "qwen3.5-9b")
-    )
-    exercise(client, report)
+    url, key, model = shared_llm_settings()
+    exercise(OpenAICompatibleClient(url, key, model), report)
 
 
 def main(argv=None) -> int:
-    return run_lab("03", DESCRIPTION, body, argv)
+    return run_lab("03", DESCRIPTION, body, argv, participant=True)
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(sys.argv[1:]))
+    sys.exit(main(sys.argv[1:]))

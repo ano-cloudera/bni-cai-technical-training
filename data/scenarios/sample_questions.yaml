@@ -1,0 +1,64 @@
+# Three to five starter questions per mission. They use the metrics and breakdowns of the group's bundle and never
+# mention test-only data.
+schema_version: 1
+missions:
+  customer_portfolio_summary:
+    - Show total customers by segment
+    - Show active customers by region
+    - Show total balance by segment
+    - Show average account balance by account type
+    - Show active accounts by product code
+  transaction_trend_analysis:
+    - Show transaction count by month
+    - Show transaction amount by month
+    - Show digital transaction ratio by month
+    - Show average transaction amount by transaction type
+    - Show transaction amount by channel
+  loan_portfolio_monitoring:
+    - Show total outstanding by risk band
+    - Show delinquent loans by product code
+    - Show delinquency ratio by segment
+    - Show total loans by loan status
+    - Show delinquency ratio by origination month
+  branch_performance:
+    - Show branch transaction amount by branch name top 10
+    - Show branch customer count by branch name top 10
+    - Show total outstanding by branch name top 10
+    - Show delinquency ratio by city tier
+    - Show transaction count by region
+  dormant_account_analysis:
+    - Show dormant accounts by product code
+    - Show dormant accounts by segment
+    - Show dormant accounts by age band
+    - Show total accounts by account status
+    - Show dormant accounts by digital adoption level
+  unusual_transaction_patterns:
+    - Show transaction count by account id and transaction date top 20
+    - Show average transaction amount by account id top 20
+    - Show transaction amount by transaction type
+    - Show transaction count by channel
+    - Show transaction amount by merchant category
+  customer_segmentation:
+    - Show total customers by income band
+    - Show total customers by digital adoption level
+    - Show average account balance by segment
+    - Show total balance by age band
+    - Show total customers by segment and age band
+  product_adoption:
+    - Show product adoption rate by product code
+    - Show total accounts by product code
+    - Show total loans by product code
+    - Show total loans by segment
+    - Show product adoption rate by account type
+  regional_comparison:
+    - Show total customers by region
+    - Show transaction amount by region
+    - Show total outstanding by region
+    - Show delinquency ratio by region
+    - Show total balance by region
+  management_summary:
+    - Show total customers
+    - Show total balance
+    - Show transaction amount by month
+    - Show delinquency ratio
+    - Show dormant accounts by region

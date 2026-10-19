@@ -1,0 +1,22 @@
+# The five shared Applications of the single_project topology (maximum 5 active at any time).
+# Resource figures are starting points and are cai-validation-pending.
+schema_version: 1
+max_active_applications: 5
+applications:
+  - {key: vllm, name: bni-vllm-qwen35-9b, script: deployments/cai/vllm/app.py, kernel: python3, resources: {cpu: 16, memory_gb: 64, nvidia_gpu: 1}, health_path: /health}
+  - {key: qdrant, name: bni-qdrant, script: deployments/cai/qdrant/app.py, kernel: python3, resources: {cpu: 4, memory_gb: 16, nvidia_gpu: 0}, health_path: /readyz}
+  - {key: phoenix, name: bni-phoenix, script: deployments/cai/phoenix/app.py, kernel: python3, resources: {cpu: 4, memory_gb: 16, nvidia_gpu: 0}, health_path: /healthz}
+  - {key: litellm, name: bni-litellm, script: deployments/cai/litellm/app.py, kernel: python3, resources: {cpu: 2, memory_gb: 4, nvidia_gpu: 0}, health_path: /health/liveliness}
+  - key: workshop-portal
+    name: bni-workshop-portal
+    script: deployments/cai/workshop-portal/app.py
+    kernel: python3
+    dependency_profile: rag
+    resources: {cpu: 4, memory_gb: 8, memory_gb_max: 16, nvidia_gpu: 0}
+    health_path: /_stcore/health
+    # The inference semaphore is process-local, so exactly one Streamlit process and one replica are required.
+    # Scaling this Application out would silently multiply the limit of 3 concurrent model requests.
+    replicas: 1
+    streamlit_processes: 1
+    scaling: single_replica_required
+    validation: cai-validation-pending

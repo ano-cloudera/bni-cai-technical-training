@@ -35,4 +35,8 @@ select = ["E", "F", "I", "B"]
 
 [tool.ruff.lint.per-file-ignores]
 "scripts/build_notebooks.py" = ["E501"]
+# Probability tables read best as one line per entry.
+"src/bni_training/data/synthetic.py" = ["E501"]
+# Lab scripts are teaching code: one check per line reads better than wrapped report calls.
+"scripts/[0-1][0-9]_*.py" = ["E501"]
 

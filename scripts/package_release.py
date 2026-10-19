@@ -16,14 +16,18 @@ EXCLUDED_PARTS = {
     ".superpowers",
     "superpowers",
 }
+EXCLUDED_PREFIXES = ("workshop/runtime/",)  # generated per-group workspaces: never packaged
+EXCLUDED_NAMES = {".env", "local-inventory.json", "start.sh", "group.env"}
 EXCLUDED_SUFFIXES = {".pyc", ".keytab", ".pem", ".crt", ".safetensors", ".bin"}
 
 
-def approved(path: Path) -> bool:
+def approved(path: Path, root: Path | None = None) -> bool:
+    relative = path.relative_to(root).as_posix() if root and path.is_absolute() else path.as_posix()
     return (
         not any(part in EXCLUDED_PARTS for part in path.parts)
+        and not relative.startswith(EXCLUDED_PREFIXES)
         and path.suffix not in EXCLUDED_SUFFIXES
-        and path.name not in {".env", "local-inventory.json", "start.sh"}
+        and path.name not in EXCLUDED_NAMES
     )
 
 
@@ -37,7 +41,7 @@ def build_release(root: Path, dist: Path, version: str) -> Path:
             continue
         path = root / line
         entries.extend([path] if path.is_file() else [p for p in path.rglob("*") if p.is_file()])
-    entries = sorted({p for p in entries if approved(p)}, key=lambda p: str(p.relative_to(root)))
+    entries = sorted({p for p in entries if approved(p, root)}, key=lambda p: str(p.relative_to(root)))
     dist.mkdir(parents=True, exist_ok=True)
     archive = dist / f"bni-cai-technical-training-{version}.zip"
     with ZipFile(archive, "w", ZIP_DEFLATED, compresslevel=9) as zf:

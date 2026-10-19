@@ -85,7 +85,11 @@ def run(cmd, *, env=None, cwd=ROOT, timeout=1500):
 
 
 def lab_script(number: str) -> Path:
-    return next((ROOT / "scripts").glob(f"{number}_*.py"))
+    """Canonical lab script from the registry (never a filename glob)."""
+    import yaml as _yaml
+
+    labs = _yaml.safe_load((ROOT / "config" / "workshop" / "labs.yaml").read_text())["labs"]
+    return ROOT / next(lab["script"] for lab in labs if lab["id"] == number)
 
 
 def tmp_log() -> Path:
@@ -290,6 +294,20 @@ def validate(profile: str, python: str, keep: bool) -> dict:
                     "status": "PASS" if ok else "FAIL",
                     "seconds": secs,
                     "detail": status_line if ok else out[-700:],
+                }
+            )
+        if profile in ("participant", "rag", "dev-test"):
+            # the Workshop Portal (rag) and participants query the dataset through the guarded CSV engine
+            code, out, secs = run(
+                [str(py), str(ROOT / "scripts" / "validate_dataset.py"), "--no-determinism"], env=env
+            )
+            tail = out.splitlines()[-1] if out else ""
+            result["steps"].append(
+                {
+                    "name": "dataset_validator",
+                    "status": "PASS" if code == 0 else "FAIL",
+                    "seconds": secs,
+                    "detail": tail if code == 0 else out[-700:],
                 }
             )
         if profile == "observability":

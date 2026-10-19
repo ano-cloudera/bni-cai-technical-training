@@ -13,10 +13,16 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from bni_training.path_audit import PATTERNS as PATH_PATTERNS  # noqa: E402
+
+# A notebook must not name a real machine path, and must not hard-code a scratch folder either.
+LOCAL_PATH = re.compile("|".join([*(p.pattern for p in PATH_PATTERNS.values()), "/" + "tmp" + "/"]))
 ALLOWED_NOTEBOOK_METADATA = {"kernelspec", "language_info"}
 ALLOWED_LANGUAGE_INFO = {"name", "version"}
 FORBIDDEN = {
-    "local-path": re.compile(r"(?:/Users/|/home/|/private/|/var/folders/|/tmp/|[A-Za-z]:\\\\Users)"),
+    "local-path": LOCAL_PATH,
     "endpoint": re.compile(r"(?:https?://|127\.0\.0\.1|localhost|\b\d{1,3}(?:\.\d{1,3}){3}\b)", re.I),
     "token": re.compile(
         r"(?:Bearer\s+\S{8,}|\bsk-[A-Za-z0-9_-]{8,}|(?:api[_-]?key|token|password|secret)\s*[:=]\s*['\"][^'\"]{4,})",

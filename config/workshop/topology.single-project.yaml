@@ -1,0 +1,20 @@
+# Default workshop topology (WORKSHOP_TOPOLOGY=single_project): one CAI Project, ten group workspaces, one shared
+# Workshop Portal. Isolation is operational (application validation), not a security boundary.
+schema_version: 1
+topology: single_project
+project: {name: bni-ai-training-workshop}
+groups: {source: data/scenarios/group_assignments.yaml, count: 10, participants_per_group: 4}
+sessions:
+  mode: group_driver
+  per_group: 1
+  per_participant: 40
+  per_participant_status: cai-validation-pending
+  cpu: 2
+  memory_gb: 8
+  gpu: 0
+  max_concurrent_env: MAX_CONCURRENT_GROUP_SESSIONS
+  default_max_concurrent: 10
+applications: {source: config/workshop/applications.yaml, per_group_streamlit_applications: 0}
+lifecycle: {source: config/workshop/application-lifecycle.yaml}
+data: {backend: csv, csv_dir: data/raw}
+isolation: {kind: operational, security_boundary: false}

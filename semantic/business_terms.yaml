@@ -1,0 +1,14 @@
+# Plain-language definitions used in the workshop. They match the metrics in metrics.yaml exactly.
+schema_version: 1
+terms:
+  active customer: A customer whose status is ACTIVE. Inactive and closed customers are not counted.
+  active account: An account that is not closed and had a transaction (or was opened) within the last 180 days before the reference date, 2026-06-30.
+  dormant account: An account that is not closed and has had no activity for more than 180 days before the reference date.
+  transaction amount: The sum of the amounts of COMPLETED transactions. Amounts are always positive; the transaction type gives the direction.
+  digital transaction: A completed transaction made on the MOBILE or ONLINE channel. Card, ATM, branch and system-generated transactions are not digital.
+  outstanding amount: The part of a loan's principal that is still unpaid at the reference date. It is never above the principal.
+  delinquent loan: A loan that is 30 or more days past due. Paid-off loans are never delinquent.
+  days past due: How many days the oldest unpaid instalment of a loan is overdue at the reference date. Zero means up to date.
+  product adoption: The share of all customers who hold at least one open account of a product.
+  branch performance: A branch's customers, completed transaction amount, outstanding loans and delinquency, compared with other branches. It describes the data; it is not a ranking of staff.
+  unusual transaction pattern: A transaction or group of transactions that stands out from the account's own history, such as a burst on one day, a very large amount, or repeated amounts just below a round limit. It is a lead to investigate, never proof of wrongdoing.

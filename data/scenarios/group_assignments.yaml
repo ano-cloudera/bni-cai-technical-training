@@ -1,0 +1,14 @@
+# Which logical bundle and mission each group receives. The missions share one architecture, one notebook set and
+# one dataset; they differ only in the analytical question.
+schema_version: 1
+assignments:
+  - {group_id: group_01, dataset_id: customer_portfolio_bundle, mission_id: customer_portfolio_summary, mission_title: Customer Portfolio Summary, mission_objective: "Describe the customer base and its balances by segment, region and product."}
+  - {group_id: group_02, dataset_id: transaction_trends_bundle, mission_id: transaction_trend_analysis, mission_title: Transaction Trend Analysis, mission_objective: "Explain how transaction volume, value and digital use change month by month."}
+  - {group_id: group_03, dataset_id: loan_monitoring_bundle, mission_id: loan_portfolio_monitoring, mission_title: Loan Portfolio Monitoring, mission_objective: "Monitor outstanding loans and where payments are overdue. Describe the data only; make no credit decisions."}
+  - {group_id: group_04, dataset_id: branch_performance_bundle, mission_id: branch_performance, mission_title: Branch Performance, mission_objective: "Compare operating branches by customers, transaction value, outstanding loans and delinquency."}
+  - {group_id: group_05, dataset_id: dormant_accounts_bundle, mission_id: dormant_account_analysis, mission_title: Dormant Account Analysis, mission_objective: "Find which products and customer groups have the most dormant accounts."}
+  - {group_id: group_06, dataset_id: unusual_patterns_bundle, mission_id: unusual_transaction_patterns, mission_title: Unusual Transaction Patterns, mission_objective: "Look for accounts and days whose transactions stand out from normal activity. A lead to investigate, never proof."}
+  - {group_id: group_07, dataset_id: segmentation_bundle, mission_id: customer_segmentation, mission_title: Customer Segmentation, mission_objective: "Compare customer groups by income, age, digital adoption and balances."}
+  - {group_id: group_08, dataset_id: product_adoption_bundle, mission_id: product_adoption, mission_title: Product Adoption, mission_objective: "See which products customers hold and how deposit and loan products relate."}
+  - {group_id: group_09, dataset_id: regional_comparison_bundle, mission_id: regional_comparison, mission_title: Regional Comparison, mission_objective: "Compare the six regions across customers, balances, transactions and loans."}
+  - {group_id: group_10, dataset_id: management_summary_bundle, mission_id: management_summary, mission_title: Management Summary, mission_objective: "Produce headline figures across every table for a short management summary."}

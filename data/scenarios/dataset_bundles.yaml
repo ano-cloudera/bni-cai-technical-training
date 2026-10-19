@@ -1,0 +1,37 @@
+# Logical dataset bundles. ONE physical dataset (data/raw/*.csv) serves all groups; a bundle only says which
+# tables, rows and metrics a group may use. Nothing is copied per group. Operational isolation, not security.
+schema_version: 1
+csv_dir: data/raw
+bundles:
+  customer_portfolio_bundle:
+    tables: [customers, accounts]
+    allowed_metrics: [total_customers, active_customers, total_accounts, active_accounts, total_balance, average_account_balance]
+  transaction_trends_bundle:
+    tables: [transactions, accounts]
+    allowed_metrics: [transaction_count, transaction_amount, average_transaction_amount, digital_transaction_ratio, total_accounts]
+  loan_monitoring_bundle:
+    tables: [loans, customers, accounts]
+    allowed_metrics: [total_loans, total_outstanding, delinquent_loans, delinquency_ratio, total_customers]
+  branch_performance_bundle:
+    tables: [branches, accounts, transactions, loans]
+    row_filters:
+      branches: "operational_status <> 'CLOSED'"
+    allowed_metrics: [branch_customer_count, branch_transaction_amount, total_outstanding, delinquency_ratio, transaction_count, total_accounts, total_loans]
+  dormant_accounts_bundle:
+    tables: [accounts, customers]
+    allowed_metrics: [dormant_accounts, active_accounts, total_accounts, total_balance, average_account_balance, total_customers]
+  unusual_patterns_bundle:
+    tables: [transactions, accounts]
+    allowed_metrics: [transaction_count, transaction_amount, average_transaction_amount, digital_transaction_ratio]
+  segmentation_bundle:
+    tables: [customers, accounts]
+    allowed_metrics: [total_customers, active_customers, total_accounts, total_balance, average_account_balance]
+  product_adoption_bundle:
+    tables: [accounts, loans, customers]
+    allowed_metrics: [product_adoption_rate, total_accounts, active_accounts, total_loans, total_outstanding, total_customers]
+  regional_comparison_bundle:
+    tables: [branches, customers, accounts, transactions, loans]
+    allowed_metrics: [total_customers, total_accounts, total_balance, transaction_count, transaction_amount, total_loans, total_outstanding, delinquency_ratio, branch_customer_count]
+  management_summary_bundle:
+    tables: [branches, customers, accounts, transactions, loans]
+    allowed_metrics: [total_customers, active_customers, total_accounts, active_accounts, dormant_accounts, total_balance, average_account_balance, transaction_count, transaction_amount, average_transaction_amount, digital_transaction_ratio, total_loans, total_outstanding, delinquent_loans, delinquency_ratio, product_adoption_rate, branch_customer_count, branch_transaction_amount]

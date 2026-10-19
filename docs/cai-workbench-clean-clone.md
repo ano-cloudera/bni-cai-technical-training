@@ -40,11 +40,18 @@ Use this exact sequence in a new Workbench session. It makes no CAI API call and
 7. **Dry-run the automation plan (trainer only).** This writes a local JSON file and calls no API.
    ```bash
    PYTHONPATH=src:. python -m automation.cai_api_v2.cli \
-     --config config/env.sandbox-l40s.example.yaml plan --output build/cai-plan.json
+     --config config/env.sandbox-l40s.example.yaml plan --output build/cai-plan.json   # single_project by default
    ```
    Compare the generated fields with the target `/api/v2/swagger.html` and set the runtime identifier from the
    catalog before any live write.
-8. **Labs.** Run notebooks 00-12 in order with `LAB_MODE=cai`, or the matching scripts with `--mode cai`.
+8. **Group workspaces (trainer).** Generate the default group-driver workspaces and check them. Enable
+   `individual_learning` only after CAI validates capacity for about 40 CPU Sessions.
+   ```bash
+   PYTHONPATH=src:. python scripts/prepare_group_workspaces.py --mode group_driver --apply
+   PYTHONPATH=src:. python scripts/validate_group_workspaces.py --mode group_driver
+   ```
+9. **Labs.** Run the notebooks of your group workspace (templates in `notebooks/templates/`) in order with
+   `LAB_MODE=cai`, or the matching scripts with `--mode cai`. Labs 01 and 02 are trainer-only.
    A lab that cannot reach its service prints `status=FAIL`; it never mocks and never falls back silently.
 
 Never paste credentials into notebooks, terminals that are logged, or commits. Stop only your own group Application.

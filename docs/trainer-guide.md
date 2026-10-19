@@ -1,5 +1,8 @@
 # Trainer Guide
 
+> **Legacy multi-project guide.** This page describes the rc1 `multi_project` topology. The default workshop
+> design is `single_project`; see `docs/trainer/`, `docs/participant/` and `docs/architecture/single-project-topology.md`.
+
 ## Class operating model
 
 - 40 participants, 10 groups, 4 rotating roles per group.

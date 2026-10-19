@@ -17,12 +17,41 @@ from .models import WorkshopSpec
 from .project_files import approved_project_files
 from .provision import provision
 
+TOPOLOGIES = ("single_project", "multi_project")
+DEFAULT_TOPOLOGY = "single_project"
+# Commands that act on the rc1 layout (one project per group, application waves) and need an explicit choice.
+LEGACY_TOPOLOGY_COMMANDS = frozenset(
+    {"apply-projects", "upload-files", "apply-applications", "start-wave", "stop-wave"}
+)
 
-def build_plan(config_path: Path) -> dict:
+
+class TopologyError(ValueError):
+    """The requested workshop topology is not one of the supported values."""
+
+
+def resolve_topology(flag: str | None = None, env: dict | None = None) -> str:
+    """Flag first, then $WORKSHOP_TOPOLOGY, then single_project. Unknown values are errors."""
+    environment = os.environ if env is None else env
+    value = (flag or environment.get("WORKSHOP_TOPOLOGY") or DEFAULT_TOPOLOGY).strip()
+    if value not in TOPOLOGIES:
+        raise TopologyError(
+            f"Unknown workshop topology '{value}'. Use one of: {', '.join(TOPOLOGIES)} "
+            "(set --topology or WORKSHOP_TOPOLOGY)."
+        )
+    return value
+
+
+def build_plan(config_path: Path, topology: str = DEFAULT_TOPOLOGY) -> dict:
+    topology = resolve_topology(topology, {})
+    if topology == "single_project":
+        from .planner import build_single_project_plan
+
+        return build_single_project_plan(config_path)
     env = load_environment(config_path)
     spec = WorkshopSpec.load(Path(env["groups_config"]), Path(env["resources_config"]))
     return {
         "dry_run": True,
+        "topology": "multi_project",
         "environment": env["environment"],
         "training_label": spec.label,
         "projects": [p.name for p in spec.projects],
@@ -36,9 +65,22 @@ def build_plan(config_path: Path) -> dict:
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser()
     p.add_argument("--config", type=Path, required=True)
+    p.add_argument(
+        "--topology",
+        choices=TOPOLOGIES,
+        default=None,
+        help="Default: $WORKSHOP_TOPOLOGY, otherwise single_project. The rc1 commands need multi_project.",
+    )
     sub = p.add_subparsers(dest="command", required=True)
     plan = sub.add_parser("plan")
     plan.add_argument("--output", type=Path, required=True)
+    plan.add_argument(
+        "--topology",
+        dest="plan_topology",
+        choices=TOPOLOGIES,
+        default=None,
+        help="Default: $WORKSHOP_TOPOLOGY, otherwise single_project (1 project, 10 workspaces, 1 Portal).",
+    )
     for name in ("discover", "validate", "apply-projects", "status", "inventory"):
         command = sub.add_parser(name)
         command.add_argument("--output", type=Path)
@@ -116,10 +158,21 @@ def _wave_manifest(spec: WorkshopSpec, wave: str) -> list[dict]:
 def main(argv=None):
     p = build_parser()
     args = p.parse_args(argv)
+    try:
+        topology = resolve_topology(getattr(args, "plan_topology", None) or args.topology)
+    except TopologyError as exc:
+        p.exit(2, f"error: {exc}\n")
+    if args.command in LEGACY_TOPOLOGY_COMMANDS and topology != "multi_project":
+        p.exit(
+            2,
+            f"error: '{args.command}' acts on the rc1 multi-project layout. Re-run with "
+            "--topology multi_project (or WORKSHOP_TOPOLOGY=multi_project). The default single_project "
+            "topology is planned with 'plan' and created by the trainer in the CAI UI.\n",
+        )
     env = load_environment(args.config)
     spec = WorkshopSpec.load(Path(env["groups_config"]), Path(env["resources_config"]))
     if args.command == "plan":
-        result = build_plan(args.config)
+        result = build_plan(args.config, topology)
         _emit(result, args.output)
         return 0
     if args.command == "validate":

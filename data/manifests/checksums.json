@@ -1,0 +1,25 @@
+{
+  "algorithm": "sha256",
+  "files": {
+    "accounts.csv": {
+      "sha256": "6ce3f1e3c5c4775918ebd4906db01f92a012ce6a3cb45dc6927a940bea39f825",
+      "bytes": 2126024
+    },
+    "branches.csv": {
+      "sha256": "b2aab2d4184ed1b29c12028f910e46e43ee0e06f8ea9fd2a42fafebfa5b22157",
+      "bytes": 9953
+    },
+    "customers.csv": {
+      "sha256": "07339c170b5c5aba2437e835a8c45afd7dca4fb20e55a287e1b4577fd16bd765",
+      "bytes": 927655
+    },
+    "loans.csv": {
+      "sha256": "31c2eb16c3bbd87edcd5d896a913bb412aeb1d402cf7468e4711881e26fc0fbf",
+      "bytes": 610966
+    },
+    "transactions.csv": {
+      "sha256": "c4df47b59b581e21db947212334650627c0c93a9237b2c0398a5fc0db70e03b6",
+      "bytes": 8210413
+    }
+  }
+}

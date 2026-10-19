@@ -1,6 +1,6 @@
 # Cloudera AI API v2 Automation
 
-The default command is read-only and creates a desired-state plan:
+The default command is read-only and creates a desired-state plan for the default `single_project` topology (use `--topology multi_project` or `WORKSHOP_TOPOLOGY=multi_project` for the rc1 layout, which the apply/wave commands require):
 
 ```bash
 PYTHONPATH=src:. python -m automation.cai_api_v2.cli --config config/env.bni.example.yaml plan --output build/cai-plan.json
