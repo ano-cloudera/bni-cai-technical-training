@@ -2,3 +2,11 @@
 # Intended pins come from the vllm 0.29.0 package metadata. Final pins are confirmed by Lab 00 in the
 # BNI PBJ NVIDIA GPU runtime. This profile is NOT validated on macOS.
 vllm==0.29.0
+# Runtime dependencies observed missing in the CAI sandbox L40S validation (vllm 0.29.0 did not bring them in).
+PyYAML
+packaging
+requests
+certifi
+urllib3
+cachetools
+cloudpickle

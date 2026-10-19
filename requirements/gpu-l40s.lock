@@ -1,3 +1,5 @@
-# gpu-l40s: CAI VALIDATION PENDING. Intended pin only; not a resolved lock and not validated on macOS.
-# Resolve on the target PBJ NVIDIA GPU runtime, run Lab 00, then replace with the frozen matrix.
+# gpu-l40s: CAI VALIDATION PENDING. Intended pin only; NOT a resolved lock and NOT complete.
+# The declarations in gpu-l40s.in (PyYAML, packaging, requests, certifi, urllib3, cachetools, cloudpickle) are
+# pending lock regeneration: resolve on the target PBJ NVIDIA GPU runtime (needs the CUDA package index), run Lab 00,
+# then replace this file with the frozen matrix.
 vllm==0.29.0

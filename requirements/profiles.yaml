@@ -60,6 +60,8 @@ profiles:
     used_by: [bni-vllm-qwen35-9b Application in the sandbox]
     gpu: NVIDIA L40S
     vllm_version: "0.29.0"
+    explicit_runtime_dependencies: [PyYAML, packaging, requests, certifi, urllib3, cachetools, cloudpickle]
+    lock_status: pending-regeneration
     local_validation: not-applicable-on-macos
     cai_validation: pending
     validation_status: cai-validation-pending
@@ -78,6 +80,8 @@ profiles:
     used_by: [bni-vllm-qwen35-9b Application at BNI]
     gpu: NVIDIA H200 NVL
     vllm_version: "0.29.0"
+    explicit_runtime_dependencies: [PyYAML, packaging, requests, certifi, urllib3, cachetools, cloudpickle]
+    lock_status: pending-regeneration
     local_validation: not-applicable-on-macos
     cai_validation: pending
     validation_status: cai-validation-pending
