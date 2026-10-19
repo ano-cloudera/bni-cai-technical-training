@@ -18,6 +18,8 @@ from collections.abc import Callable
 from enum import Enum
 from typing import Any
 
+from bni_training.user_errors import UserFacingError
+
 
 class TicketState(str, Enum):
     QUEUED = "queued"
@@ -104,6 +106,7 @@ class Ticket:
         self._state = TicketState.QUEUED
         self._result: Any = None
         self._detail = ""
+        self._user_message: str | None = None
         self._done = threading.Event()
         self.token = CancelToken()
 
@@ -125,6 +128,8 @@ class Ticket:
 
     @property
     def message(self) -> str:
+        if self._state is TicketState.FAILED and self._user_message:
+            return self._user_message
         return _MESSAGES[self._state]
 
     def position(self) -> int:
@@ -255,6 +260,10 @@ class InferenceGate:
                 result = job(ticket.token, self.request_timeout_s)
             except RequestCancelled:
                 ticket._finish(TicketState.CANCELLED)
+                return
+            except UserFacingError as exc:  # a refusal with a safe, helpful message; never retried
+                ticket._user_message = str(exc)
+                ticket._finish(TicketState.FAILED, detail=type(exc).__name__)
                 return
             except Exception as exc:  # noqa: BLE001 - classify, never crash a worker
                 last = exc

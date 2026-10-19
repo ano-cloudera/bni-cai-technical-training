@@ -53,9 +53,9 @@ def test_nothing_is_shown_until_a_group_is_chosen_and_local_mode_is_labelled() -
 
 def test_choosing_a_group_shows_only_its_mission() -> None:
     at = join(session(), "group_03")
-    assert "group_03" in at.subheader[0].value and "Loan portfolio monitoring" in at.subheader[0].value
+    assert "group_03" in at.subheader[0].value and "Loan Portfolio Monitoring" in at.subheader[0].value
     assert [s.options for s in at.selectbox if s.label == "Scenario"] == [["loan_portfolio_monitoring"]]
-    assert [s.options for s in at.selectbox if s.label == "Dataset"] == [["credit_portfolio"]]
+    assert [s.options for s in at.selectbox if s.label == "Dataset"] == [["loan_monitoring_bundle"]]
 
 
 def test_an_unknown_group_in_the_url_is_rejected_and_nobody_is_joined() -> None:

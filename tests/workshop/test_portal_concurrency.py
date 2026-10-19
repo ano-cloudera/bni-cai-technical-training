@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import threading
 
-from helpers import FakeLLM, wait_done
+from helpers import FakeLLM, question_for, wait_done
 
 GROUPS = [f"group_{i:02d}" for i in range(1, 11)]
 
@@ -21,7 +21,7 @@ def test_forty_concurrent_sessions_get_only_their_own_answers_and_files(make_ser
     def participant(group, index, state):
         try:
             marker = f"marker-{group}-p{index}"
-            ticket = service.submit_question(state, f"Show account count by region {marker}")
+            ticket = service.submit_question(state, question_for(group, marker))
             wait_done(ticket, 60)
             service.collect(state)
         except BaseException as exc:  # noqa: BLE001

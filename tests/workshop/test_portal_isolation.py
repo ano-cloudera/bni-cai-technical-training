@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 import pytest
-from helpers import two_dataset_registry, wait_done
+from helpers import question_for, two_dataset_registry, wait_done
 
 from bni_training.workshop import group_paths
 from bni_training.workshop.group_context import SessionContext
@@ -15,8 +15,8 @@ from bni_training.workshop.group_paths import UnsafePathError
 from bni_training.workshop.group_registry import GroupAccessError
 from bni_training.workshop.portal.state import PortalSessionState
 
-Q1 = "Show account count by region marker-alpha"
-Q2 = "Show outstanding balance by region marker-bravo"
+Q1 = question_for("group_01", "marker-alpha")
+Q2 = question_for("group_02", "marker-bravo")
 
 
 def ask(service, state, question):
@@ -42,7 +42,7 @@ def test_two_sessions_of_the_same_group_do_not_share_chat_or_outputs(make_servic
     backing: dict = {}
     first = service.state(backing, service.open_session("group_05"))
     second = service.state(backing, service.open_session("group_05"))
-    ask(service, first, Q1)
+    ask(service, first, question_for("group_05", "marker-alpha"))
     assert second.chat() == []
     assert service.list_outputs(second.ctx) == []
     assert first.ctx.session_id != second.ctx.session_id
@@ -64,10 +64,13 @@ def test_dataset_and_scenario_selection_is_per_session_and_only_assigned_ones(ma
     backing: dict = {}
     g1 = service.state(backing, service.open_session("group_01"))
     g2 = service.state(backing, service.open_session("group_02"))
-    service.select_dataset(g1, "credit_portfolio_b")
-    assert g1.dataset_id == "credit_portfolio_b" and g2.dataset_id == "credit_portfolio"
+    service.select_dataset(g1, "customer_portfolio_bundle_b")
+    assert (
+        g1.dataset_id == "customer_portfolio_bundle_b"
+        and g2.dataset_id == registry.group("group_02").dataset_ids[0]
+    )
     with pytest.raises(GroupAccessError):
-        service.select_dataset(g2, "credit_portfolio_b")
+        service.select_dataset(g2, "customer_portfolio_bundle_b")
     with pytest.raises(GroupAccessError):
         service.select_scenario(g2, registry.group("group_01").scenario_ids[0])
     assert g2.scenario_id == registry.group("group_02").scenario_ids[0]

@@ -5,10 +5,11 @@ from pathlib import Path
 import pytest
 from helpers import FakeLLM
 
+from bni_training.data.engine import CsvEngine
 from bni_training.workshop.group_registry import GroupRegistry
 from bni_training.workshop.portal.config import PortalConfig
 from bni_training.workshop.portal.gate import InferenceGate
-from bni_training.workshop.portal.service import PortalService, default_data_tool_factory
+from bni_training.workshop.portal.service import PortalService
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -19,13 +20,15 @@ def registry() -> GroupRegistry:
 
 
 @pytest.fixture(scope="session")
-def shared_tool(registry):
-    """One real CSV tool shared by all tests (loading 230k rows once keeps the suite fast)."""
-    return default_data_tool_factory(registry.dataset("credit_portfolio"))
+def shared_engine():
+    """One real in-memory copy of the physical dataset shared by all tests (loaded once for speed)."""
+    engine = CsvEngine()
+    yield engine
+    engine.close()
 
 
 @pytest.fixture
-def make_service(tmp_path, registry, shared_tool):
+def make_service(tmp_path, registry, shared_engine):
     created: list[PortalService] = []
 
     def factory(
@@ -37,7 +40,7 @@ def make_service(tmp_path, registry, shared_tool):
             PortalConfig(mode="local", llm_base_url="http://unused.invalid/v1"),
             gate,
             llm_factory=lambda: llm or FakeLLM(),
-            data_tool_factory=lambda dataset: shared_tool,
+            csv_engine=shared_engine,
             tracer=tracer,
             qdrant_client=qdrant,
             embed=embed,

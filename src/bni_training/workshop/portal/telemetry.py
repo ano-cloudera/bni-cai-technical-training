@@ -8,14 +8,17 @@ from typing import Any
 from bni_training.workshop.group_context import SessionContext
 
 
-def trace_attributes(ctx: SessionContext, scenario_id: str) -> dict[str, Any]:
-    """Span attributes for one request. Every portal span carries group_id and the session id."""
+def trace_attributes(ctx: SessionContext, dataset_id: str, mission_id: str) -> dict[str, Any]:
+    """Span attributes for one request: group_id, session.id, dataset_id and mission_id on every span."""
     return {
         "group_id": ctx.group_id,
         "session.id": ctx.session_id,
-        "scenario_id": scenario_id,
+        "dataset_id": dataset_id,
+        "mission_id": mission_id,
         "openinference.span.kind": "CHAIN",
-        "metadata": json.dumps({"group_id": ctx.group_id, "scenario_id": scenario_id}),
+        "metadata": json.dumps(
+            {"group_id": ctx.group_id, "dataset_id": dataset_id, "mission_id": mission_id}
+        ),
     }
 
 

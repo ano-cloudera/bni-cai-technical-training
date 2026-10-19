@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from dataclasses import dataclass
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field
 from pathlib import Path
 
-import yaml
-
 from bni_training.config import validate_group_id
-
-REPO_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_GROUPS_CONFIG = REPO_ROOT / "config" / "workshop" / "groups.yaml"
+from bni_training.data.bundles import BundleCatalog
 
 
 class UnknownGroupError(ValueError):
@@ -22,18 +18,29 @@ class GroupAccessError(PermissionError):
 
 @dataclass(frozen=True)
 class DatasetSpec:
+    """A group's logical dataset bundle (a view of the one physical dataset)."""
+
     dataset_id: str
     title: str
     csv_dir: Path
-    semantic_model: Path
+    tables: tuple[str, ...] = ()
+    row_filters: Mapping[str, str] = field(default_factory=dict)
+    allowed_metrics: tuple[str, ...] = ()
+    mission_id: str = ""
 
 
 @dataclass(frozen=True)
 class ScenarioSpec:
+    """A group's mission. ``scenario_id`` is the mission id."""
+
     scenario_id: str
     title: str
     description: str
     sample_questions: tuple[str, ...]
+
+    @property
+    def objective(self) -> str:
+        return self.description
 
 
 @dataclass(frozen=True)
@@ -43,43 +50,47 @@ class GroupSpec:
     dataset_ids: tuple[str, ...]
 
 
-def _resolve(base: Path, value: str) -> Path:
-    path = Path(value)
-    return path if path.is_absolute() else base / path
-
-
 class GroupRegistry:
-    """Immutable view of config/workshop/groups.yaml. It holds no per-session state."""
+    """Immutable view of the group assignments in data/scenarios. It holds no per-session state."""
 
-    def __init__(self, raw: Mapping, base_dir: Path = REPO_ROOT):
-        self._datasets = {
-            key: DatasetSpec(
-                key,
-                value["title"],
-                _resolve(base_dir, value["csv_dir"]),
-                _resolve(base_dir, value["semantic_model"]),
-            )
-            for key, value in raw["datasets"].items()
-        }
-        self._scenarios = {
-            key: ScenarioSpec(key, value["title"], value["description"], tuple(value["sample_questions"]))
-            for key, value in raw["scenarios"].items()
-        }
-        groups = [
-            GroupSpec(item["group_id"], tuple(item["scenarios"]), tuple(item["datasets"]))
-            for item in raw["groups"]
-        ]
+    def __init__(
+        self,
+        datasets: Mapping[str, DatasetSpec],
+        scenarios: Mapping[str, ScenarioSpec],
+        groups: Sequence[GroupSpec],
+    ):
+        self._datasets = dict(datasets)
+        self._scenarios = dict(scenarios)
         self._groups = {group.group_id: group for group in groups}
         self._validate()
 
     @classmethod
-    def load(cls, path: Path = DEFAULT_GROUPS_CONFIG) -> GroupRegistry:
-        return cls(yaml.safe_load(Path(path).read_text(encoding="utf-8")), base_dir=REPO_ROOT)
+    def from_catalog(cls, catalog: BundleCatalog) -> GroupRegistry:
+        datasets, scenarios, groups = {}, {}, []
+        for group_id, bundle in catalog.bundles.items():
+            datasets[bundle.dataset_id] = DatasetSpec(
+                bundle.dataset_id,
+                bundle.mission_title,
+                bundle.csv_dir,
+                bundle.tables,
+                dict(bundle.row_filters),
+                bundle.allowed_metrics,
+                bundle.mission_id,
+            )
+            scenarios[bundle.mission_id] = ScenarioSpec(
+                bundle.mission_id, bundle.mission_title, bundle.mission_objective, bundle.sample_questions
+            )
+            groups.append(GroupSpec(group_id, (bundle.mission_id,), (bundle.dataset_id,)))
+        return cls(datasets, scenarios, groups)
+
+    @classmethod
+    def load(cls, directory: Path | None = None) -> GroupRegistry:
+        return cls.from_catalog(BundleCatalog.load(directory) if directory else BundleCatalog.load())
 
     def _validate(self) -> None:
         expected = [f"group_{i:02d}" for i in range(1, 11)]
         if sorted(self._groups) != expected:
-            raise ValueError("groups.yaml must define exactly group_01 through group_10")
+            raise ValueError("The registry must define exactly group_01 through group_10")
         for group in self._groups.values():
             validate_group_id(group.group_id)
             if not group.scenario_ids or not group.dataset_ids:

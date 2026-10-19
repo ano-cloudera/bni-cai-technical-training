@@ -1,0 +1,17 @@
+# Which shared Applications are active in each training phase. At most 5 CAI Applications may be active at once.
+# `optional` Applications may also run; the planner checks the worst case. Stop before you start.
+schema_version: 1
+max_active_applications: 5
+phases:
+  day1:
+    active: [vllm, qdrant, phoenix, workshop-portal]
+  day2_morning:
+    active: [vllm, qdrant, litellm, workshop-portal]
+    optional: [phoenix]
+  agent_studio_publication:
+    # Only one final workflow is published. Stop these first so the published workflow's own Application
+    # resources fit under the limit.
+    stop_before: [phoenix, workshop-portal]
+    active: [vllm, litellm]
+    optional: [qdrant]
+    reserved_agent_studio_slots: 2   # cai-validation-pending: the real count is measured in the sandbox

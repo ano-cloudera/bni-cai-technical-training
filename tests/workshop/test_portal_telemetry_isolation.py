@@ -4,7 +4,7 @@ import json
 import threading
 
 import pytest
-from helpers import wait_done
+from helpers import question_for, wait_done
 
 pytest.importorskip("opentelemetry.sdk")
 
@@ -18,11 +18,16 @@ from bni_training.workshop.portal.telemetry import trace_attributes  # noqa: E40
 GROUPS = [f"group_{i:02d}" for i in range(1, 11)]
 
 
-def test_trace_attributes_always_carry_group_and_session() -> None:
+def test_trace_attributes_always_carry_group_session_dataset_and_mission() -> None:
     ctx = SessionContext("group_07", "c" * 32)
-    attrs = trace_attributes(ctx, "customer_segmentation")
+    attrs = trace_attributes(ctx, "segmentation_bundle", "customer_segmentation")
     assert attrs["group_id"] == "group_07" and attrs["session.id"] == "c" * 32
-    assert json.loads(attrs["metadata"]) == {"group_id": "group_07", "scenario_id": "customer_segmentation"}
+    assert attrs["dataset_id"] == "segmentation_bundle" and attrs["mission_id"] == "customer_segmentation"
+    assert json.loads(attrs["metadata"]) == {
+        "group_id": "group_07",
+        "dataset_id": "segmentation_bundle",
+        "mission_id": "customer_segmentation",
+    }
 
 
 def test_concurrent_groups_never_mix_span_metadata(make_service) -> None:
@@ -38,7 +43,7 @@ def test_concurrent_groups_never_mix_span_metadata(make_service) -> None:
 
     def run(state):
         tickets[state.ctx.session_id] = service.submit_question(
-            state, f"Show account count by region for {state.ctx.group_id}"
+            state, question_for(state.ctx.group_id, f"for {state.ctx.group_id}")
         )
 
     threads = [threading.Thread(target=run, args=(s,)) for s in sessions]
@@ -54,6 +59,7 @@ def test_concurrent_groups_never_mix_span_metadata(make_service) -> None:
     for span in spans:
         attrs = dict(span.attributes)
         assert attrs["group_id"] == owner[attrs["session.id"]]
+        assert attrs["dataset_id"] and attrs["mission_id"]
         assert json.loads(attrs["metadata"])["group_id"] == attrs["group_id"]
         other_groups = [g for g in GROUPS if g != attrs["group_id"]]
         assert not any(g in json.dumps(attrs) for g in other_groups)
@@ -67,7 +73,7 @@ def test_every_session_records_only_its_own_span_session_ids(make_service) -> No
     a = service.state({}, service.open_session("group_01"))
     b = service.state({}, service.open_session("group_02"))
     for state in (a, b):
-        wait_done(service.submit_question(state, "Show account count by region"))
+        wait_done(service.submit_question(state, question_for(state.ctx.group_id)))
     by_session = {
         dict(s.attributes)["session.id"]: dict(s.attributes)["group_id"]
         for s in exporter.get_finished_spans()

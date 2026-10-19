@@ -10,6 +10,10 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+from bni_training.data.bundles import GroupBundle
+from bni_training.data.engine import CsvEngine
+from bni_training.data.semantic_layer import SemanticModel
+from bni_training.data.tool import DataRequest, WorkshopDataTool
 from bni_training.guardrails import validate_input
 from bni_training.llm_client import OpenAICompatibleClient
 from bni_training.rag import HashingEmbedder, index_group_documents, search_group
@@ -47,14 +51,27 @@ class PortalAnswer:
     columns: list[str]
     rows: list[list[Any]]
     row_count: int
+    group_id: str = ""
+    session_id: str = ""
+    dataset_id: str = ""
+    mission_id: str = ""
+    truncated: bool = False
 
 
-def default_data_tool_factory(dataset: DatasetSpec):
-    from bni_training.backends.csv_backend import CsvBackend
-    from bni_training.semantic import SemanticCatalog
-    from bni_training.tools.data_tool import DataQueryTool
-
-    return DataQueryTool(CsvBackend(dataset.csv_dir), SemanticCatalog.load(dataset.semantic_model))
+def bundle_for(registry: GroupRegistry, group_id: str, dataset: DatasetSpec) -> GroupBundle:
+    scenario = registry.scenario(dataset.mission_id)
+    return GroupBundle(
+        group_id,
+        dataset.dataset_id,
+        dataset.mission_id,
+        scenario.title,
+        scenario.objective,
+        dataset.tables,
+        dict(dataset.row_filters),
+        dataset.allowed_metrics,
+        scenario.sample_questions,
+        dataset.csv_dir,
+    )
 
 
 class PortalService:
@@ -67,7 +84,8 @@ class PortalService:
         gate: InferenceGate,
         *,
         llm_factory: Callable[[], Any] | None = None,
-        data_tool_factory: Callable[[DatasetSpec], Any] = default_data_tool_factory,
+        data_tool_factory: Callable[[str, DatasetSpec], Any] | None = None,
+        csv_engine: CsvEngine | None = None,
         tracer: Any = None,
         qdrant_client: Any = None,
         embed: Callable[[str], list[float]] | None = None,
@@ -84,8 +102,11 @@ class PortalService:
         self.config = config
         self.gate = gate
         self._llm = (llm_factory or self._default_llm)()
-        self._data_tool_factory = data_tool_factory
-        self._tools: dict[str, Any] = {}  # dataset_id -> read-only tool (no group data)
+        self._data_tool_factory = data_tool_factory or self._default_tool
+        self._engine = csv_engine
+        self._owns_engine = csv_engine is None
+        self._semantic = SemanticModel.load()
+        self._tools: dict[tuple[str, str], Any] = {}  # (group, dataset) -> tool bound to that bundle only
         self._tools_lock = threading.Lock()
         self._tracer = tracer or NoopTracer()
         self._qdrant = qdrant_client
@@ -98,6 +119,11 @@ class PortalService:
         self._closers = closers
 
     # construction ---------------------------------------------------------------------------------
+    def _default_tool(self, group_id: str, dataset: DatasetSpec):
+        if self._engine is None:  # one shared, read-only, in-memory copy of the physical dataset
+            self._engine = CsvEngine(dataset.csv_dir)
+        return WorkshopDataTool(self._engine, self._semantic, bundle_for(self.registry, group_id, dataset))
+
     def _default_llm(self):
         if not self.config.llm_base_url:
             raise PortalConfigError(
@@ -112,8 +138,8 @@ class PortalService:
         env = dict(os.environ if env is None else env)
         config = PortalConfig.from_env(env)
         registry = (
-            GroupRegistry.load(Path(env["WORKSHOP_GROUPS_CONFIG"]))
-            if env.get("WORKSHOP_GROUPS_CONFIG")
+            GroupRegistry.load(Path(env["WORKSHOP_SCENARIOS_DIR"]))
+            if env.get("WORKSHOP_SCENARIOS_DIR")
             else GroupRegistry.load()
         )
         gate = InferenceGate(
@@ -200,6 +226,8 @@ class PortalService:
 
     def close(self) -> None:
         self.gate.close()
+        if self._owns_engine and self._engine is not None:
+            self._engine.close()
         for closer in self._closers:
             closer()
 
@@ -265,19 +293,22 @@ class PortalService:
         state.scenario_id = scenario_id
 
     # asking ---------------------------------------------------------------------------------------
-    def _tool_for(self, dataset: DatasetSpec):
+    def _tool_for(self, group_id: str, dataset: DatasetSpec):
         with self._tools_lock:
-            if dataset.dataset_id not in self._tools:
-                self._tools[dataset.dataset_id] = self._data_tool_factory(dataset)
-            return self._tools[dataset.dataset_id]
+            key = (group_id, dataset.dataset_id)
+            if key not in self._tools:
+                self._tools[key] = self._data_tool_factory(group_id, dataset)
+            return self._tools[key]
 
     def submit_question(self, state: PortalSessionState, question: str) -> Ticket:
         ctx = state.ctx
         question = validate_input(question)  # a rejected question never reaches the queue
         dataset = self.registry.require_dataset(ctx.group_id, state.dataset_id)
         scenario = self.registry.require_scenario(ctx.group_id, state.scenario_id)
-        tool = self._tool_for(dataset)
-        attributes = trace_attributes(ctx, scenario.scenario_id)
+        tool = self._tool_for(ctx.group_id, dataset)
+        mission_id = scenario.scenario_id
+        request = DataRequest(ctx.group_id, ctx.session_id, dataset.dataset_id, mission_id)
+        attributes = trace_attributes(ctx, dataset.dataset_id, mission_id)
         llm, tracer, max_tokens = self._llm, self._tracer, self.config.max_tokens
         system = (
             f"You support the '{scenario.title}' mission on a fully synthetic banking portfolio. "
@@ -286,7 +317,7 @@ class PortalService:
 
         def job(token, timeout: float) -> PortalAnswer:
             with tracer.start_as_current_span("portal.ask", attributes=attributes):
-                sql, result = tool.query(question)
+                sql, result = tool.query(question, request)
                 token.raise_if_cancelled()
                 reply = llm.chat(
                     [
@@ -309,6 +340,11 @@ class PortalService:
                     list(result.columns),
                     [list(r) for r in result.rows[:MAX_ROWS_IN_ANSWER]],
                     result.row_count,
+                    request.group_id,
+                    request.session_id,
+                    request.dataset_id,
+                    request.mission_id,
+                    bool(getattr(result, "truncated", False)),
                 )
 
         state.lock()  # first chat action: the group can no longer change without a reset

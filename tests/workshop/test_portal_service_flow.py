@@ -3,7 +3,7 @@ from __future__ import annotations
 import urllib.error
 
 import pytest
-from helpers import FakeLLM, wait_done
+from helpers import FakeLLM, question_for, wait_done
 
 from bni_training.guardrails import GuardrailError
 from bni_training.workshop.portal.config import PortalConfig, PortalConfigError
@@ -40,7 +40,7 @@ def test_model_failures_become_a_friendly_message_not_a_stack_trace(make_service
         llm=FakeLLM(fail=urllib.error.HTTPError("http://x", 400, "bad", {}, None)), max_retries=0
     )
     state = service.state({}, service.open_session("group_01"))
-    wait_done(service.submit_question(state, "Show account count by region"))
+    wait_done(service.submit_question(state, question_for("group_01")))
     assert service.collect(state) == {"state": "failed"}
     message = state.chat()[-1]
     assert message["role"] == "system" and "HTTPError" not in message["content"]
@@ -50,7 +50,7 @@ def test_model_failures_become_a_friendly_message_not_a_stack_trace(make_service
 def test_a_cancelled_request_is_reported_as_cancelled(make_service) -> None:
     service = make_service(llm=FakeLLM(delay=0.3), max_concurrent=1)
     state = service.state({}, service.open_session("group_01"))
-    ticket = service.submit_question(state, "Show account count by region")
+    ticket = service.submit_question(state, question_for("group_01"))
     assert service.cancel(state) is True
     wait_done(ticket)
     assert ticket.state is TicketState.CANCELLED
@@ -61,7 +61,7 @@ def test_a_cancelled_request_is_reported_as_cancelled(make_service) -> None:
 def test_overload_is_shown_as_busy_to_the_user(make_service) -> None:
     service = make_service(llm=FakeLLM(delay=0.4), max_concurrent=1, max_queue=1)
     states = [service.state({}, service.open_session(f"group_{i:02d}")) for i in range(1, 5)]
-    tickets = [service.submit_question(s, "Show account count by region") for s in states]
+    tickets = [service.submit_question(s, question_for(s.ctx.group_id)) for s in states]
     rejected = [(s, t) for s, t in zip(states, tickets, strict=True) if t.state is TicketState.REJECTED]
     assert rejected
     state, _ticket = rejected[0]

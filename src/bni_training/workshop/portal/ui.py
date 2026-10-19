@@ -158,7 +158,7 @@ def render() -> None:
     group = service.registry.group(ctx.group_id)
     scenario = service.scenario_for(state)
     st.subheader(f"{ctx.group_id}: {scenario.title}")
-    st.write(scenario.description)
+    st.write(f"**Mission objective:** {scenario.objective}")
     left, right = st.columns(2)
     try:
         service.select_scenario(
@@ -171,6 +171,15 @@ def render() -> None:
         st.error(str(exc))
         return
 
+    dataset = service.registry.dataset(state.dataset_id)
+    with st.expander("My dataset bundle: allowed tables and metrics", expanded=True):
+        st.write("**Tables:** " + ", ".join(dataset.tables))
+        st.write("**Metrics:** " + ", ".join(m.replace("_", " ") for m in dataset.allowed_metrics))
+        st.caption(
+            "One shared synthetic dataset; your group sees only these tables. "
+            "The separation is operational, not a security boundary."
+        )
+    st.markdown("**Sample questions**")
     for question in scenario.sample_questions:
         if st.button(question, key=f"sample::{question}", disabled=state.active_ticket is not None):
             _ask(service, state, question)

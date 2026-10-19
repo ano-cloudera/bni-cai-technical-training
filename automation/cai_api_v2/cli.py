@@ -18,7 +18,11 @@ from .project_files import approved_project_files
 from .provision import provision
 
 
-def build_plan(config_path: Path) -> dict:
+def build_plan(config_path: Path, topology: str = "multi_project") -> dict:
+    if topology == "single_project":
+        from .planner import build_single_project_plan
+
+        return build_single_project_plan(config_path)
     env = load_environment(config_path)
     spec = WorkshopSpec.load(Path(env["groups_config"]), Path(env["resources_config"]))
     return {
@@ -39,6 +43,12 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
     plan = sub.add_parser("plan")
     plan.add_argument("--output", type=Path, required=True)
+    plan.add_argument(
+        "--topology",
+        choices=("single_project", "multi_project"),
+        default=os.environ.get("WORKSHOP_TOPOLOGY", "multi_project"),
+        help="Default: $WORKSHOP_TOPOLOGY, otherwise multi_project (the rc1 plan).",
+    )
     for name in ("discover", "validate", "apply-projects", "status", "inventory"):
         command = sub.add_parser(name)
         command.add_argument("--output", type=Path)
@@ -119,7 +129,7 @@ def main(argv=None):
     env = load_environment(args.config)
     spec = WorkshopSpec.load(Path(env["groups_config"]), Path(env["resources_config"]))
     if args.command == "plan":
-        result = build_plan(args.config)
+        result = build_plan(args.config, args.topology)
         _emit(result, args.output)
         return 0
     if args.command == "validate":

@@ -10,12 +10,14 @@ from pathlib import Path
 
 import yaml
 
+from bni_training.user_errors import UserFacingError
+
 from .dictionary import SEMANTIC_DIR
 
 MAX_DIMENSIONS = 2
 
 
-class SemanticError(ValueError):
+class SemanticError(UserFacingError):
     """The question cannot be answered by the semantic layer. The message is safe for participants."""
 
 

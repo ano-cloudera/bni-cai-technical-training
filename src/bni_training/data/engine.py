@@ -27,6 +27,7 @@ import sqlglot
 from sqlglot import exp
 
 from bni_training.schemas import QueryResult
+from bni_training.user_errors import UserFacingError
 
 from .dictionary import DEFAULT_RAW_DIR, SQLITE_TYPES, DataDictionary
 
@@ -40,7 +41,7 @@ _SQLITE_ALLOWED_ACTIONS = frozenset({sqlite3.SQLITE_SELECT, sqlite3.SQLITE_READ,
 _SQLITE_RECURSIVE = getattr(sqlite3, "SQLITE_RECURSIVE", 33)
 
 
-class QueryRejected(ValueError):
+class QueryRejected(UserFacingError):
     """A request was refused. The message is safe and friendly to show to a participant."""
 
 

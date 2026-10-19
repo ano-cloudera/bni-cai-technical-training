@@ -8,7 +8,7 @@ import unicodedata
 from collections.abc import Mapping
 from pathlib import Path
 
-from .group_registry import REPO_ROOT
+from bni_training.data.dictionary import REPO_ROOT
 
 RUNTIME_ENV = "WORKSHOP_RUNTIME_DIR"
 _SEGMENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")

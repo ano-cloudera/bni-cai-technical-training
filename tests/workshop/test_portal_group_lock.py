@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from helpers import wait_done
+from helpers import question_for, wait_done
 
 from bni_training.workshop.portal.service import CTX_KEY, GroupLockedError
 
@@ -30,7 +30,7 @@ def test_the_first_question_locks_the_group(make_service) -> None:
     ctx = service.join_group(backing, "group_01")
     state = service.state(backing, ctx)
     assert state.locked is False
-    wait_done(service.submit_question(state, "Show account count by region"))
+    wait_done(service.submit_question(state, question_for("group_01")))
     assert state.locked is True
     with pytest.raises(GroupLockedError, match="Reset session"):
         service.join_group(backing, "group_02")
@@ -77,7 +77,7 @@ def test_reset_clears_every_trace_of_the_session_and_allows_a_new_group(make_ser
     backing: dict = {"unrelated-key": 1}
     ctx = service.join_group(backing, "group_01")
     state = service.state(backing, ctx)
-    wait_done(service.submit_question(state, "Show account count by region"))
+    wait_done(service.submit_question(state, question_for("group_01")))
     service.collect(state)
     out_dir = tmp_path / "runtime" / "groups" / "group_01" / "output" / ctx.session_id
     assert out_dir.is_dir() and state.chat() and state.events()
@@ -96,7 +96,7 @@ def test_reset_only_touches_its_own_session_folder(make_service, tmp_path) -> No
     a = service.state(one, service.join_group(one, "group_01"))
     b = service.state(two, service.join_group(two, "group_01"))
     for state in (a, b):
-        wait_done(service.submit_question(state, "Show account count by region"))
+        wait_done(service.submit_question(state, question_for("group_01")))
         service.collect(state)
     service.reset_session(one)
     assert service.list_outputs(b.ctx) == ["answer-001.json"]

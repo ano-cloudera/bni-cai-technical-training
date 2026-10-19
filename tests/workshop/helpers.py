@@ -28,18 +28,31 @@ class FakeLLM:
 
 
 def two_dataset_registry(registry: GroupRegistry) -> GroupRegistry:
-    """The real registry plus a second dataset that only group_01 is assigned."""
-    import yaml
+    """The real registry plus a second dataset bundle that only group_01 is assigned."""
+    import dataclasses
 
-    raw = yaml.safe_load((ROOT / "config" / "workshop" / "groups.yaml").read_text())
-    base = registry.dataset("credit_portfolio")
-    raw["datasets"]["credit_portfolio_b"] = {
-        "title": "Second synthetic dataset",
-        "csv_dir": str(base.csv_dir),
-        "semantic_model": str(base.semantic_model),
-    }
-    raw["groups"][0]["datasets"] = ["credit_portfolio", "credit_portfolio_b"]
-    return GroupRegistry(raw)
+    from bni_training.workshop.group_registry import GroupSpec
+
+    extra = dataclasses.replace(
+        registry.dataset("customer_portfolio_bundle"), dataset_id="customer_portfolio_bundle_b"
+    )
+    datasets = {d: registry.dataset(d) for g in registry.group_ids for d in registry.group(g).dataset_ids}
+    datasets[extra.dataset_id] = extra
+    scenarios = {s: registry.scenario(s) for g in registry.group_ids for s in registry.group(g).scenario_ids}
+    groups = []
+    for group_id in registry.group_ids:
+        spec = registry.group(group_id)
+        dataset_ids = (*spec.dataset_ids, extra.dataset_id) if group_id == "group_01" else spec.dataset_ids
+        groups.append(GroupSpec(group_id, spec.scenario_ids, dataset_ids))
+    return GroupRegistry(datasets, scenarios, groups)
+
+
+def question_for(group_id: str, marker: str = "") -> str:
+    """A question valid for the group's own bundle (its first sample question) plus an optional marker."""
+    from bni_training.data.bundles import BundleCatalog
+
+    question = BundleCatalog.load().for_group(group_id).sample_questions[0]
+    return f"{question} {marker}".strip()
 
 
 def wait_done(ticket, timeout: float = 15.0) -> None:
