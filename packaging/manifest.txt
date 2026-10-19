@@ -9,6 +9,7 @@ README.md
 pyproject.toml
 agent-studio
 apps/streamlit/app.py
+apps/workshop-portal
 apps/streamlit/service.py
 apps/litellm/mock_fallback.py
 automation

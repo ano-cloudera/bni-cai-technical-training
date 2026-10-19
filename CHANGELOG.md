@@ -2,6 +2,14 @@
 
 ## Unreleased (feature/single-project-csv-workshop)
 
+- Deterministic synthetic banking dataset in `data/raw` (100 branches, 10,000 customers, about 19,000 accounts,
+  about 100,000 transactions, 5,000 loans; 12 MB) with manifests, a validator (22 checks) and a standard-library
+  generator; semantic layer in `semantic/` (dictionary, relationships, 18 metrics, business terms); guarded
+  read-only CSV engine; ten logical group bundles and missions in `data/scenarios`.
+- Portal: mission display, group lock after the first action with explicit session reset, single-process and
+  single-replica enforcement, friendly refusals, spans with group_id, session.id, dataset_id and mission_id.
+- Single-project dry-run plan (`plan --topology single_project`); `multi_project` remains the default of `plan`.
+
 - Shared Workshop Portal (one Streamlit Application for all ten groups): group registry, safe group paths,
   per-session namespaced state, outputs and telemetry, a shared inference gate (default 3 concurrent requests,
   queue, timeout, retry, cancel, overload handling), Qdrant calls always filtered by `group_id`, a CAI launcher

@@ -1,5 +1,8 @@
 # Participant Guide
 
+> **Legacy multi-project guide.** This page describes the rc1 `multi_project` topology. The default workshop
+> design is `single_project`; see `docs/trainer/`, `docs/participant/` and `docs/architecture/single-project-topology.md`.
+
 ## Team model
 
 Forty participants work in ten groups of four. Rotate Driver, LLM Engineer, Data Engineer, and Tester roles after each major lab. Each group uses one project and one `GROUP_ID`. Streamlit deployment rotates in four waves: groups 01-03, 04-06, 07-09, and 10. Groups waiting for a deployment slot run the same UI from their Workbench session.

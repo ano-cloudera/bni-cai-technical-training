@@ -1,12 +1,53 @@
 # Project State
 
-Last updated: 2026-10-18
+Last updated: 2026-10-19
 
 ## Status
 
 Local development status: `local_validation_passed` (Python 3.10, macOS arm64, no NVIDIA GPU).
 
 **CAI readiness is NOT claimed.** GPU, CUDA, vLLM, NFS model, live Impala and live CAI API validation are pending. A green local run proves the code, locks and mocks are sound; it does not prove the CAI environment.
+
+## Single-project CSV workshop branch (local only, not pushed)
+
+Branch `feature/single-project-csv-workshop`, cut from the unmodified tag `v0.2.0-rc1`. `main`, the tag and the legacy
+multi-project topology are untouched. Nothing from this branch has been pushed, deployed, or run on Cloudera AI.
+
+Local validation passed (Python 3.10, macOS arm64): 471 tests pass, Ruff clean, secret scan clean, local acceptance
+`local_validation_passed`, notebook hygiene 13 of 13, dataset validator 22 of 22 checks, clean-clone run repeated.
+This is **not** CAI readiness.
+
+What exists locally:
+
+- **Shared Workshop Portal** (one Streamlit Application for all ten groups): validated group selection, group locked
+  after the first action with an explicit session reset, per-session isolation of chat, selections, outputs, temporary
+  files, Qdrant results and telemetry, a shared inference gate (default 3 concurrent requests, queue, timeout, retry,
+  cancel, overload handling), exactly one process and one replica (heartbeat guard; the CAI replica setting is still to
+  be verified), LiteLLM-or-vLLM routing. Thread-based tests are not proof of real CAI browser capacity.
+- **Synthetic banking dataset** (`data/raw`): 100 branches, 10,000 customers, 19,259 accounts, 101,903 transactions
+  over 24 months, 5,000 loans; 12,088,835 bytes (limit 50 MB). Deterministic (seed 20260630, reference date
+  2026-06-30), standard library only, identical bytes on Linux and macOS, no personal data, no BNI data, no credit
+  decisioning. SHA-256: accounts `6ce3f1e3...`, branches `b2aab2d4...`, customers `07339c17...`, loans `31c2eb16...`,
+  transactions `3ec309c1...` (full values in `data/manifests/checksums.json`).
+- **Semantic layer** (`semantic/`): data dictionary, relationships, 18 executable metrics, business terms.
+- **Ten logical group bundles** (`data/scenarios`) over the one physical dataset; every sample question of every
+  mission returns rows; Group 06 can discover the 33 seeded unusual patterns with ordinary queries. The anomaly flag and
+  `anomaly_test_manifest.json` are for tests and trainer validation only and are never exposed by participant tools.
+- **Guarded read-only CSV engine** (SQLite, sqlglot, authorizer, row cap, timeout). CSV is the default backend;
+  Impala is optional, only with `DATA_BACKEND=impala`, never required and never a silent fallback.
+- **Single-project dry-run plan** (`plan --topology single_project`): 1 project, 10 group workspaces, up to 10 Sessions,
+  5 shared Applications, no per-group Streamlit Applications, active Application counts per phase never above 5.
+  `multi_project` remains the default of `plan` (11 projects, 4 waves) and is unchanged.
+
+Not done yet: notebooks and labs 00-12 still use the rc1 placeholder dataset in `data/csv` (temporary); the workspace
+scripts (`prepare_group_workspaces.py`, `assign_participants.py`, `reset_group_workspace.py`, ...) are not implemented;
+the default of the `plan` command has not been switched to `single_project`.
+
+Pending on CAI (registered in `config/cai-validation-pending.yaml`, all `cai-validation-pending`): GPU dependency
+matrix; CPU-only PyTorch strategy for Linux RAG sessions; live Qdrant server; vLLM and Qwen model loading; CAI API v2
+fields and the runtime identifier; live Impala authentication; real Portal capacity and sizing for about 40 browsers;
+the single-replica setting and heartbeat behavior on CAI; running the dataset inside the CAI Application. No CAI
+readiness is claimed.
 
 ## Local Validation Passed
 

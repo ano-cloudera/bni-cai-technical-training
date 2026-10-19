@@ -292,6 +292,20 @@ def validate(profile: str, python: str, keep: bool) -> dict:
                     "detail": status_line if ok else out[-700:],
                 }
             )
+        if profile in ("participant", "rag", "dev-test"):
+            # the Workshop Portal (rag) and participants query the dataset through the guarded CSV engine
+            code, out, secs = run(
+                [str(py), str(ROOT / "scripts" / "validate_dataset.py"), "--no-determinism"], env=env
+            )
+            tail = out.splitlines()[-1] if out else ""
+            result["steps"].append(
+                {
+                    "name": "dataset_validator",
+                    "status": "PASS" if code == 0 else "FAIL",
+                    "seconds": secs,
+                    "detail": tail if code == 0 else out[-700:],
+                }
+            )
         if profile == "observability":
             result["steps"].append(phoenix_server_smoke(py, env, tmp))
             result["steps"].append(_isolation_step(py))

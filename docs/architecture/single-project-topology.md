@@ -39,9 +39,10 @@ fully synthetic.
 
 ## Datasets
 
-The rc1 CSV dataset in `data/csv` is **only a temporary placeholder** for the Portal until the single-project
-dataset slice (`data/raw`, ten group bundles) is completed. Sample questions and scenarios shown in the Portal
-before that point are stand-ins.
+The Portal uses the single-project dataset in `data/raw` through ten logical group bundles in `data/scenarios`
+(see `docs/architecture/dataset-and-semantic-layer.md`). The rc1 CSV dataset in `data/csv` is **only a temporary
+placeholder**: it is kept for the legacy topology and for notebooks 00-12, which are not yet migrated to the new
+dataset.
 
 ## Pending on CAI
 

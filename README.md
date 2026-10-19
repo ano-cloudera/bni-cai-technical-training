@@ -53,6 +53,27 @@ The workshop limit is five active CAI Applications in total. During the Day 1 gr
 ## Workshop topology
 
 The default topology is `single_project`: one CAI Project, ten group workspaces, and **one shared Streamlit
-Workshop Portal** for all groups (one Streamlit process, one replica). The rc1 `multi_project` topology is
-preserved. The CSV dataset in `data/csv` is a temporary placeholder until the `data/raw` dataset is completed.
-See `docs/architecture/single-project-topology.md`. Local validation is not CAI readiness.
+Workshop Portal** for all groups (exactly one Streamlit process and one Application replica, because the inference
+concurrency limit is process-local). The rc1 `multi_project` topology is preserved. See
+`docs/architecture/single-project-topology.md`.
+
+### Synthetic dataset and ten group missions
+
+`data/raw` holds one fully synthetic, deterministic banking dataset (branches, customers, accounts, transactions,
+loans; 12 MB, no personal data, no BNI data). `data/scenarios` defines ten **logical bundles** of it, one mission
+per group, without copying the data. CSV is the default backend (`DATA_BACKEND=csv`); Impala is an optional,
+trainer-controlled extension and is never required. Group separation is operational, not a security boundary.
+
+```bash
+python scripts/validate_dataset.py                      # 22 checks, prints PASS or FAIL
+python scripts/generate_synthetic_data.py --preview     # nothing is written
+PORTAL_MODE=local streamlit run apps/workshop-portal/app.py   # laptop demo with a mock model
+PYTHONPATH=src:. python -m automation.cai_api_v2.cli --config config/env.sandbox-l40s.example.yaml \
+  plan --topology single_project --output build/cai-plan.json   # dry run, no API call
+```
+
+Docs: `docs/participant/`, `docs/trainer/`, `docs/architecture/dataset-and-semantic-layer.md`.
+
+The CSV dataset in `data/csv` is **only a temporary placeholder** for the legacy topology and notebooks 00-12, which
+are not yet migrated to `data/raw`. Local validation is not CAI readiness: GPU matrix, live Qdrant, vLLM and model
+loading, CAI API v2 fields, Portal capacity and live Impala all remain `cai-validation-pending`.

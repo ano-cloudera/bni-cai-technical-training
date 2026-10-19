@@ -14,6 +14,7 @@ Preserve these invariants:
 - No more than five CAI Applications are active at any time in total (vLLM, Qdrant, Phoenix, LiteLLM, Workshop Portal; LiteLLM and Phoenix by phase).
 - Optional legacy topology `WORKSHOP_TOPOLOGY=multi_project` (one shared project plus ten group projects, with at most five group Streamlit Applications active, three during the Day 1 rotation) is preserved and must keep working.
 - Group separation is operational (application-layer validation), not a security boundary. A session is locked to its group after its first chat or workflow action; changing group requires an explicit session reset.
+- One physical synthetic dataset in `data/raw` serves ten logical group bundles in `data/scenarios`; never copy the data per group. Participant tools are read-only, limited to the group's tables and metrics, and never expose `is_seeded_anomaly` or `anomaly_test_manifest.json`.
 - CSV is the default participant backend (`DATA_BACKEND=csv`). Impala is an optional trainer-controlled extension and is never required for the participant workflow.
 - Impala GSSAPI, Impala LDAP, and CSV are explicit modes. Never silently fall back between backends, and never fall back after an authentication failure.
 - Secrets come from environment variables and must never appear in commits, logs, traces, notebooks, or archives.

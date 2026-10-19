@@ -74,6 +74,42 @@ def local_checks(root: Path) -> dict:
                 if cell["cell_type"] == "code"
             ),
         },
+        {
+            "name": "synthetic_dataset_and_manifests",
+            "passed": all(
+                root.joinpath(f"data/raw/{name}.csv").is_file()
+                for name in ["branches", "customers", "accounts", "transactions", "loans"]
+            )
+            and all(
+                root.joinpath(f"data/manifests/{name}.json").is_file()
+                for name in ["dataset_manifest", "checksums", "anomaly_test_manifest"]
+            ),
+        },
+        {
+            "name": "group_dataset_bundles",
+            "passed": all(
+                root.joinpath(f"data/scenarios/{name}.yaml").is_file()
+                for name in ["dataset_bundles", "group_assignments", "sample_questions"]
+            ),
+        },
+        {
+            "name": "semantic_layer",
+            "passed": all(
+                root.joinpath(f"semantic/{name}").is_file()
+                for name in [
+                    "README.md",
+                    "data_dictionary.yaml",
+                    "relationships.yaml",
+                    "metrics.yaml",
+                    "business_terms.yaml",
+                ]
+            ),
+        },
+        {
+            "name": "workshop_portal_entrypoint",
+            "passed": root.joinpath("deployments/cai/workshop-portal/app.py").is_file()
+            and root.joinpath("apps/workshop-portal/app.py").is_file(),
+        },
         {"name": "no_env_file", "passed": not root.joinpath(".env").exists()},
         {"name": "secret_scan", "passed": not scan_tree(root)},
         {"name": "model_weights_excluded", "passed": not any(root.rglob("*.safetensors"))},

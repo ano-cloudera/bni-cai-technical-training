@@ -44,3 +44,15 @@ items:
     verified_locally: isolation tests, the 3-slot inference gate, and 40 concurrent in-process sessions with a mock LLM
     evidence_needed: About 40 real browsers on one 4 vCPU / 8-16 GB Application; queue and timeout behavior against the real shared vLLM or LiteLLM endpoint; whether CAI exposes the user identity
     validated_in: [sandbox-l40s, bni-h200]
+  - id: portal-single-replica-enforcement
+    status: cai-validation-pending
+    covers: [config/workshop/applications.yaml, src/bni_training/workshop/portal/instance_guard.py]
+    verified_locally: the single-instance guard refuses a second process or host while the first heartbeat is fresh
+    evidence_needed: Confirm the CAI Application is created with one replica, that a restart does not leave two instances, and how the heartbeat file on the project filesystem behaves across pods
+    validated_in: [sandbox-l40s, bni-h200]
+  - id: dataset-in-cai-portal
+    status: cai-validation-pending
+    covers: [data/raw, src/bni_training/data/engine.py]
+    verified_locally: 22/22 validator checks, ten missions, guarded read-only SQLite engine on a Mac
+    evidence_needed: The Portal loads the 12 MB dataset in memory and answers all ten missions inside the CAI Application within its memory limit; data/raw is readable from the Application and Sessions
+    validated_in: [sandbox-l40s, bni-h200]
