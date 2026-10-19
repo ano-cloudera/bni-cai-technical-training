@@ -30,10 +30,15 @@ ROOT = Path(os.getenv("BNI_REPO_ROOT", "")) if os.getenv("BNI_REPO_ROOT") else n
     if (path / "pyproject.toml").is_file()
 )
 sys.path[:0] = [str(ROOT / "src"), str(ROOT)]
-LAB_MODE = os.getenv("LAB_MODE", "local").lower()
+from bni_training.workshop.notebook_support import load_group_env
+
+# A generated workspace provides config/group.env (LAB_MODE, GROUP_ID, GROUP_WORKSPACE, VLLM_BASE_URL, VLLM_MODEL).
+# Values already set in the Session environment win. No manual setup is needed.
 group_env = Path.cwd().parent / "config" / "group.env"
+load_group_env(group_env)
 if group_env.is_file() and not os.getenv("GROUP_ENV_FILE"):
     os.environ["GROUP_ENV_FILE"] = str(group_env)
+LAB_MODE = os.getenv("LAB_MODE", "local").lower()
 from bni_training.mock_llm import MockOpenAIServer
 from bni_training.workshop.lab_context import resolve_lab_context
 

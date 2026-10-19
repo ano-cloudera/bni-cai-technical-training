@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from collections import Counter
 from pathlib import Path
@@ -30,6 +31,20 @@ def main(argv=None) -> int:
         default="group_driver",
         help="Participant workspace mode (default: group_driver)",
     )
+    parser.add_argument(
+        "--lab-mode",
+        choices=("local", "cai"),
+        default=os.environ.get("LAB_MODE", "local"),
+        help="Written to group.env; cai needs the shared vLLM URL. Default: $LAB_MODE, else local (mock)",
+    )
+    parser.add_argument(
+        "--vllm-base-url",
+        default=os.environ.get("VLLM_BASE_URL"),
+        help="Shared vLLM Application URL (/v1 is appended). Default: $VLLM_BASE_URL. Required for cai mode",
+    )
+    parser.add_argument(
+        "--vllm-model", default=os.environ.get("VLLM_MODEL", "qwen3.5-9b"), help="Served model name"
+    )
     parser.add_argument("--apply", action="store_true", help="Write changes (the default is a dry run)")
     parser.add_argument(
         "--overwrite", action="store_true", help="Replace participant-edited files (needs --yes; backs up)"
@@ -37,12 +52,15 @@ def main(argv=None) -> int:
     parser.add_argument("--yes", action="store_true", help="Confirm a destructive --overwrite")
     parser.add_argument("--verbose", action="store_true", help="List every action, not only the summary")
     args = parser.parse_args(argv)
-    manager = WorkspaceManager(
-        args.runtime_dir or group_paths.runtime_root(),
-        args.templates_dir,
-        participant_mode=args.mode,
-    )
     try:
+        manager = WorkspaceManager(
+            args.runtime_dir or group_paths.runtime_root(),
+            args.templates_dir,
+            participant_mode=args.mode,
+            lab_mode=args.lab_mode,
+            vllm_base_url=args.vllm_base_url,
+            vllm_model=args.vllm_model,
+        )
         actions = manager.sync(apply=args.apply, overwrite=args.overwrite, yes=args.yes)
     except WorkspaceError as exc:
         print(f"REFUSED: {exc}", file=sys.stderr)
@@ -52,6 +70,7 @@ def main(argv=None) -> int:
         "mode": "apply" if args.apply else "dry-run (nothing was written; add --apply)",
         "runtime_dir": "workshop/runtime" if args.runtime_dir is None else "custom",
         "participant_mode": args.mode,
+        "lab_mode": args.lab_mode,
         "summary": dict(sorted(summary.items())),
     }
     if args.verbose:
