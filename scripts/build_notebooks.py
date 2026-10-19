@@ -9,9 +9,67 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
+from pathlib import Path
 
 from bni_training.lab_registry import REPO_ROOT, Lab, canonical_labs
+
+AUTHORING_DIR = REPO_ROOT / "notebooks" / "authoring"
+CELL_MARKER = re.compile(r"^# %%(?: \[markdown\])?\s*$")
+
+
+class AuthoringError(ValueError):
+    """A percent-format authoring file cannot be converted safely."""
+
+
+def _markdown_lines(lines: list[str]) -> list[str]:
+    rendered = []
+    for line in lines:
+        if line.startswith("# "):
+            rendered.append(line[2:])
+        elif line in {"#\n", "#"}:
+            rendered.append("\n" if line.endswith("\n") else "")
+        else:
+            raise AuthoringError("Markdown cells must use '# ' comment lines")
+    return rendered
+
+
+def parse_percent_source(path: Path) -> dict:
+    """Convert a small, dependency-free subset of Jupytext percent format."""
+    lines = Path(path).read_text(encoding="utf-8").splitlines(keepends=True)
+    cells: list[dict] = []
+    kind: str | None = None
+    body: list[str] = []
+
+    def flush() -> None:
+        nonlocal body
+        if kind is None:
+            return
+        cells.append(md("".join(_markdown_lines(body))) if kind == "markdown" else code("".join(body)))
+        body = []
+
+    for line in lines:
+        if CELL_MARKER.match(line.rstrip("\n")):
+            flush()
+            kind = "markdown" if "[markdown]" in line else "code"
+        elif kind is None:
+            if line.strip():
+                raise AuthoringError(f"{path.name}: content before the first cell marker")
+        else:
+            body.append(line)
+    flush()
+    if not cells:
+        raise AuthoringError(f"{path.name}: no cells found")
+    return {
+        "cells": cells,
+        "metadata": {
+            "kernelspec": {"display_name": "Python 3.10 (PBJ)", "language": "python", "name": "python3"},
+            "language_info": {"name": "python", "version": "3.10"},
+        },
+        "nbformat": 4,
+        "nbformat_minor": 5,
+    }
 
 SETUP = """import json, os, sys
 from pathlib import Path
@@ -152,7 +210,9 @@ def notebook(lab: Lab) -> dict:
 
 
 def render(lab: Lab) -> str:
-    return json.dumps(notebook(lab), indent=1) + "\n"
+    authoring = AUTHORING_DIR / f"{lab.id}_{lab.key}.py"
+    document = parse_percent_source(authoring) if authoring.is_file() else notebook(lab)
+    return json.dumps(document, indent=1) + "\n"
 
 
 def main(argv=None) -> int:
