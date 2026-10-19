@@ -49,3 +49,10 @@ GPU serving remains environment-dependent until the exact PBJ GPU Runtime matrix
 Select the matching `deployments/cai/<service>/app.py` file in the CAI Application `Script` field. Use kernel `python3` and the approved PBJ Python 3.10 JupyterLab runtime. Do not use a shell script as the Application entrypoint.
 
 The workshop limit is five active CAI Applications in total. During the Day 1 group UI rotation, keep vLLM and Qdrant active and run at most three group Streamlit Applications. Stop the group wave before starting Phoenix. LiteLLM is started for the Day 2 gateway lab.
+
+## Workshop topology
+
+The default topology is `single_project`: one CAI Project, ten group workspaces, and **one shared Streamlit
+Workshop Portal** for all groups (one Streamlit process, one replica). The rc1 `multi_project` topology is
+preserved. The CSV dataset in `data/csv` is a temporary placeholder until the `data/raw` dataset is completed.
+See `docs/architecture/single-project-topology.md`. Local validation is not CAI readiness.

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased (feature/single-project-csv-workshop)
+
+- Shared Workshop Portal (one Streamlit Application for all ten groups): group registry, safe group paths,
+  per-session namespaced state, outputs and telemetry, a shared inference gate (default 3 concurrent requests,
+  queue, timeout, retry, cancel, overload handling), Qdrant calls always filtered by `group_id`, a CAI launcher
+  and `config/workshop/{groups,applications}.yaml`. rc1 multi-project mode is untouched.
+
 ## 0.1.0-dev - local hardening
 
 - Qdrant group filter now uses native `qdrant-client` `Filter`/`FieldCondition` models (works in local mode and
