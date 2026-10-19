@@ -7,14 +7,15 @@ import pytest
 
 from scripts.strip_notebooks import clean, findings
 
-NOTEBOOKS = sorted(Path("notebooks").glob("*.ipynb"))
+NOTEBOOKS = sorted([*Path("notebooks").glob("*.ipynb"), *Path("notebooks/templates").glob("*.ipynb")])
 
 
-def test_there_are_thirteen_notebooks() -> None:
-    assert len(NOTEBOOKS) == 13
+def test_there_are_thirteen_rc1_notebooks_and_thirteen_canonical_templates() -> None:
+    assert len(list(Path("notebooks").glob("*.ipynb"))) == 13
+    assert len(list(Path("notebooks/templates").glob("*.ipynb"))) == 13
 
 
-@pytest.mark.parametrize("path", NOTEBOOKS, ids=lambda p: p.name[:2])
+@pytest.mark.parametrize("path", NOTEBOOKS, ids=lambda p: f"{p.parent.name}/{p.name}")
 def test_notebook_is_stripped_and_free_of_local_values(path: Path) -> None:
     original = path.read_text()
     doc = json.loads(original)

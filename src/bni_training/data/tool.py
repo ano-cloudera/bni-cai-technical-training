@@ -25,6 +25,16 @@ class DataRequest:
     mission_id: str
 
 
+class RequestBoundTool:
+    """Adds a fixed request identity to ``query`` so frameworks that call ``query(question)`` stay scoped."""
+
+    def __init__(self, tool: "WorkshopDataTool", request: DataRequest):
+        self._tool, self.request = tool, request
+
+    def query(self, question: str):
+        return self._tool.query(question, self.request)
+
+
 class WorkshopDataTool:
     def __init__(self, engine: CsvEngine, semantic: SemanticModel, bundle: GroupBundle, max_rows: int = 200):
         self._engine, self._semantic, self.bundle, self._max_rows = engine, semantic, bundle, max_rows
@@ -52,6 +62,10 @@ class WorkshopDataTool:
         """Run participant SQL against the bundle's tables only (read-only, capped)."""
         self._check(request)
         return self._engine.query(sql, self.bundle.policy, max_rows=self._max_rows)
+
+    def bind(self, request: DataRequest) -> RequestBoundTool:
+        self._check(request)
+        return RequestBoundTool(self, request)
 
     def describe(self) -> dict:
         """What this group may use. Safe to show to participants."""

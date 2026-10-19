@@ -10,7 +10,7 @@ from bni_training.labs import ROOT, require_env, run_lab
 from bni_training.llm_client import OpenAICompatibleClient
 from bni_training.mock_llm import MockOpenAIServer
 
-DESCRIPTION = "Lab 10: route requests through the shared gateway with retry and controlled fallback."
+DESCRIPTION = "Lab 10: route requests through LiteLLM and see retry and endpoint fallback."
 
 
 def call_with_retry_and_fallback(primary, fallback, retries: int, backoff: float = 0.0) -> tuple[str, str]:
@@ -27,10 +27,9 @@ def call_with_retry_and_fallback(primary, fallback, retries: int, backoff: float
 def check_config(report) -> dict:
     config = yaml.safe_load((ROOT / "config" / "litellm.yaml").read_text())
     names = {item["model_name"] for item in config["model_list"]}
-    ok = {"qwen-primary", "training-fallback"} <= names and config["router_settings"]["num_retries"] == 2
-    (report.passed if ok else report.failed)(
-        "litellm_config", f"routes {sorted(names)}, retries={config['router_settings']['num_retries']}"
-    )
+    retries = config["router_settings"]["num_retries"]
+    ok = {"qwen-primary", "training-fallback"} <= names and retries == 2
+    (report.passed if ok else report.failed)("litellm_config", f"routes {sorted(names)}, retries={retries}")
     return config
 
 
@@ -48,12 +47,11 @@ def body(args, report):
                 retries,
             )
             (report.passed if route == "training-fallback" else report.failed)(
-                "fallback_after_retries", f"route={route}; primary saw {len(primary.requests)} requests"
+                "fallback_after_retries", f"route={route}; the primary saw {len(primary.requests)} requests"
             )
         report.skipped(
             "litellm_proxy_live",
-            "Local mode simulates retry and fallback; the real proxy is validated by the gateway "
-            "profile smoke test and in CAI",
+            "Local mode simulates retry and fallback; the real proxy is checked by the gateway profile smoke test and in CAI",
         )
         return
     env = require_env(["LITELLM_BASE_URL"])
@@ -64,11 +62,15 @@ def body(args, report):
         "choices"
     ][0]["message"]["content"]
     (report.passed if text else report.failed)("litellm_route", text[:80])
+    report.skipped(
+        "endpoint_fallback_demo",
+        "The trainer demonstrates fallback by stopping the primary route; participants observe it",
+    )
 
 
 def main(argv=None) -> int:
-    return run_lab("10", DESCRIPTION, body, argv)
+    return run_lab("10", DESCRIPTION, body, argv, participant=True)
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(sys.argv[1:]))
+    sys.exit(main(sys.argv[1:]))

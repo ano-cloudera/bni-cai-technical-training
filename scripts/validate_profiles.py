@@ -85,7 +85,11 @@ def run(cmd, *, env=None, cwd=ROOT, timeout=1500):
 
 
 def lab_script(number: str) -> Path:
-    return next((ROOT / "scripts").glob(f"{number}_*.py"))
+    """Canonical lab script from the registry (never a filename glob)."""
+    import yaml as _yaml
+
+    labs = _yaml.safe_load((ROOT / "config" / "workshop" / "labs.yaml").read_text())["labs"]
+    return ROOT / next(lab["script"] for lab in labs if lab["id"] == number)
 
 
 def tmp_log() -> Path:

@@ -97,8 +97,19 @@ def main(argv=None) -> int:
     parser.add_argument("--mode", choices=["local", "cai"], default="local")
     parser.add_argument("--timeout", type=int, default=600, help="seconds per cell")
     parser.add_argument("--report-dir", type=Path, default=Path("build/notebooks"))
+    parser.add_argument(
+        "--legacy", action="store_true", help="Also run the rc1 notebooks in notebooks/*.ipynb"
+    )
     args = parser.parse_args(argv)
-    paths = args.paths or sorted(Path("notebooks").glob("*.ipynb"))
+    if args.paths:
+        paths = args.paths
+    else:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+        from bni_training.lab_registry import canonical_labs
+
+        paths = [lab.notebook_path for lab in canonical_labs()]  # the registry, not a glob, decides
+        if args.legacy:
+            paths += sorted(Path("notebooks").glob("*.ipynb"))
     results = []
     for path in paths:
         result = execute(path, args.report_dir, args.mode, args.timeout)

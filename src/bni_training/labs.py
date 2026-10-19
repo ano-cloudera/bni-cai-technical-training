@@ -43,6 +43,7 @@ class LabReport:
     mode: str
     checks: list[Check] = field(default_factory=list)
     data: dict[str, Any] = field(default_factory=dict)
+    context: Any = field(default=None, repr=False)
 
     def passed(self, name: str, detail: str = "") -> None:
         self.checks.append(Check(name, PASS, detail))
@@ -110,19 +111,46 @@ def run_lab(
     body: Callable[[argparse.Namespace, LabReport], None],
     argv: Sequence[str] | None = None,
     configure: Callable[[argparse.ArgumentParser], None] | None = None,
+    participant: bool | str = False,
 ) -> int:
+    """Run a lab body and print its report.
+
+    Participant labs (``participant=True``) resolve GROUP_ID, DATASET_ID, MISSION_ID and GROUP_WORKSPACE first
+    (``report.context``) and save the finished report inside that group's own output folder.
+    """
     parser = build_parser(description)
     if configure:
         configure(parser)
     args = parser.parse_args(list(argv) if argv is not None else None)
     report = LabReport(lab=lab, mode=args.mode)
+    context = None
     try:
+        if participant:
+            from .workshop.lab_context import LabContextError, resolve_lab_context
+
+            try:
+                context = resolve_lab_context(args.mode)
+            except LabContextError as exc:
+                if participant != "optional":
+                    raise PrerequisiteMissing(str(exc)) from exc
+                report.data["group_error"] = str(exc)  # the trainer may run without a group
+            else:
+                report.context = context
+                report.data["group"] = context.describe()
         body(args, report)
     except PrerequisiteMissing as exc:
         report.failed("prerequisites", str(exc))
     except Exception as exc:  # noqa: BLE001 - a lab must report, never crash silently
         report.failed("unhandled-exception", f"{type(exc).__name__}: {exc}")
         report.data["traceback"] = traceback.format_exc(limit=6)
+    if context is not None:
+        try:
+            saved = context.write_output(f"lab-{lab}-{args.mode}.json", report.render())
+            report.data["saved_to"] = f"groups/{context.group_id}/output/{saved.name}"
+        except Exception as exc:  # noqa: BLE001
+            report.failed("save-output", f"{type(exc).__name__}: {exc}")
+        finally:
+            context.close()
     print(report.render())
     return report.exit_code
 
@@ -178,3 +206,16 @@ def crewai_llm(base_url: str, api_key: str, model: str = "qwen3.5-9b"):
             "CrewAI is not installed. Install the participant (or rag/observability/dev-test) profile"
         ) from exc
     return LLM(model=f"openai/{model}", base_url=base_url, api_key=api_key or "none", temperature=0)
+
+
+def shared_llm_settings(env: dict[str, str] | None = None) -> tuple[str, str, str]:
+    """(base_url, api_key, model) of the ONE shared vLLM endpoint for labs 03-09. Never mocked in cai mode."""
+    source = dict(os.environ if env is None else env)
+    url = require_env(["VLLM_BASE_URL"], source)["VLLM_BASE_URL"]
+    return url, source.get("VLLM_API_KEY", ""), source.get("SERVED_MODEL_NAME", "qwen3.5-9b")
+
+
+def workshop_role(env: dict[str, str] | None = None) -> str:
+    """'participant' (default) or 'trainer'. Trainer-only steps refuse to run for anyone else in cai mode."""
+    value = (dict(os.environ if env is None else env)).get("WORKSHOP_ROLE", "participant").strip().lower()
+    return value if value in ("participant", "trainer") else "participant"

@@ -11,11 +11,14 @@ except ModuleNotFoundError:
 
 
 def local_checks(root: Path) -> dict:
-    expected_scripts = [next(root.joinpath("scripts").glob(f"{i:02d}_*.py"), None) for i in range(13)]
-    expected_notebooks = [next(root.joinpath("notebooks").glob(f"{i:02d}_*.ipynb"), None) for i in range(13)]
+    import yaml
+
+    labs = yaml.safe_load(root.joinpath("config/workshop/labs.yaml").read_text())["labs"]
+    expected_scripts = [root.joinpath(lab["script"]) for lab in labs]
+    expected_notebooks = [root.joinpath(lab["notebook"]) for lab in labs]
     checks = [
-        {"name": "lab_scripts", "passed": all(expected_scripts)},
-        {"name": "lab_notebooks", "passed": all(expected_notebooks)},
+        {"name": "lab_scripts", "passed": len(labs) == 13 and all(p.is_file() for p in expected_scripts)},
+        {"name": "lab_notebooks", "passed": all(p.is_file() for p in expected_notebooks)},
         {"name": "synthetic_manifest", "passed": root.joinpath("data/csv/manifest.json").is_file()},
         {
             "name": "python_cai_entrypoints",
@@ -56,9 +59,11 @@ def local_checks(root: Path) -> dict:
         },
         {
             "name": "labs_support_local_and_cai_modes",
-            "passed": all(
-                "run_lab(" in script.read_text()
-                for script in root.joinpath("scripts").glob("[0-1][0-9]_*.py")
+            "passed": all("run_lab(" in script.read_text() for script in expected_scripts)
+            and all(
+                "delegate(" in root.joinpath(legacy).read_text()
+                for lab in labs
+                for legacy in lab.get("legacy_scripts", [])
             ),
         },
         {
