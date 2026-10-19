@@ -101,6 +101,49 @@ def test_multi_project_mode_still_produces_the_rc1_plan() -> None:
     assert run_cli(env={"WORKSHOP_TOPOLOGY": "multi_project"})["projects"] == plan["projects"]
 
 
+def test_without_any_setting_the_cli_plans_single_project() -> None:
+    plan = run_cli(env={"WORKSHOP_TOPOLOGY": ""})
+    assert plan["topology"] == "single_project" and plan["dry_run"] is True
+    assert plan["project_count"] == 1 and plan["group_workspace_count"] == 10
+    assert plan["application_count"] == 5 and plan["per_group_streamlit_applications"] == 0
+    assert plan["requested_session_count"] <= 10
+
+
+def test_the_explicit_multi_project_plan_is_the_legacy_one() -> None:
+    plan = run_cli("--topology", "multi_project", env={"WORKSHOP_TOPOLOGY": "single_project"})
+    assert plan["topology"] == "multi_project" and len(plan["projects"]) == 11
+    assert len(plan["group_application_waves"]) == 4
+
+
+def cli_result(*args: str, env: dict | None = None) -> subprocess.CompletedProcess:
+    command = [sys.executable, "-m", "automation.cai_api_v2.cli", "--config", str(CONFIG), *args]
+    environment = {k: v for k, v in os.environ.items() if k != "WORKSHOP_TOPOLOGY"}
+    environment.update({"PYTHONPATH": "src:.", **(env or {})})
+    return subprocess.run(command, cwd=ROOT, env=environment, capture_output=True, text=True)
+
+
+def test_an_invalid_topology_fails_clearly_and_writes_nothing(tmp_path) -> None:
+    out = tmp_path / "plan.json"
+    for env in ({"WORKSHOP_TOPOLOGY": "three_projects"},):
+        result = cli_result("plan", "--output", str(out), env=env)
+        assert result.returncode == 2 and "Unknown workshop topology 'three_projects'" in result.stderr
+        assert "single_project" in result.stderr and "multi_project" in result.stderr
+    assert not out.exists()
+
+
+def test_the_rc1_commands_need_an_explicit_multi_project_topology() -> None:
+    for command in ("apply-projects", "stop-wave --inventory x.json --wave 1"):
+        result = cli_result(*command.split())
+        assert result.returncode == 2 and "multi_project" in result.stderr
+
+
+def test_planning_is_a_dry_run_and_needs_no_credentials(tmp_path) -> None:
+    env = {"CAI_API_BASE_URL": "", "CAI_API_KEY": "", "HTTPS_PROXY": "http://127.0.0.1:9"}
+    result = cli_result("plan", "--output", str(tmp_path / "p.json"), env=env)
+    assert result.returncode == 0
+    assert json.loads((tmp_path / "p.json").read_text())["dry_run"] is True
+
+
 def test_the_cli_selects_single_project_by_flag_or_environment() -> None:
     assert run_cli("--topology", "single_project")["project_count"] == 1
     assert run_cli(env={"WORKSHOP_TOPOLOGY": "single_project"})["topology"] == "single_project"

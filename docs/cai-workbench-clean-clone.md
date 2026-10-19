@@ -40,7 +40,7 @@ Use this exact sequence in a new Workbench session. It makes no CAI API call and
 7. **Dry-run the automation plan (trainer only).** This writes a local JSON file and calls no API.
    ```bash
    PYTHONPATH=src:. python -m automation.cai_api_v2.cli \
-     --config config/env.sandbox-l40s.example.yaml plan --output build/cai-plan.json
+     --config config/env.sandbox-l40s.example.yaml plan --output build/cai-plan.json   # single_project by default
    ```
    Compare the generated fields with the target `/api/v2/swagger.html` and set the runtime identifier from the
    catalog before any live write.
