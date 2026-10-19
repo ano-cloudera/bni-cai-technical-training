@@ -13,9 +13,11 @@
   `multi_project`.
 - Ten-group workspace lifecycle: `prepare_group_workspaces`, `validate_group_workspaces`, `assign_participants`,
   `reset_group_workspace`, `check_group_isolation`, `check_shared_services`, `archive_group_outputs`; a generated,
-  git-ignored `workshop/runtime/` hierarchy with a non-secret `group.env` per group.
+  git-ignored `workshop/runtime/` hierarchy with a non-secret `group.env` per group. `group_driver` is the default;
+  optional, capacity-pending `individual_learning` creates anonymous participant workspaces.
 - Labs and notebooks 00-12 migrated to the synthetic banking dataset: a lab registry
-  (`config/workshop/labs.yaml`), 13 stripped notebook templates, `--mode local|cai` on every lab, trainer-only labs
+  (`config/workshop/labs.yaml`), 13 cell-by-cell authoring sources and stripped generated templates,
+  `--mode local|cai` on every lab, trainer-only labs
   01 and 02 (participants never start vLLM), rc1 script paths kept as thin wrappers.
 - Anomaly answers removed: no flag column, no anomaly manifest and no incident IDs are tracked; the
   generator keeps them in memory and the validator regenerates them to prove Group 06 can find the patterns.

@@ -12,5 +12,15 @@ Use these to check your progress with your trainer. Each is something you can se
 5. **Limits:** you tried a metric outside your mission and read the friendly message.
 6. **Saved:** *My outputs* lists at least two saved answers.
 
-Notebook checkpoints: notebook 00 shows your group and mission; notebooks 03-11 each end with `LAB_STATUS`
-`PASS` (or `SKIPPED` with a reason); your saved lab reports are in `output/` of your group folder.
+Notebook checkpoints:
+
+| Labs | Visible checkpoint |
+|---|---|
+| 00 | Group, anonymous participant mode, mission, dataset, and writable output |
+| 03-05 | Bounded API response, guarded CSV rows, and visible semantic SQL |
+| 06-08 | Group-bound CrewAI tool, filtered RAG, then question/SQL/rows/Analyst/Reviewer outputs |
+| 09-11 | Safe trace attributes, bounded gateway fallback, and accepted/blocked guardrail samples |
+| 12 | Portal health, queue state, group lock, saved identity, and SQL comparison |
+
+Each ends with `LAB_STATUS PASS` (or an explained `SKIPPED`). Outputs are in the active group-driver or anonymous
+participant `output/` folder.

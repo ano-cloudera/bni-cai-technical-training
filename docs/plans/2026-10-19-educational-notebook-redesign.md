@@ -56,15 +56,15 @@ anomaly answers and no notebook reveals the Group 06 patterns.
 
 ## 4. Execution modes
 
-Selected by `PARTICIPANT_MODE` (names only; written to `group.env`, non-secret). The default is `individual_learning`
-because it is the preferred mode, but the trainer must confirm Session capacity first.
+Selected by `PARTICIPANT_MODE` (names only; written to `group.env`, non-secret). The default is `group_driver`.
+`individual_learning` is optional only after the trainer validates CAI Session capacity.
 
-| | `individual_learning` (preferred) | `group_driver` (fallback) |
+| | `individual_learning` (optional after capacity validation) | `group_driver` (default) |
 |---|---|---|
 | Sessions | up to about 40 CPU Sessions, one per participant | 10 CPU Sessions, one per group |
 | Notebook copy | one per participant | one per group |
 | Output folder | `groups/<g>/participants/<participant_ref>/output` | `groups/<g>/output` |
-| Identity | `PARTICIPANT_ID` = roster `participant_ref` (pseudonymous, no personal data) | `PARTICIPANT_ID` optional; notebooks include a "driver rotation" prompt and record the active driver label |
+| Identity | anonymous `PARTICIPANT_REF=participant_01` through `participant_04`; no CAI identity dependency | the same anonymous labels rotate as drivers |
 | Shared | `group_id`, mission, dataset bundle | same |
 | Concurrent writes | none inside a participant folder | one writer at a time (the driver); notebooks say so |
 
@@ -81,7 +81,8 @@ Rules for both modes:
 ## 5. Shared-service assumptions
 
 One vLLM Application (Qwen3.5-9B, BF16, TP=1, one GPU) is running and healthy before participants start. Notebooks
-read `VLLM_BASE_URL` / `LITELLM_BASE_URL`, `QDRANT_URL`, `PHOENIX_ENDPOINT`, `PORTAL_URL` and keys from the Session
+read `VLLM_BASE_URL`, `LITELLM_BASE_URL`, `QDRANT_URL`, `PHOENIX_COLLECTOR_ENDPOINT`, `PHOENIX_UI_URL`,
+`WORKSHOP_PORTAL_URL` and keys from the Session
 environment; no host, port, path or token is written in a notebook. Notebooks never start, stop or deploy a service.
 `scripts/check_shared_services.py` is the trainer's gate before each phase.
 
@@ -119,9 +120,9 @@ participant (or group) output folder.
 |---|---|---|
 | LLM | `MockOpenAIServer` started in the notebook process, announced in a cell | real `VLLM_BASE_URL` / `LITELLM_BASE_URL` |
 | Qdrant | local mode in memory with `HashingEmbedder` | `QDRANT_URL`, real embedder |
-| Phoenix | in-process exporter or temporary local Phoenix | `PHOENIX_ENDPOINT` |
+| Phoenix | in-process exporter or temporary local Phoenix | `PHOENIX_COLLECTOR_ENDPOINT` and `PHOENIX_UI_URL` |
 | LiteLLM | local stub or SKIPPED | real gateway |
-| Portal | in-process `PortalService` with the mock | `PORTAL_URL` health plus a saved answer |
+| Portal | in-process `PortalService` with the mock | `WORKSHOP_PORTAL_URL` health plus a saved answer |
 | Missing prerequisite | SKIPPED with a reason | **FAIL**, with the variable name; never a silent mock |
 
 A notebook prints one `LAB_STATUS` line (PASS, SKIPPED, FAIL) so `scripts/execute_notebooks.py` keeps working.
@@ -145,7 +146,7 @@ a header cell with audience, duration and mode. Durations are planning estimates
 - Theory: why validate first; what comes from `group.env` (GROUP_ID, DATASET_ID, MISSION_ID, workspace, mode).
 - Direct code cells: print Python version, check variable names (not values), resolve the context and show it, confirm the dataset checksum file and a row count of one table, write a tiny probe file to the output folder.
 - Reusable imports: `resolve_lab_context`, setup helper.
-- Exercise: change `PARTICIPANT_ID` label (individual) or enter the driver label (group_driver) and rerun; see the output folder name change.
+- Exercise: select the assigned anonymous `PARTICIPANT_REF` or active driver label and confirm the output folder.
 - Expected: PASS; GPU steps SKIPPED (participant Sessions are CPU-only).
 - Local: temporary workspace as today. CAI: missing GROUP_ID fails, never guessed.
 - Trainer notes: confirm every Session shows the right group before moving on.
@@ -225,7 +226,7 @@ a header cell with audience, duration and mode. Durations are planning estimates
 
 ### 09 Phoenix Monitoring (participant)
 - Duration: 25 min. Theory: traces, spans, attributes, OpenInference kinds, what must never be in a span.
-- Direct cells: configure the tracer to `PHOENIX_ENDPOINT` (visible), create a parent span with `group_id`, `dataset_id`, `mission_id`, `participant_ref` attributes via `safe_trace_attributes`, nest child spans for the SQL and the LLM call, flush, then query Phoenix to find your trace and print its span names; show a deliberate secret being dropped by the attribute filter.
+- Direct cells: configure the tracer with `PHOENIX_COLLECTOR_ENDPOINT`, create a parent span with `group_id`, `dataset_id`, `mission_id`, `participant_ref` attributes via `safe_trace_attributes`, nest child spans for SQL and LLM work, flush, then query `PHOENIX_UI_URL`; show a deliberate secret being dropped.
 - Imports: `opentelemetry` SDK, `configure_phoenix`, `safe_trace_attributes`, the Phoenix client (profile question).
 - Exercise: add a custom attribute (allowed names only) and find it.
 - Expected: your trace found by `group_id`; no secret in any span.
@@ -255,7 +256,7 @@ a header cell with audience, duration and mode. Durations are planning estimates
 - Imports: `httpx`, local mode `PortalService`.
 - Exercise: ask a second question in the Portal and find its saved JSON.
 - Expected: Portal healthy; a saved answer for your group; SQL shown in it matches the semantic plan style.
-- Local: in-process `PortalService` with the mock. CAI: `PORTAL_URL` health and a saved answer; absent answer is a clear FAIL telling the participant to ask a question first.
+- Local: in-process `PortalService` with the mock. CAI: `WORKSHOP_PORTAL_URL` health and a saved answer; absent answer is a clear FAIL telling the participant to ask a question first.
 - Tests: no cross-group answer read, saved answer found, local service round trip.
 
 ## 11. Testing strategy
@@ -276,7 +277,7 @@ The existing 697 tests must keep passing at every commit.
 
 ## 12. Workspace-generation changes
 
-- `PARTICIPANT_MODE` and `PARTICIPANT_ID` added to `group.env.example` (names, non-secret).
+- `PARTICIPANT_MODE` and anonymous `PARTICIPANT_REF` added to `group.env.example` (names, non-secret).
 - `individual_learning`: `groups/<g>/participants/<participant_ref>/{notebooks,output,logs,tmp}` created from the roster
   (`assign_participants.py --apply`), with `participant_ref` validated like group ids (`safe_join`). `prepare_group_workspaces.py --mode`
   creates them; without a roster it creates none and says so.

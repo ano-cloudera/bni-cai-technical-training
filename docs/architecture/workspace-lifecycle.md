@@ -10,6 +10,8 @@ workshop/runtime/
     config/workspace-manifest.json      template checksums used to detect participant edits
     notebooks/                          copies of notebooks/templates/*.ipynb (13)
     output/  logs/  tmp/                saved reports, logs, temporary files of that group only
+    driver-rotation.md                  default group_driver turn-taking
+    participants/participant_01...04/   optional individual_learning notebooks/output/logs/tmp
     README.md                           participant instructions
 ```
 
@@ -28,6 +30,9 @@ workshop/runtime/
   environment first, then `group.env`. A conflict between the two is an error. In `--mode cai` nothing is guessed; in
   `--mode local` the labs use group_01 and a throwaway workspace.
 - **Operational isolation only.** `check_group_isolation.py` proves the guards work; it is not a security boundary.
+- **Two explicit modes.** `group_driver` is the default and creates no participant folders. `individual_learning`
+  reads the ignored trainer assignment and creates anonymous participant workspaces; without an assignment it creates
+  none and reports why.
 
 ## Labs and notebooks
 
@@ -41,7 +46,7 @@ workshop/runtime/
 | 05 Semantic Layer | `05_semantic_layer` | participant |
 | 06 CrewAI Tools | `06_crewai_tools` | participant |
 | 07 Qdrant RAG | `07_qdrant_rag` | participant |
-| 08 Agent Workflow | `08_agent_workflow` | participant |
+| 08 Multi-Agent Workflow | `08_agent_workflow` | participant |
 | 09 Phoenix Monitoring | `09_phoenix_monitoring` | participant |
 | 10 LiteLLM Routing | `10_litellm_routing` | participant |
 | 11 Input and Output Guardrails | `11_guardrails` | participant |

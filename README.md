@@ -19,17 +19,24 @@ active CAI Applications in total.
 
 ### Participant flow
 
-1. Open your group's CPU-only Session; your folder is `workshop/runtime/groups/<group_id>/`.
+The default is `PARTICIPANT_MODE=group_driver`: one CPU-only Session per group, with four anonymous driver labels
+(`participant_01` to `participant_04`). `individual_learning` creates one folder per anonymous participant only after
+the trainer validates CAI capacity; it never depends on CAI exposing the signed-in identity.
+
+1. Open the CPU-only Session assigned by the trainer. Group-driver notebooks are under
+   `workshop/runtime/groups/<group_id>/`; individual notebooks are under
+   `groups/<group_id>/participants/<participant_ref>/`.
 2. Run notebook `00_environment_validation`; it shows your `GROUP_ID`, `DATASET_ID`, `MISSION_ID` and workspace.
 3. Run notebooks 03-11 in order against the one shared model endpoint. Notebooks 01 and 02 are trainer-only: you never
    download the model and never start vLLM.
-4. Finish with notebook 12 and the shared Workshop Portal. Everything you save goes to your group's `output/` folder.
+4. Finish with notebook 12 and the shared Workshop Portal. Outputs go to the active group-driver or participant
+   `output/` folder.
 
 ### Trainer flow
 
 ```bash
 python scripts/validate_dataset.py
-python scripts/prepare_group_workspaces.py --apply     # dry run without --apply
+python scripts/prepare_group_workspaces.py --mode group_driver --apply  # default; dry run without --apply
 python scripts/validate_group_workspaces.py
 python scripts/assign_participants.py --roster roster.csv --apply
 python scripts/check_group_isolation.py
@@ -42,7 +49,8 @@ Details: `docs/trainer/workshop-runbook.md` and `docs/architecture/workspace-lif
 
 ## Labs and notebooks
 
-`config/workshop/labs.yaml` is the registry of the 13 labs; notebook templates are in `notebooks/templates/`.
+`config/workshop/labs.yaml` is the registry of the 13 labs; percent-format authoring sources are in
+`notebooks/authoring/` and stripped generated templates are in `notebooks/templates/`.
 
 | ID | Lab | Audience |
 |---|---|---|
@@ -54,7 +62,7 @@ Details: `docs/trainer/workshop-runbook.md` and `docs/architecture/workspace-lif
 | 05 | Semantic Layer | participant |
 | 06 | CrewAI Tools | participant |
 | 07 | Qdrant RAG | participant |
-| 08 | Agent Workflow | participant |
+| 08 | Multi-Agent Workflow | participant |
 | 09 | Phoenix Monitoring | participant |
 | 10 | LiteLLM Routing | participant |
 | 11 | Input and Output Guardrails | participant |

@@ -10,20 +10,22 @@ Status: everything below passes locally. Nothing has run on Cloudera AI; each CA
 2. **Check the dataset**: `python scripts/validate_dataset.py` (21 checks, ends in `RESULT: PASS`).
 3. **Dry-run the plan** (no API call, single project by default):
    `python -m automation.cai_api_v2.cli --config config/env.sandbox-l40s.example.yaml plan --output build/cai-plan.json`
-4. **Prepare the ten group workspaces**:
+4. **Prepare the ten group-driver workspaces** (the default):
    ```bash
    python scripts/prepare_group_workspaces.py            # dry run: lists what would be created
-   python scripts/prepare_group_workspaces.py --apply    # creates workshop/runtime/{shared,groups/group_01..10}
-   python scripts/validate_group_workspaces.py           # structure, group.env, notebooks, no secrets
+   python scripts/prepare_group_workspaces.py --mode group_driver --apply
+   python scripts/validate_group_workspaces.py --mode group_driver
    ```
    Running it again is safe: unchanged files are left alone and participant-edited notebooks are never overwritten
    (`--overwrite --yes` replaces them after a backup under `shared/state/backups/`).
-5. **Assign about 40 participants** (a CSV roster or `--count 40`; at most five per group by default):
+5. **Assign about 40 participants** (a CSV roster or `--count 40`; four per group):
    ```bash
    python scripts/assign_participants.py --roster roster.csv            # dry run, shows the summary
    python scripts/assign_participants.py --roster roster.csv --apply    # writes runtime/shared/state/
    ```
-   The roster and assignment are trainer-only, stay outside Git, and use participant references, not personal data.
+   The roster and assignment are trainer-only and stay outside Git. Generated workspace labels are anonymous
+   `participant_01` through `participant_04`. To use capacity-pending individual mode, assign first, then run
+   `prepare_group_workspaces.py --mode individual_learning --apply` and its matching validator.
 6. **Check the group boundaries**: `python scripts/check_group_isolation.py` (local probes in a temporary folder).
 7. **Provision the shared Applications** (vLLM, Qdrant, Phoenix, LiteLLM, the single Portal) in the CAI UI. Lab 01
    (model files) and lab 02 (vLLM) are yours: participants never download the model or start vLLM.

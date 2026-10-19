@@ -21,7 +21,9 @@ mission title and objective), `sample_questions.yaml` (3-5 questions per mission
 at load time (unknown tables or metrics, metrics that need tables outside the bundle, question counts, and that
 every sample question resolves).
 
-Run `scripts/assign_participants.py` to spread about 40 participants over the ten groups (at most five per group;
-trainer-only output). Participants choose their group in the Portal; it is locked after the first question. Tell groups their number.
+Run `scripts/assign_participants.py` to spread about 40 participants over the ten groups (four per group;
+trainer-only output). Runtime roster references are mapped to group-local anonymous labels `participant_01` through
+`participant_04`; notebooks do not depend on CAI identity. Participants choose their group in the Portal; it is
+locked after the first question. Tell groups their number and anonymous label.
 Group 06 can find the unusual patterns with ordinary queries (a one-day burst of transactions, an amount far above the
 account's norm for that type, repeated amounts just below 10,000); the validator proves it.

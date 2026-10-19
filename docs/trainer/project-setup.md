@@ -40,7 +40,7 @@ start while another instance's heartbeat is fresh (`runtime/shared/state/portal-
 
 Environment (names only; values come from the project environment):
 `PORTAL_MODE=cai`, `LITELLM_BASE_URL` or `VLLM_BASE_URL`, `LITELLM_API_KEY` / `VLLM_API_KEY`, `QDRANT_URL`,
-`QDRANT_API_KEY`, `EMBEDDING_MODEL_PATH`, `PHOENIX_ENDPOINT`, optional `PORTAL_MAX_CONCURRENT_INFERENCE`,
+`QDRANT_API_KEY`, `PHOENIX_COLLECTOR_ENDPOINT`, `PHOENIX_UI_URL`, `WORKSHOP_PORTAL_URL`, optional `PORTAL_MAX_CONCURRENT_INFERENCE`,
 `PORTAL_MAX_QUEUE_DEPTH`, `PORTAL_QUEUE_TIMEOUT_S`, `PORTAL_REQUEST_TIMEOUT_S`, `PORTAL_MAX_RETRIES`.
 `DATA_BACKEND` stays `csv`; the Portal does not enable Impala.
 

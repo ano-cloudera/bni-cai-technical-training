@@ -44,10 +44,11 @@ Use this exact sequence in a new Workbench session. It makes no CAI API call and
    ```
    Compare the generated fields with the target `/api/v2/swagger.html` and set the runtime identifier from the
    catalog before any live write.
-8. **Group workspaces (trainer).** Generate the ten workspaces and check them; participants then open their own copies.
+8. **Group workspaces (trainer).** Generate the default group-driver workspaces and check them. Enable
+   `individual_learning` only after CAI validates capacity for about 40 CPU Sessions.
    ```bash
-   PYTHONPATH=src:. python scripts/prepare_group_workspaces.py --apply
-   PYTHONPATH=src:. python scripts/validate_group_workspaces.py
+   PYTHONPATH=src:. python scripts/prepare_group_workspaces.py --mode group_driver --apply
+   PYTHONPATH=src:. python scripts/validate_group_workspaces.py --mode group_driver
    ```
 9. **Labs.** Run the notebooks of your group workspace (templates in `notebooks/templates/`) in order with
    `LAB_MODE=cai`, or the matching scripts with `--mode cai`. Labs 01 and 02 are trainer-only.

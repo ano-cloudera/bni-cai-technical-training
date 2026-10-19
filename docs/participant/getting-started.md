@@ -5,8 +5,10 @@ banking dataset and the same shared AI model. Each group has a different **missi
 
 ## 0. Your Session and your notebooks
 
-Your trainer gives you a CPU-only Jupyter **Session** and your group number. Your group has its own folder,
-`workshop/runtime/groups/<your group>/`, prepared for you:
+Your trainer gives you a CPU-only Jupyter **Session**, group number, and anonymous label. The default
+`group_driver` mode uses `workshop/runtime/groups/<your group>/`; take turns according to
+`driver-rotation.md`. Optional `individual_learning` uses
+`groups/<your group>/participants/<participant_01...participant_04>/` only after capacity is validated.
 
 | Folder | Use |
 |---|---|
@@ -37,7 +39,7 @@ Every notebook is safe to run again. Each one ends with a status line: `PASS`, `
 | 05 Semantic Layer | Ask for metrics and breakdowns | participant |
 | 06 CrewAI Tools | Give an agent a data tool limited to your group | participant |
 | 07 Qdrant RAG | Search the glossary and your mission notes | participant |
-| 08 Agent Workflow | Run the two-step agent workflow | participant |
+| 08 Multi-Agent Workflow | Run the explicit evidence and two-agent workflow | participant |
 | 09 Phoenix Monitoring | See your traces in the shared Phoenix | participant |
 | 10 LiteLLM Routing | Use the shared gateway | participant |
 | 11 Input and Output Guardrails | Block unsafe input and output | participant |
@@ -73,7 +75,7 @@ people or other groups.
 | Break a metric down by up to two dimensions (`by region and segment`) | Write data, run commands, or read files |
 | Look up glossary terms and your mission notes (Qdrant, your group only) | See another group's chat, outputs or results |
 
-Everything in the workshop is **fully synthetic**. There are no real customers, and nothing here makes lending
+`PARTICIPANT_REF` is a runtime label, not your CAI identity and not a security control. Everything in the workshop is **fully synthetic**. There are no real customers, and nothing here makes lending
 decisions: loan fields describe the data only.
 
 ## Important: this is operational separation, not security
