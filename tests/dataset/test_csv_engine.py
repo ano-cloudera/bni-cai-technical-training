@@ -4,6 +4,8 @@ import pytest
 
 from bni_training.data.engine import AccessPolicy, QueryRejected, RestrictedColumnError, RestrictedTableError
 
+HIDDEN_COLUMN = "merchant_category"  # hidden only in the hidden_engine fixture
+
 
 def policy(*tables, **filters) -> AccessPolicy:
     return AccessPolicy(frozenset(tables), filters)
@@ -69,14 +71,19 @@ def test_internal_tables_files_and_functions_are_unreachable(engine, sql) -> Non
         engine.query(sql, policy("customers"))
 
 
-def test_hidden_columns_cannot_be_read_even_with_select_star(engine) -> None:
+def test_hidden_columns_cannot_be_read_even_with_select_star(hidden_engine) -> None:
     p = policy("transactions")
     with pytest.raises(RestrictedColumnError):
-        engine.query("SELECT is_seeded_anomaly FROM transactions", p)
+        hidden_engine.query(f"SELECT {HIDDEN_COLUMN} FROM transactions", p)
     with pytest.raises(RestrictedColumnError):
-        engine.query("SELECT COUNT(*) FROM transactions WHERE is_seeded_anomaly = 1", p)
-    star = engine.query("SELECT * FROM transactions LIMIT 3", p)
-    assert "is_seeded_anomaly" not in star.columns and len(star.columns) == 8
+        hidden_engine.query(f"SELECT COUNT(*) FROM transactions WHERE {HIDDEN_COLUMN} = 'NONE'", p)
+    star = hidden_engine.query("SELECT * FROM transactions LIMIT 3", p)
+    assert HIDDEN_COLUMN not in star.columns and len(star.columns) == 7
+
+
+def test_the_shipped_dictionary_exposes_every_column_and_no_answer_column_exists(engine) -> None:
+    star = engine.query("SELECT * FROM transactions LIMIT 1", policy("transactions"))
+    assert len(star.columns) == 8 and not any("anomal" in c or "seeded" in c for c in star.columns)
 
 
 def test_row_filters_are_applied_inside_every_reference(engine) -> None:
@@ -110,11 +117,11 @@ def test_runaway_queries_are_stopped(engine) -> None:
         engine.query(sql, policy("transactions"), timeout_s=0.2)
 
 
-def test_the_database_cannot_be_modified_even_if_the_guard_were_bypassed(engine) -> None:
+def test_the_database_cannot_be_modified_even_if_the_guard_were_bypassed(engine, hidden_engine) -> None:
     import sqlite3
 
     with pytest.raises(sqlite3.DatabaseError):
         engine._conn.execute('DELETE FROM "_raw_branches"')
     with pytest.raises(sqlite3.DatabaseError):
-        engine._conn.execute('SELECT "is_seeded_anomaly" FROM "_raw_transactions"')
+        hidden_engine._conn.execute(f'SELECT "{HIDDEN_COLUMN}" FROM "_raw_transactions"')
     assert engine.query("SELECT COUNT(*) FROM branches", policy("branches")).rows[0][0] == 100

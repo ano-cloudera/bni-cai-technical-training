@@ -87,7 +87,7 @@ def local_checks(root: Path) -> dict:
             )
             and all(
                 root.joinpath(f"data/manifests/{name}.json").is_file()
-                for name in ["dataset_manifest", "checksums", "anomaly_test_manifest"]
+                for name in ["dataset_manifest", "checksums"]
             ),
         },
         {

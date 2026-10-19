@@ -259,7 +259,7 @@ REGION_RISK = {"North": 0.9, "South": 1.0, "East": 1.0, "West": 0.9, "Central": 
 @dataclass
 class GeneratedDataset:
     tables: dict[str, list[dict]]
-    anomaly_incidents: list[dict]
+    anomaly_incidents: list[dict]  # in memory only; never written to disk or exposed to participants
     seed: int
     scale: float
 
@@ -548,7 +548,6 @@ def _build_transactions(
                     "amount": money(_amount(rng, txn_type, account["account_type"], income)),
                     "merchant_category": category,
                     "transaction_status": STATUS_DIST.pick(rng),
-                    "is_seeded_anomaly": 0,
                 }
             )
     return rows
@@ -592,7 +591,7 @@ def _seed_anomalies(rng: Rng, accounts: list[dict], latent: dict[str, dict], row
                 "amount": money(amount),
                 "merchant_category": "NONE",
                 "transaction_status": "COMPLETED",
-                "is_seeded_anomaly": 1,
+                "_incident": True,
             }
         )
         incident["_keys"].append((account_id, iso(day), money(amount)))
@@ -654,11 +653,11 @@ def _seed_anomalies(rng: Rng, accounts: list[dict], latent: dict[str, dict], row
 
 
 def _finalize_transactions(rows: list[dict], incidents: list[dict]) -> None:
-    rows.sort(key=lambda r: (r["transaction_date"], r["account_id"], r["is_seeded_anomaly"], r["amount"]))
+    rows.sort(key=lambda r: (r["transaction_date"], r["account_id"], r.get("_incident", False), r["amount"]))
     index: dict[tuple[str, str, str], list[str]] = {}
     for n, row in enumerate(rows, start=1):
         row["transaction_id"] = f"SYN-TXN-{n:06d}"
-        if row["is_seeded_anomaly"]:
+        if row.pop("_incident", False):
             index.setdefault((row["account_id"], row["transaction_date"], row["amount"]), []).append(
                 row["transaction_id"]
             )
@@ -846,21 +845,9 @@ def build_manifests(
         "algorithm": "sha256",
         "files": {name: {"sha256": sha256(data), "bytes": len(data)} for name, data in sorted(files.items())},
     }
-    anomaly_manifest = {
-        "purpose": (
-            "Automated tests and trainer validation ONLY. "
-            "Never shown in the Workshop Portal or to participants."
-        ),
-        "column": "transactions.is_seeded_anomaly",
-        "incident_count": len(dataset.anomaly_incidents),
-        "transaction_count": sum(len(i["transaction_ids"]) for i in dataset.anomaly_incidents),
-        "types": sorted({i["type"] for i in dataset.anomaly_incidents}),
-        "incidents": dataset.anomaly_incidents,
-    }
     return {
         "dataset_manifest.json": dataset_manifest,
         "checksums.json": checksums,
-        "anomaly_test_manifest.json": anomaly_manifest,
     }
 
 

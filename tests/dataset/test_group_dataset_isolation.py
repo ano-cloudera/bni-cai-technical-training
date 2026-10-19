@@ -52,15 +52,12 @@ def test_a_group_cannot_use_a_metric_outside_its_bundle(tools, semantic, group_i
 
 
 @pytest.mark.parametrize("group_id", [g for g in GROUPS if "transactions" in CATALOG.for_group(g).tables])
-def test_the_hidden_anomaly_column_is_unreachable_for_every_group_with_transactions(tools, group_id) -> None:
-    for sql in (
-        "SELECT is_seeded_anomaly FROM transactions",
-        "SELECT * FROM transactions WHERE is_seeded_anomaly = 1",
-        "SELECT t.is_seeded_anomaly FROM transactions t",
-    ):
+def test_no_answer_column_exists_for_any_group_with_transactions(tools, group_id) -> None:
+    columns = tools[group_id].run_sql("SELECT * FROM transactions LIMIT 1").columns
+    assert not any("anomal" in c or "seeded" in c for c in columns)
+    for name in ("is_anomaly", "anomaly_flag", "answer_key"):
         with pytest.raises(RestrictedColumnError):
-            tools[group_id].run_sql(sql)
-    assert "is_seeded_anomaly" not in tools[group_id].run_sql("SELECT * FROM transactions LIMIT 1").columns
+            tools[group_id].run_sql(f"SELECT {name} FROM transactions")
 
 
 def test_a_request_naming_another_groups_bundle_is_rejected_for_every_pair(tools) -> None:

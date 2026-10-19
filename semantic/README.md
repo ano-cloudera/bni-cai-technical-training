@@ -14,8 +14,5 @@ How a question becomes SQL: the question is matched to one metric and up to two 
 joins from the metric's base table toward the parent tables, and the guarded CSV engine runs the result. Only the
 tables and metrics assigned to your group's logical bundle (`data/scenarios/`) are available.
 
-`transactions.is_seeded_anomaly` exists for automated tests. It is marked `participant_exposed: false` and the
-engine refuses any query that touches it.
-
 The older `credit_portfolio.yaml` belongs to the rc1 placeholder dataset in `data/csv` and is kept for the legacy
 multi-project topology.

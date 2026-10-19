@@ -15,9 +15,8 @@ network). There are no names, addresses, phone numbers or identity numbers, and 
 | `loans.csv` | 5,000 | `SYN-LOAN-xxxxx` |
 
 The whole dataset is about 12 MB (limit: 50 MB). Columns are described in `semantic/data_dictionary.yaml`.
-`data/manifests/` holds `dataset_manifest.json`, `checksums.json` and `anomaly_test_manifest.json`. The last one
-lists the deliberately seeded unusual transactions for automated tests and trainer validation only; it is never
-read by the Workshop Portal and is never shown to participants.
+`data/manifests/` holds `dataset_manifest.json` and `checksums.json`. The unusual patterns for Group 06 are in the
+data but nothing in the project marks or lists them; participants have to discover them with queries.
 
 One physical copy serves all ten groups. Each group sees a **logical bundle** (tables, optional row filters,
 metrics, mission) defined in `data/scenarios/`; the files are not duplicated per group. The separation is

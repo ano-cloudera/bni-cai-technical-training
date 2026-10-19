@@ -60,9 +60,7 @@ def test_each_group_sees_its_mission_objective_tables_and_sample_questions(group
 def test_the_portal_never_shows_test_only_data() -> None:
     for group in ("group_06", "group_10"):
         text = page_text(open_group(group)).lower()
-        assert (
-            "is_seeded_anomaly" not in text and "anomaly_test_manifest" not in text and "seeded" not in text
-        )
+        assert "anomaly" not in text and "seeded" not in text
 
 
 def test_clicking_a_sample_question_runs_it_locks_the_group_and_reset_is_needed_to_change() -> None:
@@ -77,11 +75,11 @@ def test_clicking_a_sample_question_runs_it_locks_the_group_and_reset_is_needed_
     assert len(at.chat_message) == 2 and "SELECT" in " ".join(c.value for c in at.code)
 
 
-def test_participants_cannot_read_trainer_manifests_through_the_output_api(make_service) -> None:
+def test_participants_cannot_read_dataset_manifests_through_the_output_api(make_service) -> None:
     from bni_training.workshop.group_paths import UnsafePathError
 
     service = make_service()
     ctx = service.open_session("group_06")
-    for name in ("anomaly_test_manifest.json", "../../../../data/manifests/anomaly_test_manifest.json"):
+    for name in ("dataset_manifest.json", "../../../../data/manifests/dataset_manifest.json"):
         with pytest.raises((UnsafePathError, FileNotFoundError)):
             service.read_output(ctx, name)

@@ -16,10 +16,9 @@ python scripts/generate_synthetic_data.py --preview
 ```
 
 The dataset in `data/raw` is committed and deterministic (seed 20260630, reference date 2026-06-30). Regenerate only
-if you change the generator; the validator compares bytes. `data/manifests/anomaly_test_manifest.json` lists the
-deliberately seeded unusual patterns for Group 06. The Portal and every participant tool never read it, but it is a
-file in the project, so any collaborator could technically open it. That is an accepted limit of operational
-isolation.
+if you change the generator; the validator compares bytes. The unusual patterns for Group 06 are produced
+by the same generator but no flag column, answer list or manifest is written anywhere in the project. The validator
+regenerates them in memory and checks that ordinary queries find them.
 
 ## 3. Dry-run the plan (no API call)
 

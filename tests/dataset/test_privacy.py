@@ -68,33 +68,28 @@ def test_synthetic_ids_never_look_real() -> None:
             assert row["customer_id"].startswith("SYN-CUST-")
 
 
-def test_the_anomaly_manifest_is_not_reachable_from_any_participant_facing_code() -> None:
-    allowed = {"synthetic.py", "validation.py"}  # trainer and test tooling only
-    offenders = []
-    for path in (ROOT / "src").rglob("*.py"):
-        if "anomaly_test_manifest" in path.read_text() and path.name not in allowed:
-            offenders.append(str(path))
-    assert offenders == []
+def test_no_participant_facing_code_references_an_anomaly_answer_key() -> None:
     portal = [p for p in (ROOT / "src/bni_training/workshop").rglob("*.py")] + list(
         (ROOT / "apps/workshop-portal").rglob("*.py")
     )
     assert portal and not any("anomaly" in p.read_text().lower() for p in portal)
-    assert "anomaly_test_manifest" not in (ROOT / "src/bni_training/data/engine.py").read_text()
-    assert "anomaly_test_manifest" not in (ROOT / "src/bni_training/data/tool.py").read_text()
+    for name in ("engine.py", "tool.py", "bundles.py", "semantic_layer.py"):
+        assert "anomaly" not in (ROOT / "src/bni_training/data" / name).read_text().lower(), name
 
 
-def test_the_anomaly_flag_is_marked_internal_and_hidden_in_the_dictionary() -> None:
+def test_no_anomaly_flag_or_manifest_is_part_of_the_dictionary_or_the_data_files() -> None:
     raw = yaml.safe_load((ROOT / "semantic/data_dictionary.yaml").read_text())
-    column = raw["tables"]["transactions"]["columns"]["is_seeded_anomaly"]
-    assert column["participant_exposed"] is False and column["sensitivity"] == "internal_test_only"
-    exposed_flags = [
-        (t, c) for t, tab in raw["tables"].items() for c, col in tab["columns"].items()
-        if col.get("sensitivity") == "internal_test_only" and col.get("participant_exposed", True)
-    ]  # fmt: skip
-    assert exposed_flags == []
+    names = {c for tab in raw["tables"].values() for c in tab["columns"]}
+    assert not any("anomal" in n or "seeded" in n for n in names)
+    header = (DEFAULT_RAW_DIR / "transactions.csv").read_text().splitlines()[0]
+    assert "anomal" not in header and "seeded" not in header
+    assert sorted(p.name for p in (ROOT / "data/manifests").iterdir()) == [
+        "checksums.json",
+        "dataset_manifest.json",
+    ]
 
 
 def test_sample_questions_and_missions_never_mention_the_test_only_data() -> None:
     for name in ("sample_questions.yaml", "group_assignments.yaml", "dataset_bundles.yaml"):
         text = (ROOT / "data/scenarios" / name).read_text().lower()
-        assert "seeded" not in text and "is_seeded" not in text and "anomaly_test" not in text, name
+        assert "seeded" not in text and "anomaly" not in text, name

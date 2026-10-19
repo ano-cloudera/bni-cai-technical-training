@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import functools
 import json
 
 import pytest
 
 from bni_training.data.bundles import BundleCatalog
-from bni_training.data.dictionary import DEFAULT_MANIFEST_DIR
+from bni_training.data.synthetic import generate
 from bni_training.data.tool import WorkshopDataTool
 from bni_training.data.validation import LARGE_AMOUNT_SQL, STRUCTURING_SQL
 
@@ -59,16 +60,16 @@ def test_the_branch_mission_never_sees_closed_branches_but_the_regional_mission_
     assert ranked.row_count <= 98
 
 
+@functools.lru_cache(maxsize=1)
 def anomaly_accounts() -> dict[str, set[str]]:
+    """The answer key exists only in memory: the deterministic generator is re-run and nothing is written."""
     by_type: dict[str, set[str]] = {}
-    for incident in json.loads((DEFAULT_MANIFEST_DIR / "anomaly_test_manifest.json").read_text())[
-        "incidents"
-    ]:
+    for incident in generate().anomaly_incidents:
         by_type.setdefault(incident["type"], set()).add(incident["account_id"])
     return by_type
 
 
-def test_group_06_can_discover_every_kind_of_seeded_unusual_pattern(tools) -> None:
+def test_group_06_can_discover_every_kind_of_unusual_pattern(tools) -> None:
     seeded = anomaly_accounts()
     tool = tools["group_06"]
     top = {r[0] for r in tool.query(tool.bundle.sample_questions[0])[1].rows}
@@ -79,7 +80,11 @@ def test_group_06_can_discover_every_kind_of_seeded_unusual_pattern(tools) -> No
     assert len(structuring & seeded["structuring"]) >= 7
 
 
-def test_the_default_participant_tool_never_exposes_the_anomaly_flag(tools) -> None:
+def test_the_default_participant_tool_never_exposes_an_answer_column(tools) -> None:
     tool = tools["group_06"]
-    assert "is_seeded_anomaly" not in json.dumps(tool.describe())
-    assert "is_seeded_anomaly" not in tool.run_sql("SELECT * FROM transactions LIMIT 1").columns
+    assert "anomal" not in json.dumps(tool.describe()).lower()
+    columns = tool.run_sql("SELECT * FROM transactions LIMIT 1").columns
+    assert not any("anomal" in c or "seeded" in c for c in columns)
+    for other in BundleCatalog.load().bundles.values():
+        if other.group_id != "group_06":
+            assert other.mission_title not in json.dumps(tool.describe())

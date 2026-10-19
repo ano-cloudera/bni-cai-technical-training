@@ -69,7 +69,6 @@ def test_write_is_atomic_leaves_no_staging_files_and_overwrites_cleanly(tmp_path
         "transactions.csv",
     ]
     assert sorted(p.name for p in manifests.iterdir()) == [
-        "anomaly_test_manifest.json",
         "checksums.json",
         "dataset_manifest.json",
     ]

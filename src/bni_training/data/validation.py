@@ -287,24 +287,6 @@ def validate_dataset(
         dormant >= max(20, len(tables["accounts"]) // 20),
         f"{dormant} dormant accounts",
     )
-    flagged = [t for t in tables["transactions"] if t["is_seeded_anomaly"] == "1"]
-    anomaly_path = manifest_dir / "anomaly_test_manifest.json"
-    if anomaly_path.is_file():
-        manifest_ids = {
-            i for inc in json.loads(anomaly_path.read_text())["incidents"] for i in inc["transaction_ids"]
-        }
-        report.add(
-            "anomaly manifest matches the flagged transactions",
-            manifest_ids == {t["transaction_id"] for t in flagged},
-            f"{len(flagged)} flagged",
-        )
-    else:
-        report.add(
-            "anomaly manifest matches the flagged transactions",
-            False,
-            "anomaly_test_manifest.json is missing",
-        )
-
     # 7. privacy
     pii_hits: Counter = Counter()
     for name in TABLE_ORDER:
@@ -378,7 +360,7 @@ STRUCTURING_SQL = (
 def validate_missions(
     report: ValidationReport, raw_dir: Path, manifest_dir: Path, dictionary: DataDictionary
 ) -> None:
-    """Every group's mission must return non-empty results, and the seeded patterns must be discoverable."""
+    """Every group's mission must return non-empty results, and the unusual patterns must be discoverable."""
     from .bundles import BundleCatalog
     from .engine import CsvEngine
     from .semantic_layer import SemanticModel
@@ -404,25 +386,24 @@ def validate_missions(
             "; ".join((empty + failed)[:4])
             or f"{sum(len(b.sample_questions) for b in catalog.bundles.values())} questions",
         )
-        anomaly_path = manifest_dir / "anomaly_test_manifest.json"
-        if anomaly_path.is_file():
-            by_type: dict[str, set[str]] = {}
-            for incident in json.loads(anomaly_path.read_text())["incidents"]:
-                by_type.setdefault(incident["type"], set()).add(incident["account_id"])
-            tool = WorkshopDataTool(engine, semantic, catalog.for_group("group_06"))
-            _sql, burst = tool.query(catalog.for_group("group_06").sample_questions[0])
-            found_bursts = len({row[0] for row in burst.rows} & by_type["velocity_burst"])
-            found_large = len({r[0] for r in tool.run_sql(LARGE_AMOUNT_SQL).rows} & by_type["large_amount"])
-            found_structuring = len(
-                {r[0] for r in tool.run_sql(STRUCTURING_SQL).rows} & by_type["structuring"]
-            )
-            ok = found_bursts >= 8 and found_large >= 13 and found_structuring >= 7
-            report.add(
-                "Group 06 can discover the seeded unusual patterns with ordinary queries",
-                ok,
-                f"bursts {found_bursts}/{len(by_type['velocity_burst'])}, "
-                f"large {found_large}/{len(by_type['large_amount'])}, "
-                f"structuring {found_structuring}/{len(by_type['structuring'])}",
-            )
+        # The answer key lives only in memory: the deterministic generator is re-run, never written.
+        from .synthetic import generate
+
+        by_type: dict[str, set[str]] = {}
+        for incident in generate().anomaly_incidents:
+            by_type.setdefault(incident["type"], set()).add(incident["account_id"])
+        tool = WorkshopDataTool(engine, semantic, catalog.for_group("group_06"))
+        _sql, burst = tool.query(catalog.for_group("group_06").sample_questions[0])
+        found_bursts = len({row[0] for row in burst.rows} & by_type["velocity_burst"])
+        found_large = len({r[0] for r in tool.run_sql(LARGE_AMOUNT_SQL).rows} & by_type["large_amount"])
+        found_structuring = len({r[0] for r in tool.run_sql(STRUCTURING_SQL).rows} & by_type["structuring"])
+        ok = found_bursts >= 8 and found_large >= 13 and found_structuring >= 7
+        report.add(
+            "Group 06 can discover the unusual patterns with ordinary queries",
+            ok,
+            f"bursts {found_bursts}/{len(by_type['velocity_burst'])}, "
+            f"large {found_large}/{len(by_type['large_amount'])}, "
+            f"structuring {found_structuring}/{len(by_type['structuring'])}",
+        )
     finally:
         engine.close()

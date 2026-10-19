@@ -112,16 +112,16 @@ def test_a_bundle_shared_by_two_groups_is_rejected(tmp_path) -> None:
         BundleCatalog.load(directory)
 
 
-def test_a_row_filter_on_a_hidden_column_is_rejected(tmp_path) -> None:
+def test_a_row_filter_on_a_hidden_column_is_rejected(tmp_path, hidden_dictionary) -> None:
     directory = copy_config(tmp_path)
     edit(
         directory / "dataset_bundles.yaml",
         lambda d: d["bundles"]["unusual_patterns_bundle"].__setitem__(
-            "row_filters", {"transactions": "is_seeded_anomaly = 0"}
+            "row_filters", {"transactions": "merchant_category = 'NONE'"}
         ),
     )
     with pytest.raises(BundleConfigError, match="unavailable columns"):
-        BundleCatalog.load(directory)
+        BundleCatalog.load(directory, dictionary=hidden_dictionary)
 
 
 def test_a_sample_question_that_does_not_fit_the_bundle_is_rejected(tmp_path) -> None:

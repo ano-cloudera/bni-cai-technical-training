@@ -51,7 +51,7 @@ def test_required_tables_and_columns_exist_exactly(tables, dictionary) -> None:
         ),
         "transactions": cols(
             "transaction_id account_id transaction_date transaction_type channel amount merchant_category "
-            "transaction_status is_seeded_anomaly"
+            "transaction_status"
         ),
         "loans": cols(
             "loan_id customer_id account_id branch_id product_code origination_date maturity_date "
@@ -262,7 +262,9 @@ def test_a_dataset_over_the_size_limit_is_reported(small_copy, monkeypatch) -> N
     assert "50 MB" in failed_names(check(*small_copy))
 
 
-def test_a_seeded_anomaly_missing_from_the_manifest_is_reported(small_copy) -> None:
+def test_an_answer_key_column_in_a_csv_is_reported(small_copy) -> None:
     raw, manifests = small_copy
-    (manifests / "anomaly_test_manifest.json").write_text('{"incidents": []}')
-    assert "anomaly manifest" in failed_names(check(raw, manifests))
+    path = raw / "transactions.csv"
+    lines = path.read_text().splitlines()
+    path.write_text("\n".join([lines[0] + ",answer_flag", *[line + ",0" for line in lines[1:]]]) + "\n")
+    assert "columns match the data dictionary" in failed_names(check(raw, manifests))

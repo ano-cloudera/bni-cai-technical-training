@@ -64,8 +64,7 @@
       "channel",
       "amount",
       "merchant_category",
-      "transaction_status",
-      "is_seeded_anomaly"
+      "transaction_status"
     ],
     "loans": [
       "loan_id",
@@ -82,8 +81,8 @@
       "risk_band"
     ]
   },
-  "total_size_bytes": 12088835,
-  "total_size_mb": 12.089,
+  "total_size_bytes": 11885011,
+  "total_size_mb": 11.885,
   "size_limit_mb": 50,
   "determinism": "Only random() with +,-,*,/ on floats; no exp/log/pow; identical on Linux and macOS."
 }

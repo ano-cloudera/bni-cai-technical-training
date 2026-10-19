@@ -60,7 +60,6 @@ tables:
       amount: {description: Transaction amount, always positive; the type gives the direction., type: real, role: measure, sensitivity: synthetic_amount, min: 0}
       merchant_category: {description: Merchant group for card purchases and payments; NONE otherwise., type: text, role: attribute, sensitivity: synthetic_attribute, allowed_values: [GROCERY, FUEL, DINING, RETAIL, UTILITIES, TRAVEL, HEALTHCARE, EDUCATION, ENTERTAINMENT, NONE]}
       transaction_status: {description: Processing status., type: text, role: attribute, sensitivity: synthetic_attribute, allowed_values: [COMPLETED, PENDING, FAILED, REVERSED]}
-      is_seeded_anomaly: {description: "TEST ONLY. 1 marks a deliberately seeded unusual transaction for automated validation. Never exposed to participants.", type: integer, role: attribute, sensitivity: internal_test_only, participant_exposed: false, allowed_values: [0, 1]}
   loans:
     description: A synthetic loan. Descriptive data only; no approval, rejection or scoring exists anywhere.
     primary_key: loan_id

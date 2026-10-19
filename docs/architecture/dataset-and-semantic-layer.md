@@ -7,7 +7,7 @@ numbers; no BNI data; loan fields are descriptive only and nothing approves, rej
 
 **Quality gates** (`scripts/validate_dataset.py`): files and columns, row ranges, key uniqueness, foreign keys, value
 domains, date and amount rules, privacy patterns, size, checksums, byte-for-byte regeneration, every mission returns
-rows, and the seeded unusual patterns are discoverable.
+rows, and the unusual patterns are discoverable.
 
 **Semantic layer** (`semantic/`): data dictionary (with sensitivity and participant-exposure flags), relationships
 (many-to-one only), 18 executable metrics with their dimensions, and plain business terms. A question is matched to

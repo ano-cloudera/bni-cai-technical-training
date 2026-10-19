@@ -31,8 +31,8 @@ What exists locally:
   transactions `3ec309c1...` (full values in `data/manifests/checksums.json`).
 - **Semantic layer** (`semantic/`): data dictionary, relationships, 18 executable metrics, business terms.
 - **Ten logical group bundles** (`data/scenarios`) over the one physical dataset; every sample question of every
-  mission returns rows; Group 06 can discover the 33 seeded unusual patterns with ordinary queries. The anomaly flag and
-  `anomaly_test_manifest.json` are for tests and trainer validation only and are never exposed by participant tools.
+  mission returns rows; Group 06 can discover the 33 unusual patterns with ordinary queries. No anomaly flag, answer list or manifest is
+  tracked or written to disk; the generator keeps the answer key in memory for the validator and tests only.
 - **Guarded read-only CSV engine** (SQLite, sqlglot, authorizer, row cap, timeout). CSV is the default backend;
   Impala is optional, only with `DATA_BACKEND=impala`, never required and never a silent fallback.
 - **Single-project dry-run plan** (`plan --topology single_project`): 1 project, 10 group workspaces, up to 10 Sessions,
