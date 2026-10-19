@@ -71,14 +71,18 @@ def test_lab_status_has_the_executor_contract(capsys: pytest.CaptureFixture[str]
 
 
 @pytest.mark.parametrize(
-    ("lab_id", "key", "visible_artifacts"),
+    ("lab_id", "key", "visible_artifacts", "trainer_only"),
     [
-        ("01", "model_artifact_validation", ("MODEL_PATH", "directory_manifest", "config.json")),
-        ("02", "vllm_deployment", ("build_vllm_command", "/v1/models", "max_tokens")),
+        ("00", "environment_validation", ("PARTICIPANT_MODE", "GROUP_ID", "WORKSHOP_PORTAL_URL"), False),
+        ("01", "model_artifact_validation", ("MODEL_PATH", "directory_manifest", "config.json"), True),
+        ("02", "vllm_deployment", ("build_vllm_command", "/v1/models", "max_tokens"), True),
+        ("03", "llm_api_testing", ("payload", "max_tokens", "429"), False),
+        ("04", "csv_data_access", ("run_sql", "SELECT", "RestrictedTableError"), False),
+        ("05", "semantic_layer", ("SemanticModel", ".plan(", "planned.sql"), False),
     ],
 )
-def test_trainer_notebooks_are_authored_as_direct_lessons(
-    lab_id: str, key: str, visible_artifacts: tuple[str, ...]
+def test_migrated_notebooks_are_authored_as_direct_lessons(
+    lab_id: str, key: str, visible_artifacts: tuple[str, ...], trainer_only: bool
 ) -> None:
     source = ROOT / "notebooks" / "authoring" / f"{lab_id}_{key}.py"
     notebook = ROOT / "notebooks" / "templates" / f"{lab_id}_{key}.ipynb"
@@ -100,8 +104,10 @@ def test_trainer_notebooks_are_authored_as_direct_lessons(
         "Cleanup",
     ):
         assert heading in rendered
-    assert "TRAINER ONLY" in rendered
+    assert ("TRAINER ONLY" in rendered) is trainer_only
     assert all(artifact in rendered for artifact in visible_artifacts)
     assert "get_lab(" not in rendered
     assert "load_script_module" not in rendered
     assert "module.main(" not in rendered
+    if not trainer_only:
+        assert "# EXERCISE" in rendered

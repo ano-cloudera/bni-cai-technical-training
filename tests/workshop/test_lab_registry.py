@@ -18,7 +18,7 @@ from bni_training.lab_registry import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-EDUCATIONAL_NOTEBOOKS = {"01", "02"}  # removed when the last wrapper notebook is migrated
+EDUCATIONAL_NOTEBOOKS = {"00", "01", "02", "03", "04", "05"}  # removed after full migration
 EXPECTED = {
     "00": ("Environment Validation", {"trainer", "participant"}, False, "00_environment_validation"),
     "01": ("Model Artifact Validation", {"trainer"}, True, "01_model_artifact_validation"),

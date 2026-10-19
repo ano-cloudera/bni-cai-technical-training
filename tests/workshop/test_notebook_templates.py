@@ -48,7 +48,7 @@ def test_a_notebook_runs_from_a_generated_group_workspace_and_writes_only_there(
     result = execute(notebook, tmp_path / "executed", "local", 600)
     assert result["result"] == "PASS", result
     saved = sorted(p.name for p in (runtime / "groups/group_03/output").iterdir())
-    assert saved == ["04_dataset_preview.json", "lab-04-local.json"]
+    assert saved == ["04_dataset_preview.json"]
     others = [
         p
         for g in range(1, 11)
