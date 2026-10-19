@@ -2,7 +2,7 @@
   "algorithm": "sha256",
   "files": {
     "accounts.csv": {
-      "sha256": "8a1c57fff3dd39af581d07cb5fd6faa9884aa77f3582d0ad95af08faba62ebb8",
+      "sha256": "6ce3f1e3c5c4775918ebd4906db01f92a012ce6a3cb45dc6927a940bea39f825",
       "bytes": 2126024
     },
     "branches.csv": {
@@ -18,8 +18,8 @@
       "bytes": 610966
     },
     "transactions.csv": {
-      "sha256": "05c6fd297464a1b2a1d55732b3f982e5f1ebe02d271734fb0c508983ee53aa11",
-      "bytes": 8414217
+      "sha256": "3ec309c1744027b9864f471808f39e84e7aa4cc5d240ddcad594e0a5c034547b",
+      "bytes": 8414237
     }
   }
 }

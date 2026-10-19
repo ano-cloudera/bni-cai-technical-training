@@ -555,23 +555,31 @@ def _build_transactions(
 
 
 def _seed_anomalies(rng: Rng, accounts: list[dict], latent: dict[str, dict], rows: list[dict]) -> list[dict]:
-    """Add deterministic unusual patterns for the Group 06 mission and return their incidents."""
-    by_account: dict[str, list[float]] = {}
+    """Add deterministic unusual patterns for the Group 06 mission and return their incidents.
+
+    * velocity_burst: 18-30 transactions on one day.
+    * large_amount: one transfer or withdrawal 20-40 times the account's average for that transaction type.
+      Normal amounts are bounded (a type's largest value is under 4 times the type's mean), so these stand out.
+    * structuring: 5-8 transfers just below a round limit over a few days.
+    """
+    by_type: dict[tuple[str, str], list[float]] = {}
+    count: dict[str, int] = {}
     for row in rows:
-        by_account.setdefault(row["account_id"], []).append(float(row["amount"]))
+        by_type.setdefault((row["account_id"], row["transaction_type"]), []).append(float(row["amount"]))
+        count[row["account_id"]] = count.get(row["account_id"], 0) + 1
     candidates = [
         a["account_id"]
         for a in accounts
         if latent[a["account_id"]]["state"] == "ACTIVE"
-        and len(by_account.get(a["account_id"], [])) >= 10
+        and count.get(a["account_id"], 0) >= 10
         and latent[a["account_id"]]["open"] <= REFERENCE_DATE - timedelta(days=60)
     ]
     rng.shuffle(candidates)
     incidents: list[dict] = []
 
-    def median(account_id: str) -> float:
-        values = sorted(by_account[account_id])
-        return values[len(values) // 2]
+    def typical(account_id: str) -> float:
+        values = sorted(v for (acc, _), vs in by_type.items() if acc == account_id for v in vs)
+        return max(values[len(values) // 2], 5.0)
 
     def add(account_id: str, day: date, txn_type: str, amount: float, channel: str, incident: dict) -> None:
         rows.append(
@@ -589,13 +597,19 @@ def _seed_anomalies(rng: Rng, accounts: list[dict], latent: dict[str, dict], row
         )
         incident["_keys"].append((account_id, iso(day), money(amount)))
 
+    def usable_type(account_id: str, preferred: str) -> str | None:
+        other = "WITHDRAWAL" if preferred == "TRANSFER_OUT" else "TRANSFER_OUT"
+        return next((t for t in (preferred, other) if len(by_type.get((account_id, t), ())) >= 5), None)
+
     cursor = 0
-    plan = [("velocity_burst", 10), ("large_amount", 15), ("structuring", 8)]
-    for kind, number in plan:
+    for kind, number in (("velocity_burst", 10), ("large_amount", 15), ("structuring", 8)):
         for n in range(number):
-            account_id = candidates[cursor]
-            cursor += 1
-            med = max(median(account_id), 5.0)
+            preferred = ("TRANSFER_OUT", "WITHDRAWAL")[rng.randint(0, 1)] if kind == "large_amount" else ""
+            while True:
+                account_id = candidates[cursor]
+                cursor += 1
+                if kind != "large_amount" or usable_type(account_id, preferred):
+                    break
             earliest = max(
                 latent[account_id]["open"] + timedelta(days=1), REFERENCE_DATE - timedelta(days=365)
             )
@@ -608,16 +622,33 @@ def _seed_anomalies(rng: Rng, accounts: list[dict], latent: dict[str, dict], row
                 "_keys": [],
             }
             if kind == "velocity_burst":
+                med = typical(account_id)
                 for _ in range(rng.randint(18, 30)):
-                    add(account_id, day, ("WITHDRAWAL", "TRANSFER_OUT", "PAYMENT")[rng.randint(0, 2)],
-                        med * rng.uniform(0.6, 1.4), "ONLINE", incident)  # fmt: skip
+                    kinds = ("WITHDRAWAL", "TRANSFER_OUT", "PAYMENT")
+                    add(
+                        account_id,
+                        day,
+                        kinds[rng.randint(0, 2)],
+                        med * rng.uniform(0.6, 1.4),
+                        "ONLINE",
+                        incident,
+                    )
             elif kind == "large_amount":
-                add(account_id, day, ("TRANSFER_OUT", "WITHDRAWAL")[rng.randint(0, 1)],
-                    med * rng.uniform(25.0, 60.0), "ONLINE", incident)  # fmt: skip
+                chosen = usable_type(account_id, preferred)
+                values = by_type[(account_id, chosen)]
+                mean = sum(values) / len(values)
+                add(account_id, day, chosen, mean * rng.uniform(20.0, 40.0), "ONLINE", incident)
             else:
                 for step in range(rng.randint(5, 8)):
-                    add(account_id, day + timedelta(days=step // 2), "TRANSFER_OUT",
-                        float(rng.randint(9500, 9990)), "MOBILE", incident)  # fmt: skip
+                    amount = float(rng.randint(9500, 9990))
+                    add(
+                        account_id,
+                        day + timedelta(days=step // 2),
+                        "TRANSFER_OUT",
+                        amount,
+                        "MOBILE",
+                        incident,
+                    )
             incidents.append(incident)
     return incidents
 

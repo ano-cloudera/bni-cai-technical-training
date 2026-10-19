@@ -82,7 +82,7 @@
       "risk_band"
     ]
   },
-  "total_size_bytes": 12088815,
+  "total_size_bytes": 12088835,
   "total_size_mb": 12.089,
   "size_limit_mb": 50,
   "determinism": "Only random() with +,-,*,/ on floats; no exp/log/pow; identical on Linux and macOS."

@@ -18,6 +18,9 @@ def main(argv=None) -> int:
         "--no-determinism", action="store_true", help="Skip regenerating the dataset to compare bytes"
     )
     parser.add_argument(
+        "--no-missions", action="store_true", help="Skip the per-group mission and discoverability checks"
+    )
+    parser.add_argument(
         "--partial-scale",
         action="store_true",
         help="Skip the full-size row-count ranges (for scaled test data)",
@@ -27,6 +30,7 @@ def main(argv=None) -> int:
         args.data_dir,
         args.manifest_dir,
         check_determinism=not args.no_determinism,
+        check_missions=not args.no_missions,
         expect_full_scale=not args.partial_scale,
     )
     print(report.render())

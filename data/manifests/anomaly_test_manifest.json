@@ -14,7 +14,6 @@
       "type": "velocity_burst",
       "account_id": "SYN-ACC-10123",
       "transaction_ids": [
-        "SYN-TXN-046199",
         "SYN-TXN-046200",
         "SYN-TXN-046201",
         "SYN-TXN-046202",
@@ -40,7 +39,8 @@
         "SYN-TXN-046222",
         "SYN-TXN-046223",
         "SYN-TXN-046224",
-        "SYN-TXN-046225"
+        "SYN-TXN-046225",
+        "SYN-TXN-046226"
       ],
       "first_date": "2025-07-07"
     },
@@ -147,7 +147,6 @@
       "type": "velocity_burst",
       "account_id": "SYN-ACC-08325",
       "transaction_ids": [
-        "SYN-TXN-054920",
         "SYN-TXN-054921",
         "SYN-TXN-054922",
         "SYN-TXN-054923",
@@ -164,7 +163,8 @@
         "SYN-TXN-054934",
         "SYN-TXN-054935",
         "SYN-TXN-054936",
-        "SYN-TXN-054937"
+        "SYN-TXN-054937",
+        "SYN-TXN-054938"
       ],
       "first_date": "2025-09-15"
     },
@@ -347,251 +347,251 @@
     {
       "incident_id": "large_amount-01",
       "type": "large_amount",
-      "account_id": "SYN-ACC-00506",
+      "account_id": "SYN-ACC-09459",
       "transaction_ids": [
-        "SYN-TXN-075661"
+        "SYN-TXN-084896"
       ],
-      "first_date": "2026-02-10"
+      "first_date": "2026-04-04"
     },
     {
       "incident_id": "large_amount-02",
       "type": "large_amount",
-      "account_id": "SYN-ACC-09459",
+      "account_id": "SYN-ACC-11237",
       "transaction_ids": [
-        "SYN-TXN-081779"
+        "SYN-TXN-049832"
       ],
-      "first_date": "2026-03-20"
+      "first_date": "2025-08-05"
     },
     {
       "incident_id": "large_amount-03",
       "type": "large_amount",
-      "account_id": "SYN-ACC-13991",
+      "account_id": "SYN-ACC-07061",
       "transaction_ids": [
-        "SYN-TXN-061583"
+        "SYN-TXN-098533"
       ],
-      "first_date": "2025-11-02"
+      "first_date": "2026-06-16"
     },
     {
       "incident_id": "large_amount-04",
       "type": "large_amount",
-      "account_id": "SYN-ACC-01716",
+      "account_id": "SYN-ACC-15767",
       "transaction_ids": [
-        "SYN-TXN-055712"
+        "SYN-TXN-046621"
       ],
-      "first_date": "2025-09-22"
+      "first_date": "2025-07-10"
     },
     {
       "incident_id": "large_amount-05",
       "type": "large_amount",
-      "account_id": "SYN-ACC-07660",
+      "account_id": "SYN-ACC-03012",
       "transaction_ids": [
-        "SYN-TXN-052325"
+        "SYN-TXN-057336"
       ],
-      "first_date": "2025-08-27"
+      "first_date": "2025-10-02"
     },
     {
       "incident_id": "large_amount-06",
       "type": "large_amount",
-      "account_id": "SYN-ACC-08509",
+      "account_id": "SYN-ACC-08008",
       "transaction_ids": [
-        "SYN-TXN-072862"
-      ],
-      "first_date": "2026-01-22"
-    },
-    {
-      "incident_id": "large_amount-07",
-      "type": "large_amount",
-      "account_id": "SYN-ACC-07803",
-      "transaction_ids": [
-        "SYN-TXN-060468"
-      ],
-      "first_date": "2025-10-27"
-    },
-    {
-      "incident_id": "large_amount-08",
-      "type": "large_amount",
-      "account_id": "SYN-ACC-14822",
-      "transaction_ids": [
-        "SYN-TXN-059801"
-      ],
-      "first_date": "2025-10-22"
-    },
-    {
-      "incident_id": "large_amount-09",
-      "type": "large_amount",
-      "account_id": "SYN-ACC-07248",
-      "transaction_ids": [
-        "SYN-TXN-084433"
+        "SYN-TXN-084440"
       ],
       "first_date": "2026-04-02"
     },
     {
+      "incident_id": "large_amount-07",
+      "type": "large_amount",
+      "account_id": "SYN-ACC-16216",
+      "transaction_ids": [
+        "SYN-TXN-084804"
+      ],
+      "first_date": "2026-04-03"
+    },
+    {
+      "incident_id": "large_amount-08",
+      "type": "large_amount",
+      "account_id": "SYN-ACC-15979",
+      "transaction_ids": [
+        "SYN-TXN-048515"
+      ],
+      "first_date": "2025-07-27"
+    },
+    {
+      "incident_id": "large_amount-09",
+      "type": "large_amount",
+      "account_id": "SYN-ACC-06086",
+      "transaction_ids": [
+        "SYN-TXN-060306"
+      ],
+      "first_date": "2025-10-26"
+    },
+    {
       "incident_id": "large_amount-10",
       "type": "large_amount",
-      "account_id": "SYN-ACC-13839",
+      "account_id": "SYN-ACC-13527",
       "transaction_ids": [
-        "SYN-TXN-097751"
+        "SYN-TXN-056577"
       ],
-      "first_date": "2026-06-11"
+      "first_date": "2025-09-27"
     },
     {
       "incident_id": "large_amount-11",
       "type": "large_amount",
-      "account_id": "SYN-ACC-12666",
+      "account_id": "SYN-ACC-18401",
       "transaction_ids": [
-        "SYN-TXN-063790"
+        "SYN-TXN-062204"
       ],
-      "first_date": "2025-11-20"
+      "first_date": "2025-11-06"
     },
     {
       "incident_id": "large_amount-12",
       "type": "large_amount",
-      "account_id": "SYN-ACC-06745",
+      "account_id": "SYN-ACC-12920",
       "transaction_ids": [
-        "SYN-TXN-087846"
+        "SYN-TXN-075462"
       ],
-      "first_date": "2026-04-23"
+      "first_date": "2026-02-08"
     },
     {
       "incident_id": "large_amount-13",
       "type": "large_amount",
-      "account_id": "SYN-ACC-07253",
+      "account_id": "SYN-ACC-00631",
       "transaction_ids": [
-        "SYN-TXN-048965"
+        "SYN-TXN-063831"
       ],
-      "first_date": "2025-07-30"
+      "first_date": "2025-11-21"
     },
     {
       "incident_id": "large_amount-14",
       "type": "large_amount",
-      "account_id": "SYN-ACC-01784",
+      "account_id": "SYN-ACC-09953",
       "transaction_ids": [
-        "SYN-TXN-057113"
+        "SYN-TXN-072517"
       ],
-      "first_date": "2025-10-01"
+      "first_date": "2026-01-19"
     },
     {
       "incident_id": "large_amount-15",
       "type": "large_amount",
-      "account_id": "SYN-ACC-17499",
+      "account_id": "SYN-ACC-10415",
       "transaction_ids": [
-        "SYN-TXN-050963"
+        "SYN-TXN-046049"
       ],
-      "first_date": "2025-08-15"
+      "first_date": "2025-07-05"
     },
     {
       "incident_id": "structuring-01",
       "type": "structuring",
-      "account_id": "SYN-ACC-10070",
+      "account_id": "SYN-ACC-17335",
       "transaction_ids": [
-        "SYN-TXN-051679",
-        "SYN-TXN-051680",
-        "SYN-TXN-051765",
-        "SYN-TXN-051766",
-        "SYN-TXN-051853"
+        "SYN-TXN-051716",
+        "SYN-TXN-051717",
+        "SYN-TXN-051796",
+        "SYN-TXN-051797",
+        "SYN-TXN-051882"
       ],
       "first_date": "2025-08-22"
     },
     {
       "incident_id": "structuring-02",
       "type": "structuring",
-      "account_id": "SYN-ACC-08260",
+      "account_id": "SYN-ACC-03036",
       "transaction_ids": [
-        "SYN-TXN-074355",
-        "SYN-TXN-074356",
-        "SYN-TXN-074534",
-        "SYN-TXN-074535",
-        "SYN-TXN-074750",
-        "SYN-TXN-074751",
-        "SYN-TXN-074923"
+        "SYN-TXN-074319",
+        "SYN-TXN-074320",
+        "SYN-TXN-074479",
+        "SYN-TXN-074480",
+        "SYN-TXN-074683",
+        "SYN-TXN-074684",
+        "SYN-TXN-074887"
       ],
       "first_date": "2026-02-01"
     },
     {
       "incident_id": "structuring-03",
       "type": "structuring",
-      "account_id": "SYN-ACC-11237",
+      "account_id": "SYN-ACC-14867",
       "transaction_ids": [
-        "SYN-TXN-055912",
-        "SYN-TXN-055913",
-        "SYN-TXN-056046",
-        "SYN-TXN-056047",
-        "SYN-TXN-056223",
-        "SYN-TXN-056224",
-        "SYN-TXN-056416",
-        "SYN-TXN-056417"
+        "SYN-TXN-055931",
+        "SYN-TXN-055932",
+        "SYN-TXN-056067",
+        "SYN-TXN-056068",
+        "SYN-TXN-056248",
+        "SYN-TXN-056249",
+        "SYN-TXN-056456",
+        "SYN-TXN-056457"
       ],
       "first_date": "2025-09-23"
     },
     {
       "incident_id": "structuring-04",
       "type": "structuring",
-      "account_id": "SYN-ACC-15858",
+      "account_id": "SYN-ACC-05748",
       "transaction_ids": [
-        "SYN-TXN-058859",
-        "SYN-TXN-058860",
-        "SYN-TXN-059020",
-        "SYN-TXN-059021",
-        "SYN-TXN-059141"
+        "SYN-TXN-058790",
+        "SYN-TXN-058791",
+        "SYN-TXN-058929",
+        "SYN-TXN-058930",
+        "SYN-TXN-059081"
       ],
       "first_date": "2025-10-14"
     },
     {
       "incident_id": "structuring-05",
       "type": "structuring",
-      "account_id": "SYN-ACC-07046",
+      "account_id": "SYN-ACC-02952",
       "transaction_ids": [
-        "SYN-TXN-053355",
-        "SYN-TXN-053356",
-        "SYN-TXN-053545",
-        "SYN-TXN-053546",
-        "SYN-TXN-053725",
-        "SYN-TXN-053726",
-        "SYN-TXN-053851"
+        "SYN-TXN-053302",
+        "SYN-TXN-053303",
+        "SYN-TXN-053504",
+        "SYN-TXN-053505",
+        "SYN-TXN-053695",
+        "SYN-TXN-053696",
+        "SYN-TXN-053832"
       ],
       "first_date": "2025-09-02"
     },
     {
       "incident_id": "structuring-06",
       "type": "structuring",
-      "account_id": "SYN-ACC-15790",
+      "account_id": "SYN-ACC-11616",
       "transaction_ids": [
-        "SYN-TXN-090337",
-        "SYN-TXN-090338",
-        "SYN-TXN-090523",
-        "SYN-TXN-090524",
-        "SYN-TXN-090701"
+        "SYN-TXN-090293",
+        "SYN-TXN-090294",
+        "SYN-TXN-090473",
+        "SYN-TXN-090474",
+        "SYN-TXN-090667"
       ],
       "first_date": "2026-05-04"
     },
     {
       "incident_id": "structuring-07",
       "type": "structuring",
-      "account_id": "SYN-ACC-09610",
+      "account_id": "SYN-ACC-10185",
       "transaction_ids": [
-        "SYN-TXN-062136",
-        "SYN-TXN-062137",
-        "SYN-TXN-062265",
-        "SYN-TXN-062266",
-        "SYN-TXN-062373",
+        "SYN-TXN-062140",
+        "SYN-TXN-062141",
+        "SYN-TXN-062270",
+        "SYN-TXN-062271",
         "SYN-TXN-062374",
-        "SYN-TXN-062446"
+        "SYN-TXN-062375",
+        "SYN-TXN-062450"
       ],
       "first_date": "2025-11-06"
     },
     {
       "incident_id": "structuring-08",
       "type": "structuring",
-      "account_id": "SYN-ACC-11375",
+      "account_id": "SYN-ACC-17221",
       "transaction_ids": [
-        "SYN-TXN-091301",
-        "SYN-TXN-091302",
-        "SYN-TXN-091446",
-        "SYN-TXN-091447",
-        "SYN-TXN-091618",
-        "SYN-TXN-091619",
-        "SYN-TXN-091788",
-        "SYN-TXN-091789"
+        "SYN-TXN-091333",
+        "SYN-TXN-091334",
+        "SYN-TXN-091497",
+        "SYN-TXN-091498",
+        "SYN-TXN-091670",
+        "SYN-TXN-091671",
+        "SYN-TXN-091843",
+        "SYN-TXN-091844"
       ],
       "first_date": "2026-05-10"
     }

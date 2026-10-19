@@ -83,6 +83,7 @@ def validate_dataset(
     dictionary: DataDictionary | None = None,
     check_determinism: bool = True,
     expect_full_scale: bool = True,
+    check_missions: bool = True,
 ) -> ValidationReport:
     report = ValidationReport()
     raw_dir, manifest_dir = Path(raw_dir), Path(manifest_dir)
@@ -175,6 +176,13 @@ def validate_dataset(
         if orphans:
             fk_errors.append(f"{child}.{child_col}->{parent}.{parent_col}: {orphans}")
     report.add("all foreign keys resolve", not fk_errors, "; ".join(fk_errors))
+    if fk_errors:  # the lifecycle rules look rows up through these keys, so they cannot be evaluated
+        report.add(
+            "dates, amounts and lifecycle rules are logically valid",
+            False,
+            "not checked: foreign keys are broken",
+        )
+        return report
 
     # 5. logical rules
     branches = {r["branch_id"]: r for r in tables["branches"]}
@@ -274,7 +282,11 @@ def validate_dataset(
         f"region ratio {max(regions.values()) / min(regions.values()):.1f}",
     )
     dormant = sum(1 for a in tables["accounts"] if a["account_status"] == "DORMANT")
-    report.add("dormant accounts are discoverable", dormant >= 500, f"{dormant} dormant accounts")
+    report.add(
+        "dormant accounts are discoverable",
+        dormant >= max(20, len(tables["accounts"]) // 20),
+        f"{dormant} dormant accounts",
+    )
     flagged = [t for t in tables["transactions"] if t["is_seeded_anomaly"] == "1"]
     anomaly_path = manifest_dir / "anomaly_test_manifest.json"
     if anomaly_path.is_file():
@@ -345,4 +357,72 @@ def validate_dataset(
         regenerated = render_all(generate(manifest["seed"], manifest["scale"]), dictionary)
         same = all(regenerated[f"{n}.csv"] == (raw_dir / f"{n}.csv").read_bytes() for n in TABLE_ORDER)
         report.add("regenerating with the manifest seed reproduces the files byte for byte", same)
+    if check_missions:
+        validate_missions(report, raw_dir, manifest_dir, dictionary)
     return report
+
+
+LARGE_AMOUNT_SQL = (
+    "SELECT DISTINCT t.account_id FROM transactions t JOIN ("
+    "SELECT account_id, transaction_type, SUM(amount) s, COUNT(*) n FROM transactions "
+    "WHERE transaction_status = 'COMPLETED' GROUP BY account_id, transaction_type HAVING COUNT(*) >= 5) a "
+    "ON a.account_id = t.account_id AND a.transaction_type = t.transaction_type "
+    "WHERE t.transaction_status = 'COMPLETED' AND t.amount > 15 * (a.s - t.amount) / (a.n - 1)"
+)
+STRUCTURING_SQL = (
+    "SELECT account_id FROM transactions WHERE amount BETWEEN 9500 AND 9990 "
+    "AND transaction_type = 'TRANSFER_OUT' GROUP BY account_id HAVING COUNT(*) >= 5"
+)
+
+
+def validate_missions(
+    report: ValidationReport, raw_dir: Path, manifest_dir: Path, dictionary: DataDictionary
+) -> None:
+    """Every group's mission must return non-empty results, and the seeded patterns must be discoverable."""
+    from .bundles import BundleCatalog
+    from .engine import CsvEngine
+    from .semantic_layer import SemanticModel
+    from .tool import WorkshopDataTool
+
+    catalog, semantic = BundleCatalog.load(dictionary=dictionary), SemanticModel.load()
+    engine = CsvEngine(raw_dir, dictionary)
+    try:
+        empty, failed = [], []
+        for group_id, bundle in catalog.bundles.items():
+            tool = WorkshopDataTool(engine, semantic, bundle)
+            for question in bundle.sample_questions:
+                try:
+                    _sql, result = tool.query(question)
+                except ValueError as exc:
+                    failed.append(f"{group_id}: {question} ({exc})")
+                    continue
+                if result.row_count == 0:
+                    empty.append(f"{group_id}: {question}")
+        report.add(
+            "every group mission returns non-empty results (all sample questions)",
+            not empty and not failed,
+            "; ".join((empty + failed)[:4])
+            or f"{sum(len(b.sample_questions) for b in catalog.bundles.values())} questions",
+        )
+        anomaly_path = manifest_dir / "anomaly_test_manifest.json"
+        if anomaly_path.is_file():
+            by_type: dict[str, set[str]] = {}
+            for incident in json.loads(anomaly_path.read_text())["incidents"]:
+                by_type.setdefault(incident["type"], set()).add(incident["account_id"])
+            tool = WorkshopDataTool(engine, semantic, catalog.for_group("group_06"))
+            _sql, burst = tool.query(catalog.for_group("group_06").sample_questions[0])
+            found_bursts = len({row[0] for row in burst.rows} & by_type["velocity_burst"])
+            found_large = len({r[0] for r in tool.run_sql(LARGE_AMOUNT_SQL).rows} & by_type["large_amount"])
+            found_structuring = len(
+                {r[0] for r in tool.run_sql(STRUCTURING_SQL).rows} & by_type["structuring"]
+            )
+            ok = found_bursts >= 8 and found_large >= 13 and found_structuring >= 7
+            report.add(
+                "Group 06 can discover the seeded unusual patterns with ordinary queries",
+                ok,
+                f"bursts {found_bursts}/{len(by_type['velocity_burst'])}, "
+                f"large {found_large}/{len(by_type['large_amount'])}, "
+                f"structuring {found_structuring}/{len(by_type['structuring'])}",
+            )
+    finally:
+        engine.close()
