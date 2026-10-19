@@ -149,6 +149,13 @@ Not run and not claimed: a live Qdrant server (only local mode and a captured RE
 - Regression at this milestone: 713 tests passed; Ruff passed for `src`, `tests`, `scripts`, and
   `apps`; generated notebook templates match their authoring sources. This is local validation only
   and does not change any CAI-pending status.
+- Labs 09-11 now expose direct Phoenix tracing, bounded LiteLLM alias/fallback calls, and input,
+  SQL, and output guardrails. Their generated notebooks passed local execution on 2026-10-19.
+  Lab 09 uses an in-memory exporter locally and the environment-configured shared collector in CAI;
+  participant notebooks never install or start Phoenix.
+- Regression after the Labs 09-11 milestone: 716 tests passed; scoped Ruff and authoring/template
+  synchronization passed. The two initial hygiene failures (credential-header examples matching the
+  token scanner) were corrected before this passing run.
 
 ## Environment-dependent validation (pending, not claimed)
 

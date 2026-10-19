@@ -82,6 +82,24 @@ def test_lab_status_has_the_executor_contract(capsys: pytest.CaptureFixture[str]
         ("06", "crewai_tools", ("@tool", "Agent(", "Task(", "Crew("), False),
         ("07", "qdrant_rag", ("HashingEmbedder", "group_filter_json", "search_group"), False),
         ("08", "agent_workflow", ("analyst_agent", "reviewer_agent", "Process.sequential"), False),
+        (
+            "09",
+            "phoenix_monitoring",
+            ("PHOENIX_COLLECTOR_ENDPOINT", "safe_trace_attributes", "participant_ref"),
+            False,
+        ),
+        (
+            "10",
+            "litellm_routing",
+            ("LITELLM_BASE_URL", "qwen-primary", "training-fallback"),
+            False,
+        ),
+        (
+            "11",
+            "guardrails",
+            ("validate_input", "validate_sql", "validate_grounded_answer"),
+            False,
+        ),
     ],
 )
 def test_migrated_notebooks_are_authored_as_direct_lessons(

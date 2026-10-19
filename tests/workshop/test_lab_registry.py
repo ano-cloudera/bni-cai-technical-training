@@ -18,7 +18,20 @@ from bni_training.lab_registry import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-EDUCATIONAL_NOTEBOOKS = {"00", "01", "02", "03", "04", "05", "06", "07", "08"}
+EDUCATIONAL_NOTEBOOKS = {
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "10",
+    "11",
+}
 EXPECTED = {
     "00": ("Environment Validation", {"trainer", "participant"}, False, "00_environment_validation"),
     "01": ("Model Artifact Validation", {"trainer"}, True, "01_model_artifact_validation"),
