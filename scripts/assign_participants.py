@@ -19,6 +19,7 @@ from bni_training.workshop import group_paths
 from bni_training.workshop.roster import (
     DEFAULT_MAX_PER_GROUP,
     RosterError,
+    anonymous_refs,
     assign,
     read_roster,
     summarize,
@@ -54,10 +55,14 @@ def main(argv=None) -> int:
         target_dir.mkdir(parents=True, exist_ok=True)
         buffer = io.StringIO()
         writer = csv.writer(buffer, lineterminator="\n")
-        writer.writerow(["participant_ref", "group_id", "dataset_id", "mission_id"])
-        for ref, group in sorted(assignment.items(), key=lambda kv: (kv[1], kv[0].casefold())):
+        writer.writerow(
+            ["trainer_ref", "participant_ref", "group_id", "dataset_id", "mission_id"]
+        )
+        for trainer_ref, participant_ref, group in anonymous_refs(assignment):
             bundle = catalog.for_group(group)
-            writer.writerow([ref, group, bundle.dataset_id, bundle.mission_id])
+            writer.writerow(
+                [trainer_ref, participant_ref, group, bundle.dataset_id, bundle.mission_id]
+            )
         (target_dir / "participant-assignments.csv").write_text(buffer.getvalue(), encoding="utf-8")
         (target_dir / "participant-assignments.summary.json").write_text(
             json.dumps(summary, indent=2) + "\n", encoding="utf-8"

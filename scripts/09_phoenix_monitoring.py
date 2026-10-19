@@ -222,14 +222,21 @@ def body(args, report):
         )
         report.skipped("gpu_monitoring", "GPU utilization is trainer-led in CAI (vLLM Application metrics)")
         return
-    env = require_env(["PHOENIX_ENDPOINT", "VLLM_BASE_URL"])
+    env = require_env(["PHOENIX_COLLECTOR_ENDPOINT", "VLLM_BASE_URL"])
     headers = (
         {"Authorization": f"Bearer {os.environ['PHOENIX_API_KEY']}"} if os.getenv("PHOENIX_API_KEY") else {}
     )
     llm = crewai_llm(
         env["VLLM_BASE_URL"], os.getenv("VLLM_API_KEY", ""), os.getenv("SERVED_MODEL_NAME", "qwen3.5-9b")
     )
-    trace_workflow(base_from_endpoint(env["PHOENIX_ENDPOINT"]), headers, llm, report.context, report, secret)
+    trace_workflow(
+        base_from_endpoint(env["PHOENIX_COLLECTOR_ENDPOINT"]),
+        headers,
+        llm,
+        report.context,
+        report,
+        secret,
+    )
 
 
 def main(argv=None) -> int:

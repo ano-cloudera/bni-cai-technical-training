@@ -44,6 +44,7 @@ def test_all_thirteen_canonical_labs_are_registered_in_order() -> None:
         assert lab.script == f"scripts/{stem}.py" and lab.notebook == f"notebooks/templates/{stem}.ipynb"
         assert lab.script_path.is_file() and lab.notebook_path.is_file()
         assert lab.purpose and lab.theory and lab.expected
+        assert lab.duration_min > 0 and lab.exercise
 
 
 def test_only_the_model_labs_are_trainer_only() -> None:

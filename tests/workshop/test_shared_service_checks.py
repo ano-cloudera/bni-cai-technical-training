@@ -67,9 +67,9 @@ def full_env(base: str, **extra) -> dict:
     return {
         "VLLM_BASE_URL": base + "/v1",
         "QDRANT_URL": base,
-        "PHOENIX_ENDPOINT": base + "/v1/traces",
+        "PHOENIX_UI_URL": base,
         "LITELLM_BASE_URL": base + "/v1",
-        "PORTAL_URL": base,
+        "WORKSHOP_PORTAL_URL": base,
         **extra,
     }
 
@@ -81,9 +81,8 @@ def by_service(results) -> dict:
 def test_health_urls_are_derived_from_each_services_own_setting() -> None:
     assert health_url(SPECS["vllm"], "https://v.example.invalid/v1") == "https://v.example.invalid/health"
     assert health_url(SPECS["qdrant"], "https://q.example.invalid") == "https://q.example.invalid/readyz"
-    assert (
-        health_url(SPECS["phoenix"], "https://p.example.invalid/v1/traces")
-        == "https://p.example.invalid/healthz"
+    assert health_url(SPECS["phoenix"], "https://p.example.invalid") == (
+        "https://p.example.invalid/healthz"
     )
     assert (
         health_url(SPECS["litellm"], "https://l.example.invalid/v1/")
@@ -118,7 +117,7 @@ def test_a_required_service_returning_an_error_fails(server) -> None:
 
 
 def test_an_unreachable_required_service_fails_but_an_optional_one_is_skipped() -> None:
-    env = {"VLLM_BASE_URL": "http://127.0.0.1:9/v1", "PHOENIX_ENDPOINT": "http://127.0.0.1:9"}
+    env = {"VLLM_BASE_URL": "http://127.0.0.1:9/v1", "PHOENIX_UI_URL": "http://127.0.0.1:9"}
     results = by_service(check_services(env, services=("vllm", "phoenix"), phase="day2_morning", mode="cai"))
     assert results["vllm"].status == "FAIL" and results["phoenix"].status == "SKIPPED"
     assert "optional" in results["phoenix"].detail

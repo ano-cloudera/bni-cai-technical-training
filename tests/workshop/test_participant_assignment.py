@@ -12,6 +12,7 @@ from bni_training.data.bundles import GROUP_IDS
 from bni_training.workshop.roster import (
     RosterError,
     RosterRow,
+    anonymous_refs,
     assign,
     read_roster,
     summarize,
@@ -66,12 +67,12 @@ def test_explicit_groups_are_honoured_and_the_rest_fill_the_smallest_groups() ->
 
 
 def test_group_capacity_is_enforced() -> None:
-    rows = [RosterRow(f"p{i}", "group_01") for i in range(6)]
-    with pytest.raises(RosterError, match="capacity of 5"):
+    rows = [RosterRow(f"p{i}", "group_01") for i in range(5)]
+    with pytest.raises(RosterError, match="capacity of 4"):
         assign(rows)
-    assert len(assign(rows[:5])) == 5
-    with pytest.raises(RosterError, match="exceed the capacity of 50"):
-        assign([RosterRow(f"p{i}") for i in range(51)])
+    assert len(assign(rows[:4])) == 4
+    with pytest.raises(RosterError, match="exceed the capacity of 40"):
+        assign([RosterRow(f"p{i}") for i in range(41)])
     with pytest.raises(RosterError, match="capacity of 4"):
         assign([RosterRow(f"p{i}", "group_02") for i in range(5)], max_per_group=4)
 
@@ -81,6 +82,16 @@ def test_unknown_groups_and_duplicate_participants_are_rejected() -> None:
         assign([RosterRow("a", "group_11")])
     with pytest.raises(RosterError, match="Duplicate"):
         assign([RosterRow("a"), RosterRow("a")])
+
+
+def test_anonymous_refs_are_group_local_and_do_not_depend_on_cai_identity() -> None:
+    rows = anonymous_refs(assign(synthetic_roster(40)))
+
+    assert len(rows) == 40
+    assert {participant for _trainer, participant, _group in rows} == {
+        f"participant_{number:02d}" for number in range(1, 5)
+    }
+    assert all(trainer != participant for trainer, participant, _group in rows)
 
 
 def test_reading_a_roster_supports_several_column_names_and_rejects_bad_files(tmp_path) -> None:
@@ -111,8 +122,17 @@ def test_apply_writes_a_trainer_only_assignment_with_dataset_and_mission(tmp_pat
     capsys.readouterr()
     target = tmp_path / "rt" / "shared" / "state" / "participant-assignments.csv"
     rows = list(csv.DictReader(target.open()))
-    assert len(rows) == 40 and list(rows[0]) == ["participant_ref", "group_id", "dataset_id", "mission_id"]
+    assert len(rows) == 40 and list(rows[0]) == [
+        "trainer_ref",
+        "participant_ref",
+        "group_id",
+        "dataset_id",
+        "mission_id",
+    ]
     assert Counter(r["group_id"] for r in rows) == {g: 4 for g in GROUP_IDS}
+    assert {r["participant_ref"] for r in rows} == {
+        f"participant_{number:02d}" for number in range(1, 5)
+    }
     assert all(r["mission_id"] and r["dataset_id"].endswith("_bundle") for r in rows)
     assert (
         json.loads(target.with_name("participant-assignments.summary.json").read_text())["participants"] == 40

@@ -152,7 +152,8 @@ class PortalService:
         )
         if config.mode == "local":
             return cls._local(registry, config, gate, env)
-        tracer = build_tracer(env["PHOENIX_ENDPOINT"]) if env.get("PHOENIX_ENDPOINT") else None
+        collector = env.get("PHOENIX_COLLECTOR_ENDPOINT")
+        tracer = build_tracer(collector) if collector else None
         client = embed = None
         if env.get("QDRANT_URL") and env.get("EMBEDDING_MODEL_PATH"):
             from qdrant_client import QdrantClient

@@ -107,3 +107,31 @@ def write_group_output(root: Path, group_id: str, name: str, text: str) -> Path:
     target = safe_join(out_dir, name)
     os.replace(tmp_name, target)
     return target
+
+
+def participant_workspace(root: Path, group_id: str, participant_ref: str) -> Path:
+    """Validated participant folder below one operational group workspace."""
+    return safe_join(group_workspace(root, group_id), "participants", participant_ref)
+
+
+def write_participant_output(
+    root: Path, group_id: str, participant_ref: str, name: str, text: str
+) -> Path:
+    """Atomically write into one anonymous participant's output folder."""
+    import tempfile
+
+    check_filename(name)
+    data = text.encode("utf-8")
+    if len(data) > MAX_OUTPUT_BYTES:
+        raise ValueError("Output is too large")
+    workspace = participant_workspace(root, group_id, participant_ref)
+    out_dir = safe_join(workspace, "output")
+    tmp_dir = safe_join(workspace, "tmp")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(dir=tmp_dir, prefix=".write-")
+    with os.fdopen(fd, "wb") as handle:
+        handle.write(data)
+    target = safe_join(out_dir, name)
+    os.replace(tmp_name, target)
+    return target

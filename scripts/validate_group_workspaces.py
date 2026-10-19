@@ -14,8 +14,17 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--runtime-dir", type=Path, default=None)
     parser.add_argument("--templates-dir", type=Path, default=TEMPLATES_DIR)
+    parser.add_argument(
+        "--mode",
+        choices=("group_driver", "individual_learning"),
+        default="group_driver",
+    )
     args = parser.parse_args(argv)
-    manager = WorkspaceManager(args.runtime_dir or group_paths.runtime_root(), args.templates_dir)
+    manager = WorkspaceManager(
+        args.runtime_dir or group_paths.runtime_root(),
+        args.templates_dir,
+        participant_mode=args.mode,
+    )
     try:
         report = manager.validate()
     except WorkspaceError as exc:

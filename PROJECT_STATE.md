@@ -160,6 +160,16 @@ Not run and not claimed: a live Qdrant server (only local mode and a captured RE
   group lock, session-scoped output identity, and comparison with the Lab 05 group-bound SQL path.
   Its local in-process Portal execution passed, the migration allow-list was removed, and regression
   remained at 716 passing tests with scoped Ruff and authoring/template synchronization passing.
+- Participant workspace modes are implemented and locally verified. `group_driver` is the default and
+  creates ten group workspaces with driver-rotation notes. Explicit `individual_learning` consumes the
+  ignored trainer assignment and creates 40 distinct anonymous `participant_01` through
+  `participant_04` workspaces; notebooks write only to the active participant output. Targeted reset
+  and archive work per participant. The dry-run plan reports 10 requested Sessions by default or 40
+  capacity-pending Sessions when individual mode is explicit.
+- Service configuration now uses the six documented URL variables: `VLLM_BASE_URL`, `QDRANT_URL`,
+  `PHOENIX_COLLECTOR_ENDPOINT`, `PHOENIX_UI_URL`, `LITELLM_BASE_URL`, and
+  `WORKSHOP_PORTAL_URL`. Regression after this milestone: 724 tests passed; scoped Ruff and generated
+  notebook synchronization passed. This does not validate 40 real CAI Sessions or change CAI readiness.
 
 ## Environment-dependent validation (pending, not claimed)
 

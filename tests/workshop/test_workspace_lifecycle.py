@@ -42,6 +42,7 @@ def test_apply_creates_the_full_hierarchy_for_all_ten_groups(manager, tmp_path) 
         assert sorted(p.name for p in base.iterdir()) == [
             "README.md",
             "config",
+            "driver-rotation.md",
             "logs",
             "notebooks",
             "output",
@@ -69,11 +70,16 @@ def test_group_env_has_the_assigned_dataset_and_mission_and_no_secrets(manager, 
             "DATASET_ID",
             "MISSION_ID",
             "GROUP_WORKSPACE",
+            "PARTICIPANT_MODE",
+            "PARTICIPANT_REF",
+            "PARTICIPANT_WORKSPACE",
             "WORKSHOP_TOPOLOGY",
             "DATA_BACKEND",
             "CSV_DATA_DIR",
         }
         assert not any(SECRET_KEY.search(k) for k in values) and not SECRET_VALUE.search(text)
+        assert values["PARTICIPANT_MODE"] == "group_driver"
+        assert values["PARTICIPANT_REF"] == "participant_01"
 
 
 def test_the_participant_readme_names_the_group_and_the_run_order(manager, tmp_path) -> None:
@@ -81,6 +87,79 @@ def test_the_participant_readme_names_the_group_and_the_run_order(manager, tmp_p
     text = (tmp_path / "runtime" / "groups" / "group_06" / "README.md").read_text()
     assert "group_06" in text and "Unusual Transaction Patterns" in text and "00 to 12" in text
     assert "trainer-only" in text.lower() and "{{" not in text
+
+
+def test_group_driver_is_default_and_has_no_participant_folders(manager, tmp_path) -> None:
+    manager.sync(apply=True)
+
+    for group in GROUP_IDS:
+        base = tmp_path / "runtime" / "groups" / group
+        assert (base / "driver-rotation.md").is_file()
+        assert not (base / "participants").exists()
+
+
+def test_individual_mode_creates_four_isolated_anonymous_workspaces_per_group(
+    tmp_path, templates
+) -> None:
+    runtime = tmp_path / "runtime"
+    assignment_dir = runtime / "shared" / "state"
+    assignment_dir.mkdir(parents=True)
+    rows = ["trainer_ref,participant_ref,group_id,dataset_id,mission_id"]
+    for group in GROUP_IDS:
+        for number in range(1, 5):
+            rows.append(f"runtime-only-{group}-{number},participant_{number:02d},{group},d,m")
+    (assignment_dir / "participant-assignments.csv").write_text("\n".join(rows) + "\n")
+    individual = WorkspaceManager(runtime, templates, participant_mode="individual_learning")
+
+    individual.sync(apply=True)
+
+    outputs = []
+    for group in GROUP_IDS:
+        base = runtime / "groups" / group
+        assert not (base / "driver-rotation.md").exists()
+        for number in range(1, 5):
+            participant = base / "participants" / f"participant_{number:02d}"
+            assert sorted(path.name for path in (participant / "notebooks").iterdir()) == sorted(
+                NOTEBOOKS
+            )
+            assert (participant / "config" / "group.env").is_file()
+            outputs.append((participant / "output").resolve())
+    assert len(outputs) == len(set(outputs)) == 40
+    assert individual.validate().passed, individual.validate().render()
+
+
+def test_individual_mode_without_assignment_creates_no_participant_folders(
+    tmp_path, templates
+) -> None:
+    manager = WorkspaceManager(
+        tmp_path / "runtime", templates, participant_mode="individual_learning"
+    )
+
+    actions = manager.sync(apply=True)
+
+    assert any(action.kind == "no_participant_roster" for action in actions)
+    assert not list((tmp_path / "runtime" / "groups").glob("*/participants/*"))
+
+
+def test_reset_and_archive_can_target_one_anonymous_participant(tmp_path, templates) -> None:
+    runtime = tmp_path / "runtime"
+    assignment_dir = runtime / "shared" / "state"
+    assignment_dir.mkdir(parents=True)
+    assignment_dir.joinpath("participant-assignments.csv").write_text(
+        "trainer_ref,participant_ref,group_id,dataset_id,mission_id\n"
+        "runtime-only,participant_01,group_01,d,m\n"
+    )
+    manager = WorkspaceManager(runtime, templates, participant_mode="individual_learning")
+    manager.sync(apply=True)
+    target = runtime / "groups/group_01/participants/participant_01/output/result.json"
+    target.write_text("{}")
+
+    archive = manager.archive("group_01", participant_ref="participant_01", apply=True)
+    manager.reset("group_01", participant_ref="participant_01", apply=True, yes=True)
+
+    assert archive["files"] == 1 and "participant_01" in archive["archive"]
+    assert not list(target.parent.iterdir())
+    assert not (runtime / "groups/group_02/participants").exists()
 
 
 def test_the_manifest_records_template_checksums(manager, tmp_path, templates) -> None:

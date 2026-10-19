@@ -24,6 +24,12 @@ def main(argv=None) -> int:
         "--runtime-dir", type=Path, default=None, help="Default: $WORKSHOP_RUNTIME_DIR or workshop/runtime"
     )
     parser.add_argument("--templates-dir", type=Path, default=TEMPLATES_DIR)
+    parser.add_argument(
+        "--mode",
+        choices=("group_driver", "individual_learning"),
+        default="group_driver",
+        help="Participant workspace mode (default: group_driver)",
+    )
     parser.add_argument("--apply", action="store_true", help="Write changes (the default is a dry run)")
     parser.add_argument(
         "--overwrite", action="store_true", help="Replace participant-edited files (needs --yes; backs up)"
@@ -31,7 +37,11 @@ def main(argv=None) -> int:
     parser.add_argument("--yes", action="store_true", help="Confirm a destructive --overwrite")
     parser.add_argument("--verbose", action="store_true", help="List every action, not only the summary")
     args = parser.parse_args(argv)
-    manager = WorkspaceManager(args.runtime_dir or group_paths.runtime_root(), args.templates_dir)
+    manager = WorkspaceManager(
+        args.runtime_dir or group_paths.runtime_root(),
+        args.templates_dir,
+        participant_mode=args.mode,
+    )
     try:
         actions = manager.sync(apply=args.apply, overwrite=args.overwrite, yes=args.yes)
     except WorkspaceError as exc:
@@ -41,6 +51,7 @@ def main(argv=None) -> int:
     result = {
         "mode": "apply" if args.apply else "dry-run (nothing was written; add --apply)",
         "runtime_dir": "workshop/runtime" if args.runtime_dir is None else "custom",
+        "participant_mode": args.mode,
         "summary": dict(sorted(summary.items())),
     }
     if args.verbose:

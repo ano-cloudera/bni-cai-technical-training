@@ -86,8 +86,9 @@ def test_cai_mode_without_prerequisites_fails_instead_of_mocking(
     lab, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     for name in (
-        "VLLM_BASE_URL", "QDRANT_URL", "EMBEDDING_MODEL_PATH", "PHOENIX_ENDPOINT", "LITELLM_BASE_URL",
-        "PORTAL_URL", "GROUP_ID", "GROUP_WORKSPACE", "GROUP_ENV_FILE", "DATASET_ID", "MISSION_ID",
+        "VLLM_BASE_URL", "QDRANT_URL", "EMBEDDING_MODEL_PATH", "PHOENIX_COLLECTOR_ENDPOINT",
+        "PHOENIX_UI_URL", "LITELLM_BASE_URL", "WORKSHOP_PORTAL_URL", "GROUP_ID", "GROUP_WORKSPACE",
+        "GROUP_ENV_FILE", "DATASET_ID", "MISSION_ID",
     ):  # fmt: skip
         monkeypatch.delenv(name, raising=False)
     if lab.id == "07":

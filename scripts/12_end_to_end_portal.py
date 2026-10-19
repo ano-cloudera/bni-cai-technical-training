@@ -65,8 +65,8 @@ def local_flow(ctx, report) -> None:
 
 
 def cai_flow(ctx, report) -> None:
-    env = require_env(["PORTAL_URL"])
-    url = health_url(SPECS["workshop-portal"], env["PORTAL_URL"])
+    env = require_env(["WORKSHOP_PORTAL_URL"])
+    url = health_url(SPECS["workshop-portal"], env["WORKSHOP_PORTAL_URL"])
     try:
         with urllib.request.urlopen(url, timeout=10) as response:  # noqa: S310 - operator-supplied https URL
             (report.passed if response.status < 400 else report.failed)(

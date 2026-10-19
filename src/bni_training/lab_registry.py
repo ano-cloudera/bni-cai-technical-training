@@ -24,6 +24,8 @@ class Lab:
     script: str
     notebook: str
     legacy_scripts: tuple[str, ...]
+    duration_min: int
+    exercise: str
     purpose: str
     theory: str
     expected: str
@@ -57,6 +59,8 @@ def load_registry(path: Path = REGISTRY_PATH) -> tuple[tuple[Lab, ...], tuple[st
             script=item["script"],
             notebook=item["notebook"],
             legacy_scripts=tuple(item.get("legacy_scripts", ())),
+            duration_min=int(item["duration_min"]),
+            exercise=item["exercise"],
             purpose=item["purpose"],
             theory=" ".join(item["theory"].split()),
             expected=item["expected"],

@@ -11,6 +11,8 @@ labs:
     script: scripts/00_environment_validation.py
     notebook: notebooks/templates/00_environment_validation.ipynb
     legacy_scripts: [scripts/00_environment_check.py]
+    duration_min: 15
+    exercise: Display the assigned mission and tables, then write and read a checkpoint.
     purpose: Validate Python 3.10, the runtime, your group configuration, the dataset, and the service variables.
     theory: >-
       Before any lab runs, confirm that the environment is what the workshop expects. A mismatch found here costs
@@ -25,6 +27,8 @@ labs:
     script: scripts/01_model_artifact_validation.py
     notebook: notebooks/templates/01_model_artifact_validation.ipynb
     legacy_scripts: [scripts/01_model_download.py]
+    duration_min: 30
+    exercise: Compare the artifact metadata with the proposed vLLM configuration.
     purpose: Validate the Qwen model directory on the CAI NFS workspace without downloading anything by default.
     theory: >-
       The model weights live on shared NFS and are never packaged or downloaded by a notebook. This lab only checks
@@ -39,6 +43,8 @@ labs:
     script: scripts/02_vllm_deployment.py
     notebook: notebooks/templates/02_vllm_deployment.ipynb
     legacy_scripts: [scripts/02_vllm_server.py]
+    duration_min: 45
+    exercise: Change a safe inference parameter and compare the response.
     purpose: Preview and validate the single shared vLLM deployment. Trainer demo only.
     theory: >-
       One shared vLLM endpoint serves all ten groups on one GPU (tensor parallel size 1, bfloat16). The trainer
@@ -53,6 +59,8 @@ labs:
     script: scripts/03_llm_api_testing.py
     notebook: notebooks/templates/03_llm_api_testing.ipynb
     legacy_scripts: []
+    duration_min: 20
+    exercise: Change the system prompt and compare the bounded answer.
     purpose: Test the shared endpoint - health, models, a normal request and a streaming request.
     theory: >-
       The shared model speaks the OpenAI-compatible API. A health check proves the server is up, the models list proves
@@ -67,6 +75,8 @@ labs:
     script: scripts/04_csv_data_access.py
     notebook: notebooks/templates/04_csv_data_access.ipynb
     legacy_scripts: []
+    duration_min: 25
+    exercise: Run a safe join across two allowed mission tables.
     purpose: Explore your group's assigned logical bundle of the synthetic banking dataset.
     theory: >-
       One physical dataset in data/raw serves all ten groups; your bundle lists the tables you may read. Queries are
@@ -80,6 +90,8 @@ labs:
     script: scripts/05_semantic_layer.py
     notebook: notebooks/templates/05_semantic_layer.ipynb
     legacy_scripts: [scripts/06_semantic_layer.py]
+    duration_min: 25
+    exercise: Ask one allowed metric with up to two dimensions.
     purpose: Understand the data dictionary, relationships, metrics and business terms behind your mission.
     theory: >-
       Business questions use words like "dormant account"; the semantic layer turns each into one metric and a safe
@@ -93,6 +105,8 @@ labs:
     script: scripts/06_crewai_tools.py
     notebook: notebooks/templates/06_crewai_tools.ipynb
     legacy_scripts: []
+    duration_min: 30
+    exercise: Change the agent goal or data-tool description and rerun.
     purpose: Build and test a group-scoped banking data tool that an agent can call.
     theory: >-
       An agent can only act through the tools you give it. The tool here wraps your group's data bundle, so the agent
@@ -106,6 +120,8 @@ labs:
     script: scripts/07_qdrant_rag.py
     notebook: notebooks/templates/07_qdrant_rag.ipynb
     legacy_scripts: [scripts/07_rag_with_qdrant.py]
+    duration_min: 30
+    exercise: Add one group-scoped note and retrieve it.
     purpose: Index and retrieve glossary and mission notes with a mandatory group_id filter.
     theory: >-
       Retrieval-augmented generation looks up relevant text before answering. All groups share one Qdrant collection,
@@ -119,6 +135,8 @@ labs:
     script: scripts/08_agent_workflow.py
     notebook: notebooks/templates/08_agent_workflow.ipynb
     legacy_scripts: [scripts/08_multi_agent_workflow.py]
+    duration_min: 60
+    exercise: Add one reviewer criterion and verify that grounding still passes.
     purpose: Run a lightweight CrewAI workflow with the shared LLM and your group's data tool.
     theory: >-
       Two small agents cooperate: an analyst calls the data tool, and a writer explains the result without changing
@@ -132,6 +150,8 @@ labs:
     script: scripts/09_phoenix_monitoring.py
     notebook: notebooks/templates/09_phoenix_monitoring.ipynb
     legacy_scripts: [scripts/09_phoenix_observability.py]
+    duration_min: 25
+    exercise: Add one safe custom trace attribute and find it.
     purpose: Send traces that carry group and session metadata and check them.
     theory: >-
       A trace is a timeline of what an agent did. Every span here carries your group_id, session id, dataset_id and
@@ -145,6 +165,8 @@ labs:
     script: scripts/10_litellm_routing.py
     notebook: notebooks/templates/10_litellm_routing.ipynb
     legacy_scripts: []
+    duration_min: 25
+    exercise: Compare latency for the two approved aliases.
     purpose: Route requests through LiteLLM and see how retry and endpoint fallback behave.
     theory: >-
       LiteLLM is a gateway in front of the model. It retries a failing endpoint and can fall back to a controlled
@@ -158,6 +180,8 @@ labs:
     script: scripts/11_guardrails.py
     notebook: notebooks/templates/11_guardrails.ipynb
     legacy_scripts: [scripts/11_llm_guardrails.py]
+    duration_min: 30
+    exercise: Add one transparent regex rule and test good and bad samples.
     purpose: Validate inputs, SQL access and model outputs.
     theory: >-
       Guardrails are ordinary, readable code. Inputs are checked for prompt injection, SQL is limited to your
@@ -171,6 +195,8 @@ labs:
     script: scripts/12_end_to_end_portal.py
     notebook: notebooks/templates/12_end_to_end_portal.ipynb
     legacy_scripts: []
+    duration_min: 20
+    exercise: Ask a second mission question in the Portal and find its output.
     purpose: Validate the full group-specific workflow through the shared Workshop Portal.
     theory: >-
       The Portal combines everything: your mission, the data bundle, the shared model, retrieval, queueing and

@@ -64,6 +64,6 @@ class Settings:
             impala_ca_cert=values.get("IMPALA_CA_CERT") or None,
             qdrant_url=values.get("QDRANT_URL") or None,
             qdrant_api_key=values.get("QDRANT_API_KEY") or None,
-            phoenix_endpoint=values.get("PHOENIX_ENDPOINT") or None,
+            phoenix_endpoint=values.get("PHOENIX_COLLECTOR_ENDPOINT") or None,
             litellm_base_url=values.get("LITELLM_BASE_URL") or None,
         )

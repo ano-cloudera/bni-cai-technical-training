@@ -25,6 +25,7 @@ from bni_training.data.tool import DataRequest, WorkshopDataTool
 
 from . import group_paths
 from .group_registry import UnknownGroupError
+from .notebook_support import participant_settings
 from .workspace_manager import TEMPLATES_DIR, WorkspaceError, WorkspaceManager, parse_env
 
 LOCAL_DEFAULT_GROUP = "group_01"
@@ -44,6 +45,9 @@ class LabContext:
     runtime_root: Path
     bundle: GroupBundle
     source: str
+    participant_mode: str = "group_driver"
+    participant_ref: str = "participant_01"
+    participant_workspace: Path | None = None
     run_id: str = field(default_factory=lambda: uuid.uuid4().hex)
     _engine: CsvEngine | None = field(default=None, repr=False)
 
@@ -53,6 +57,8 @@ class LabContext:
             "dataset_id": self.dataset_id,
             "mission_id": self.mission_id,
             "workspace": f"groups/{self.group_id}",
+            "participant_mode": self.participant_mode,
+            "participant_ref": self.participant_ref,
             "source": self.source,
         }
 
@@ -66,7 +72,11 @@ class LabContext:
         return WorkshopDataTool(self._engine, SemanticModel.load(), self.bundle)
 
     def write_output(self, name: str, text: str) -> Path:
-        """Save a result inside this group's own output folder, and nowhere else."""
+        """Save to the selected group or anonymous participant output folder."""
+        if self.participant_mode == "individual_learning":
+            return group_paths.write_participant_output(
+                self.runtime_root, self.group_id, self.participant_ref, name, text
+            )
         return group_paths.write_group_output(self.runtime_root, self.group_id, name, text)
 
     def close(self) -> None:
@@ -118,6 +128,7 @@ def resolve_lab_context(
     catalog = catalog or BundleCatalog.load()
     env_file = _find_group_env(source_env)
     from_file = parse_env(env_file.read_text(encoding="utf-8")) if env_file else {}
+    participant = participant_settings({**from_file, **source_env})
     values: dict[str, str] = {}
     for key in KEYS:
         from_env, from_group_file = source_env.get(key, ""), from_file.get(key, "")
@@ -169,6 +180,28 @@ def resolve_lab_context(
                 )
             resolved.mkdir(parents=True, exist_ok=True)
             (resolved / "output").mkdir(exist_ok=True)
+        participant_workspace = None
+        if participant.mode == "individual_learning":
+            configured = source_env.get("PARTICIPANT_WORKSPACE") or from_file.get(
+                "PARTICIPANT_WORKSPACE"
+            )
+            participant_workspace = (
+                Path(configured)
+                if configured
+                else resolved / "participants" / participant.participant_ref
+            )
+            if not participant_workspace.is_absolute() and not participant_workspace.exists():
+                participant_workspace = REPO_ROOT / participant_workspace
+            participant_workspace = participant_workspace.resolve()
+            expected = (resolved / "participants" / participant.participant_ref).resolve()
+            if participant_workspace != expected:
+                raise LabContextError(
+                    "PARTICIPANT_WORKSPACE must match this group and PARTICIPANT_REF"
+                )
+            if not (participant_workspace / "output").is_dir():
+                raise LabContextError(
+                    "The participant workspace is not prepared. Ask the trainer to prepare individual mode."
+                )
         return LabContext(
             group_id,
             bundle.dataset_id,
@@ -177,6 +210,9 @@ def resolve_lab_context(
             resolved.parent.parent,
             bundle,
             "environment",
+            participant.mode,
+            participant.participant_ref,
+            participant_workspace,
         )
     if mode == "cai":
         raise LabContextError(
@@ -186,7 +222,18 @@ def resolve_lab_context(
         root, base = _prepare_local_workspace(group_id, source_env)
     except WorkspaceError as exc:
         raise LabContextError(str(exc)) from exc
-    return LabContext(group_id, bundle.dataset_id, bundle.mission_id, base, root, bundle, "local-default")
+    return LabContext(
+        group_id,
+        bundle.dataset_id,
+        bundle.mission_id,
+        base,
+        root,
+        bundle,
+        "local-default",
+        participant.mode,
+        participant.participant_ref,
+        None,
+    )
 
 
 __all__ = ("LabContext", "LabContextError", "resolve_lab_context", "UnknownGroupError")

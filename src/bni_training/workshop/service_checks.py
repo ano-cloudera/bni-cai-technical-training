@@ -34,11 +34,19 @@ SPECS = types.MappingProxyType(
     {
         "vllm": ServiceSpec("vllm", "VLLM_BASE_URL", "/health", ("/v1",), "VLLM_API_KEY"),
         "qdrant": ServiceSpec("qdrant", "QDRANT_URL", "/readyz", (), "QDRANT_API_KEY", "api-key", ""),
-        "phoenix": ServiceSpec("phoenix", "PHOENIX_ENDPOINT", "/healthz", ("/v1/traces",), "PHOENIX_API_KEY"),
+        "phoenix": ServiceSpec(
+            "phoenix",
+            "PHOENIX_UI_URL",
+            "/healthz",
+            (),
+            "PHOENIX_API_KEY",
+        ),
         "litellm": ServiceSpec(
             "litellm", "LITELLM_BASE_URL", "/health/liveliness", ("/v1",), "LITELLM_API_KEY"
         ),
-        "workshop-portal": ServiceSpec("workshop-portal", "PORTAL_URL", "/_stcore/health"),
+        "workshop-portal": ServiceSpec(
+            "workshop-portal", "WORKSHOP_PORTAL_URL", "/_stcore/health"
+        ),
     }
 )
 

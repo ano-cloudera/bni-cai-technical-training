@@ -17,15 +17,29 @@ def main(argv=None) -> int:
     target = parser.add_mutually_exclusive_group(required=True)
     target.add_argument("--group-id", help="One group, group_01 ... group_10")
     target.add_argument("--all", action="store_true", help="All ten groups")
+    parser.add_argument(
+        "--participant-ref",
+        help="Archive one anonymous participant folder (requires --group-id)",
+    )
     parser.add_argument("--include-logs", action="store_true")
     parser.add_argument("--apply", action="store_true", help="Write the zip archive(s)")
     parser.add_argument("--runtime-dir", type=Path, default=None)
     parser.add_argument("--templates-dir", type=Path, default=TEMPLATES_DIR)
     args = parser.parse_args(argv)
+    if args.all and args.participant_ref:
+        parser.error("--participant-ref requires --group-id")
     manager = WorkspaceManager(args.runtime_dir or group_paths.runtime_root(), args.templates_dir)
     groups = list(GROUP_IDS) if args.all else [args.group_id]
     try:
-        results = [manager.archive(g, include_logs=args.include_logs, apply=args.apply) for g in groups]
+        results = [
+            manager.archive(
+                g,
+                participant_ref=args.participant_ref,
+                include_logs=args.include_logs,
+                apply=args.apply,
+            )
+            for g in groups
+        ]
     except WorkspaceError as exc:
         print(f"REFUSED: {exc}", file=sys.stderr)
         return 2

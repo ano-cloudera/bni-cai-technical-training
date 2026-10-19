@@ -8,7 +8,7 @@ dependency_profiles_validated_locally: [participant, rag, observability, gateway
 data_mode: "impala_gssapi or impala_ldap or csv (explicit choice, no fallback)"
 # Names only. Values come from the environment; none are stored in this repository.
 required_env:
-  participant: [GROUP_ID, DATA_MODE, VLLM_BASE_URL, VLLM_API_KEY, QDRANT_URL, EMBEDDING_MODEL_PATH, PHOENIX_ENDPOINT]
+  participant: [GROUP_ID, DATA_MODE, VLLM_BASE_URL, VLLM_API_KEY, QDRANT_URL, PHOENIX_COLLECTOR_ENDPOINT, PHOENIX_UI_URL, LITELLM_BASE_URL, WORKSHOP_PORTAL_URL]
   trainer: [MODEL_PATH, GPU_PROFILE, SERVED_MODEL_NAME, SERVICE_AUTH_MODE, QDRANT_BINARY, QDRANT_STORAGE_PATH, PHOENIX_WORKING_DIR, LITELLM_CONFIG, LITELLM_MASTER_KEY, CAI_API_BASE_URL, CAI_API_KEY]
 # MANDATORY: must PASS in this environment. SKIPPED: not applicable here and reported as SKIPPED.
 # OPTIONAL: run when available. SKIPPED is never a FAILED result.

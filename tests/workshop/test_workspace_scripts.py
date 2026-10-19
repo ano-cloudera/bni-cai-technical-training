@@ -24,7 +24,7 @@ def test_prepare_is_a_dry_run_unless_apply_is_given(args, tmp_path, capsys) -> N
     assert (tmp_path / "rt" / "groups" / "group_10" / "config" / "group.env").is_file()
     assert validate_main(args) == 0
     assert prepare_main([*args, "--apply"]) == 0
-    assert last_json(capsys.readouterr().out)["summary"] == {"unchanged": 50}
+    assert last_json(capsys.readouterr().out)["summary"] == {"unchanged": 60}
 
 
 def test_prepare_overwrite_without_yes_is_refused(args, capsys) -> None:

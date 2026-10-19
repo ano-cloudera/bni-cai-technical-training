@@ -56,16 +56,30 @@ def build_single_project_plan(
     lifecycle = _load(REPO_ROOT / topology["lifecycle"]["source"])
     assignments = _load(REPO_ROOT / topology["groups"]["source"])["assignments"]
     source = os.environ if env is None else env
+    participant_mode = source.get("PARTICIPANT_MODE", topology["sessions"]["mode"])
+    if participant_mode not in {"group_driver", "individual_learning"}:
+        raise PlanError("PARTICIPANT_MODE must be group_driver or individual_learning")
+    groups = [a["group_id"] for a in assignments]
+    session_labels = (
+        groups
+        if participant_mode == "group_driver"
+        else [
+            f"{group_id}/participant_{number:02d}"
+            for group_id in groups
+            for number in range(1, topology["groups"]["participants_per_group"] + 1)
+        ]
+    )
     try:
         max_sessions = int(
             source.get("MAX_CONCURRENT_GROUP_SESSIONS", topology["sessions"]["default_max_concurrent"])
         )
     except ValueError as exc:
         raise PlanError("MAX_CONCURRENT_GROUP_SESSIONS must be a whole number") from exc
-    if not 1 <= max_sessions <= len(assignments):
-        raise PlanError(f"MAX_CONCURRENT_GROUP_SESSIONS must be between 1 and {len(assignments)}")
-    groups = [a["group_id"] for a in assignments]
-    waves = [groups[i : i + max_sessions] for i in range(0, len(groups), max_sessions)]
+    if not 1 <= max_sessions <= len(session_labels):
+        raise PlanError(
+            f"MAX_CONCURRENT_GROUP_SESSIONS must be between 1 and {len(session_labels)}"
+        )
+    waves = [session_labels[i : i + max_sessions] for i in range(0, len(session_labels), max_sessions)]
     apps = {a["key"]: a for a in applications["applications"]}
     limit = int(applications["max_active_applications"])
     if len(apps) > limit:
@@ -88,7 +102,9 @@ def build_single_project_plan(
         "group_count": len(groups),
         "group_workspace_count": len(groups),
         "participants_per_group": topology["groups"]["participants_per_group"],
-        "requested_session_count": len(groups) * session["per_group"],
+        "participant_mode": participant_mode,
+        "requested_session_count": len(session_labels),
+        "individual_learning_status": session.get("per_participant_status"),
         "max_concurrent_session_count": max_sessions,
         "session_waves": waves,
         "per_group_streamlit_applications": 0,
@@ -114,5 +130,5 @@ def build_single_project_plan(
         "data_backend": topology["data"]["backend"],
         "isolation": topology["isolation"],
         "unresolved_cai_validation_items": pending,
-        "waves_needed": math.ceil(len(groups) / max_sessions),
+        "waves_needed": math.ceil(len(session_labels) / max_sessions),
     }

@@ -28,6 +28,9 @@ from .group_paths import UnsafePathError, safe_join
 
 SCHEMA_VERSION = 1
 GROUP_SUBDIRS = ("config", "notebooks", "output", "logs", "tmp")
+PARTICIPANT_SUBDIRS = ("config", "notebooks", "output", "logs", "tmp")
+PARTICIPANT_MODES = ("group_driver", "individual_learning")
+PARTICIPANT_REFS = tuple(f"participant_{number:02d}" for number in range(1, 5))
 SHARED_SUBDIRS = ("config", "state", "logs")
 MANIFEST_NAME = "workspace-manifest.json"
 README_TEMPLATE = REPO_ROOT / "workshop" / "templates" / "group" / "README.md"
@@ -111,12 +114,18 @@ class WorkspaceManager:
         *,
         repo_root: Path = REPO_ROOT,
         clock: Callable[[], float] = time.time,
+        participant_mode: str = "group_driver",
     ):
         self.root = Path(runtime_root)
         self.templates_dir = Path(templates_dir)
         self.catalog = catalog or BundleCatalog.load()
         self.repo_root = Path(repo_root)
         self._clock = clock
+        if participant_mode not in PARTICIPANT_MODES:
+            raise WorkspaceError(
+                "PARTICIPANT_MODE must be group_driver or individual_learning"
+            )
+        self.participant_mode = participant_mode
 
     # paths
     def group_dir(self, group_id: str) -> Path:
@@ -158,11 +167,61 @@ class WorkspaceManager:
             f"DATASET_ID={bundle.dataset_id}",
             f"MISSION_ID={bundle.mission_id}",
             f"GROUP_WORKSPACE={self._workspace_ref(group_id)}",
+            f"PARTICIPANT_MODE={self.participant_mode}",
             "WORKSHOP_TOPOLOGY=single_project",
             "DATA_BACKEND=csv",
             f"CSV_DATA_DIR={csv_ref}",
         ]
+        if self.participant_mode == "group_driver":
+            lines.extend(
+                [
+                    "PARTICIPANT_REF=participant_01",
+                    f"PARTICIPANT_WORKSPACE={self._workspace_ref(group_id)}",
+                ]
+            )
         return "\n".join(lines) + "\n"
+
+    def participant_env_text(self, group_id: str, participant_ref: str) -> str:
+        if participant_ref not in PARTICIPANT_REFS:
+            raise WorkspaceError("participant_ref must be participant_01 through participant_04")
+        participant_workspace = f"{self._workspace_ref(group_id)}/participants/{participant_ref}"
+        return self.group_env_text(group_id) + "\n".join(
+            [
+                f"PARTICIPANT_REF={participant_ref}",
+                f"PARTICIPANT_WORKSPACE={participant_workspace}",
+            ]
+        ) + "\n"
+
+    @staticmethod
+    def driver_rotation_text(group_id: str) -> str:
+        rows = "\n".join(
+            f"- `{ref}`: rotate keyboard control at the trainer's checkpoint."
+            for ref in PARTICIPANT_REFS
+        )
+        return (
+            f"# Driver rotation for {group_id}\n\n"
+            "This group uses one CPU Session. Only the active driver edits or runs a cell.\n\n"
+            f"{rows}\n"
+        )
+
+    def _participants_by_group(self) -> dict[str, tuple[str, ...]]:
+        result = {group_id: () for group_id in GROUP_IDS}
+        assignment_path = self.root / "shared" / "state" / "participant-assignments.csv"
+        if not assignment_path.is_file():
+            return result
+        import csv
+
+        found: dict[str, list[str]] = {group_id: [] for group_id in GROUP_IDS}
+        with assignment_path.open(newline="", encoding="utf-8") as handle:
+            for row in csv.DictReader(handle):
+                group_id = (row.get("group_id") or "").strip()
+                participant_ref = (row.get("participant_ref") or "").strip()
+                if group_id not in GROUP_IDS or participant_ref not in PARTICIPANT_REFS:
+                    raise WorkspaceError("participant assignment contains an invalid group or anonymous ref")
+                if participant_ref in found[group_id]:
+                    raise WorkspaceError(f"duplicate {participant_ref} in {group_id}")
+                found[group_id].append(participant_ref)
+        return {group_id: tuple(sorted(refs)) for group_id, refs in found.items()}
 
     def readme_text(self, group_id: str) -> str:
         bundle = self.catalog.for_group(group_id)
@@ -210,6 +269,7 @@ class WorkspaceManager:
         if overwrite and not yes:
             raise WorkspaceError("--overwrite replaces participant files and requires --yes")
         templates = self.templates()
+        participants = self._participants_by_group() if self.participant_mode == "individual_learning" else {}
         actions: list[Action] = []
         stamp = self._timestamp()
         for name in SHARED_SUBDIRS:
@@ -219,10 +279,29 @@ class WorkspaceManager:
                 if apply:
                     path.mkdir(parents=True, exist_ok=True)
         for group_id in GROUP_IDS:
-            actions.extend(self._sync_group(group_id, templates, apply, overwrite, stamp))
+            actions.extend(
+                self._sync_group(
+                    group_id,
+                    templates,
+                    apply,
+                    overwrite,
+                    stamp,
+                    participants.get(group_id, ()),
+                )
+            )
+        if self.participant_mode == "individual_learning" and not any(participants.values()):
+            actions.append(
+                Action(
+                    "shared",
+                    "no_participant_roster",
+                    "shared/state/participant-assignments.csv",
+                    "run assign_participants.py --apply before preparing individual folders",
+                )
+            )
         if apply:
             summary = {
                 "schema_version": SCHEMA_VERSION,
+                "participant_mode": self.participant_mode,
                 "groups": {
                     g: {
                         "dataset_id": self.catalog.for_group(g).dataset_id,
@@ -238,7 +317,13 @@ class WorkspaceManager:
         return actions
 
     def _sync_group(
-        self, group_id: str, templates: dict[str, Path], apply: bool, overwrite: bool, stamp: str
+        self,
+        group_id: str,
+        templates: dict[str, Path],
+        apply: bool,
+        overwrite: bool,
+        stamp: str,
+        participant_refs: tuple[str, ...],
     ) -> list[Action]:
         actions: list[Action] = []
         base = self.group_dir(group_id)
@@ -256,6 +341,7 @@ class WorkspaceManager:
                 "group_id": group_id,
                 "dataset_id": self.catalog.for_group(group_id).dataset_id,
                 "mission_id": self.catalog.for_group(group_id).mission_id,
+                "participant_mode": self.participant_mode,
             }
         )
 
@@ -323,16 +409,50 @@ class WorkspaceManager:
                 )
             )
 
-        for name, path in templates.items():
-            data = path.read_bytes()
+        if self.participant_mode == "group_driver":
+            for name, path in templates.items():
+                data = path.read_bytes()
+                sync_file(
+                    f"notebooks/{name}",
+                    data,
+                    "copy_notebook",
+                    "refresh_notebook",
+                    "replace_notebook",
+                    sha256_bytes(data),
+                )
             sync_file(
-                f"notebooks/{name}",
-                data,
-                "copy_notebook",
-                "refresh_notebook",
-                "replace_notebook",
-                sha256_bytes(data),
+                "driver-rotation.md",
+                self.driver_rotation_text(group_id).encode(),
+                "write_file",
+                "refresh_file",
+                "replace_file",
             )
+        else:
+            for participant_ref in participant_refs:
+                for sub in PARTICIPANT_SUBDIRS:
+                    directory = safe_join(base, "participants", participant_ref, sub)
+                    if not directory.is_dir():
+                        relative = f"groups/{group_id}/participants/{participant_ref}/{sub}"
+                        actions.append(Action(group_id, "create_dir", relative))
+                        if apply:
+                            directory.mkdir(parents=True, exist_ok=True)
+                for name, path in templates.items():
+                    data = path.read_bytes()
+                    sync_file(
+                        f"participants/{participant_ref}/notebooks/{name}",
+                        data,
+                        "copy_notebook",
+                        "refresh_notebook",
+                        "replace_notebook",
+                        sha256_bytes(data),
+                    )
+                sync_file(
+                    f"participants/{participant_ref}/config/group.env",
+                    self.participant_env_text(group_id, participant_ref).encode(),
+                    "write_file",
+                    "refresh_file",
+                    "replace_file",
+                )
         sync_file(
             "config/group.env",
             self.group_env_text(group_id).encode(),
@@ -386,6 +506,11 @@ class WorkspaceManager:
             "; ".join(unsafe[:3]),
         )
         templates = self.templates()
+        participants = (
+            self._participants_by_group()
+            if self.participant_mode == "individual_learning"
+            else {}
+        )
         env_errors, mission_errors, notebook_errors, secret_errors, folder_errors, write_errors = (
             [],
             [],
@@ -417,6 +542,8 @@ class WorkspaceManager:
                     mission_errors.append(f"{group_id}: {wrong}")
                 if values.get("DATA_BACKEND", "csv") != "csv":
                     env_errors.append(f"{group_id}: DATA_BACKEND must be csv")
+                if values.get("PARTICIPANT_MODE") != self.participant_mode:
+                    env_errors.append(f"{group_id}: PARTICIPANT_MODE mismatch")
                 try:
                     group_paths.check_segment(Path(values.get("GROUP_WORKSPACE", "")).name)
                     if Path(values.get("GROUP_WORKSPACE", "")).name != group_id:
@@ -426,25 +553,65 @@ class WorkspaceManager:
                 for key, value in values.items():
                     if SECRET_KEY.search(key) or SECRET_VALUE.search(value):
                         secret_errors.append(f"{group_id}: {key}")
-            for path in (base / "config").glob("*") if (base / "config").is_dir() else []:
+            config_files = list((base / "config").glob("*")) if (base / "config").is_dir() else []
+            config_files.extend((base / "participants").glob("*/config/*"))
+            for path in config_files:
                 if (
                     path.is_file()
                     and path.suffix in (".json", ".md", ".env")
                     and SECRET_VALUE.search(path.read_text(encoding="utf-8", errors="ignore"))
                 ):
                     secret_errors.append(f"{group_id}: {path.name}")
-            missing_notebooks = [n for n in templates if not (base / "notebooks" / n).is_file()]
-            if missing_notebooks:
-                notebook_errors.append(
-                    f"{group_id}: missing {len(missing_notebooks)} ({missing_notebooks[0]}...)"
+            if self.participant_mode == "group_driver":
+                missing_notebooks = [
+                    name for name in templates if not (base / "notebooks" / name).is_file()
+                ]
+                if missing_notebooks:
+                    notebook_errors.append(
+                        f"{group_id}: missing {len(missing_notebooks)} ({missing_notebooks[0]}...)"
+                    )
+                if not (base / "driver-rotation.md").is_file():
+                    folder_errors.append(f"{group_id}: driver-rotation.md missing")
+                output_dirs = [base / "output"]
+            else:
+                output_dirs = []
+                expected_refs = participants.get(group_id, ())
+                actual_dir = base / "participants"
+                actual_refs = (
+                    sorted(path.name for path in actual_dir.iterdir())
+                    if actual_dir.is_dir()
+                    else []
                 )
-            if (base / "output").is_dir():
-                probe = safe_join(base, "output", "write-probe.tmp")
+                if actual_refs != list(expected_refs):
+                    folder_errors.append(f"{group_id}: participant folders {actual_refs}")
+                for participant_ref in expected_refs:
+                    participant = base / "participants" / participant_ref
+                    missing_dirs = [
+                        sub for sub in PARTICIPANT_SUBDIRS if not (participant / sub).is_dir()
+                    ]
+                    if missing_dirs:
+                        folder_errors.append(
+                            f"{group_id}/{participant_ref}: missing {missing_dirs}"
+                        )
+                    missing_notebooks = [
+                        name
+                        for name in templates
+                        if not (participant / "notebooks" / name).is_file()
+                    ]
+                    if missing_notebooks:
+                        notebook_errors.append(
+                            f"{group_id}/{participant_ref}: missing {missing_notebooks[0]}"
+                        )
+                    output_dirs.append(participant / "output")
+            for output_dir in output_dirs:
+                if not output_dir.is_dir():
+                    continue
+                probe = safe_join(output_dir, "write-probe.tmp")
                 try:
                     probe.write_text("ok", encoding="utf-8")
                     probe.unlink()
                 except OSError as exc:
-                    write_errors.append(f"{group_id}: {type(exc).__name__}")
+                    write_errors.append(f"{group_id}/{output_dir.parent.name}: {type(exc).__name__}")
         report.add(
             "every group has its config, notebooks, output, logs and tmp folders",
             not folder_errors,
@@ -461,7 +628,9 @@ class WorkspaceManager:
             "; ".join(mission_errors[:3]),
         )
         report.add(
-            "every group has all notebook templates", not notebook_errors, "; ".join(notebook_errors[:3])
+            "every active workspace has all notebook templates",
+            not notebook_errors,
+            "; ".join(notebook_errors[:3]),
         )
         report.add("each group output folder is writable", not write_errors, "; ".join(write_errors[:3]))
         report.add(
@@ -482,7 +651,11 @@ class WorkspaceManager:
         report.add(
             "the shared dataset is readable", readable, f"missing {csv_missing}" if csv_missing else ""
         )
-        copies = [str(p.relative_to(self.root)) for p in _walk(self.root) if p.suffix == ".csv"]
+        copies = [
+            str(p.relative_to(self.root))
+            for p in _walk(self.root / "groups")
+            if p.suffix == ".csv"
+        ]
         report.add(
             "the physical dataset is not duplicated into group folders", not copies, "; ".join(copies[:3])
         )
@@ -490,15 +663,33 @@ class WorkspaceManager:
 
     # reset
     def reset(
-        self, group_id: str, *, include_notebooks: bool = False, apply: bool = False, yes: bool = False
+        self,
+        group_id: str,
+        *,
+        participant_ref: str | None = None,
+        include_notebooks: bool = False,
+        apply: bool = False,
+        yes: bool = False,
     ) -> list[Action]:
         if group_id not in GROUP_IDS:
             raise WorkspaceError(f"Unknown group: {group_id!r}. Give one of group_01 to group_10.")
         if apply and not yes:
             raise WorkspaceError("Resetting deletes group files and requires --yes")
-        base = self.group_dir(group_id)
-        if not base.is_dir():
+        group_base = self.group_dir(group_id)
+        if not group_base.is_dir():
             raise WorkspaceError(f"{group_id} has no workspace yet")
+        if participant_ref is not None:
+            if participant_ref not in PARTICIPANT_REFS:
+                raise WorkspaceError("participant_ref must be participant_01 through participant_04")
+            base = safe_join(group_base, "participants", participant_ref)
+            if not base.is_dir():
+                raise WorkspaceError(f"{group_id}/{participant_ref} has no workspace yet")
+            display_root = f"groups/{group_id}/participants/{participant_ref}"
+            manifest_prefix = f"participants/{participant_ref}/"
+        else:
+            base = group_base
+            display_root = f"groups/{group_id}"
+            manifest_prefix = ""
         actions: list[Action] = []
         stamp = self._timestamp()
         for sub in ("output", "logs", "tmp"):
@@ -513,7 +704,7 @@ class WorkspaceManager:
                 Action(
                     group_id,
                     "clear_dir",
-                    f"groups/{group_id}/{sub}",
+                    f"{display_root}/{sub}",
                     f"{len(files)} files, {sum(p.stat().st_size for p in files)} bytes",
                 )
             )
@@ -528,44 +719,60 @@ class WorkspaceManager:
             templates = self.templates()
             for name, template in templates.items():
                 relative = f"notebooks/{name}"
+                manifest_relative = manifest_prefix + relative
                 target = safe_join(base, "notebooks", name)
                 data = template.read_bytes()
                 if target.exists():
                     modified = sha256_file(target) != sha256_bytes(data)
                     if not modified:
-                        actions.append(Action(group_id, "unchanged", f"groups/{group_id}/{relative}"))
+                        actions.append(Action(group_id, "unchanged", f"{display_root}/{relative}"))
                         continue
                     actions.append(
                         Action(
                             group_id,
                             "reset_notebook",
-                            f"groups/{group_id}/{relative}",
+                            f"{display_root}/{relative}",
                             "modified notebook backed up first",
                         )
                     )
                     if apply:
-                        self._backup(group_id, target, relative, stamp)
+                        self._backup(group_id, target, manifest_relative, stamp)
                 else:
-                    actions.append(Action(group_id, "restore_notebook", f"groups/{group_id}/{relative}"))
+                    actions.append(Action(group_id, "restore_notebook", f"{display_root}/{relative}"))
                 if apply:
                     self._write(base, relative, data)
-                    manifest.setdefault("files", {})[relative] = {
+                    manifest.setdefault("files", {})[manifest_relative] = {
                         "template_sha256": sha256_bytes(data),
                         "installed_sha256": sha256_bytes(data),
                     }
             if apply:
                 self._write(
-                    base,
+                    group_base,
                     f"config/{MANIFEST_NAME}",
                     (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode(),
                 )
         return actions
 
     # archive
-    def archive(self, group_id: str, *, include_logs: bool = False, apply: bool = False) -> dict:
-        base = self.group_dir(group_id)
-        if not base.is_dir():
+    def archive(
+        self,
+        group_id: str,
+        *,
+        participant_ref: str | None = None,
+        include_logs: bool = False,
+        apply: bool = False,
+    ) -> dict:
+        group_base = self.group_dir(group_id)
+        if not group_base.is_dir():
             raise WorkspaceError(f"{group_id} has no workspace yet")
+        if participant_ref is not None:
+            if participant_ref not in PARTICIPANT_REFS:
+                raise WorkspaceError("participant_ref must be participant_01 through participant_04")
+            base = safe_join(group_base, "participants", participant_ref)
+            if not base.is_dir():
+                raise WorkspaceError(f"{group_id}/{participant_ref} has no workspace yet")
+        else:
+            base = group_base
         folders = ["output"] + (["logs"] if include_logs else [])
         entries: list[tuple[Path, str]] = []
         for sub in folders:
@@ -577,6 +784,7 @@ class WorkspaceManager:
                     entries.append((path, path.relative_to(base).as_posix()))
         summary = {
             "group_id": group_id,
+            "participant_ref": participant_ref,
             "files": len(entries),
             "bytes": sum(p.stat().st_size for p, _ in entries),
             "archive": None,
@@ -585,7 +793,12 @@ class WorkspaceManager:
             stamp = self._timestamp()
             target_dir = safe_join(self.root, "shared", "state") / "archives"
             target_dir.mkdir(parents=True, exist_ok=True)
-            target = target_dir / f"{group_id}-{stamp}.zip"
+            target_name = (
+                f"{group_id}-{participant_ref}-{stamp}.zip"
+                if participant_ref
+                else f"{group_id}-{stamp}.zip"
+            )
+            target = target_dir / target_name
             checksums = {}
             with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as archive:
                 for path, name in entries:

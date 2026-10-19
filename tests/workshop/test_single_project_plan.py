@@ -20,6 +20,7 @@ def test_the_default_single_project_plan_has_one_project_and_one_portal() -> Non
     assert plan["project_count"] == 1 and plan["projects"] == ["bni-ai-training-workshop"]
     assert plan["group_count"] == plan["group_workspace_count"] == 10
     assert plan["requested_session_count"] == 10 and plan["max_concurrent_session_count"] == 10
+    assert plan["participant_mode"] == "group_driver"
     assert plan["per_group_streamlit_applications"] == 0 and "group_application_waves" not in plan
     assert plan["application_count"] == 5 and set(plan["applications"]) == {
         "vllm", "qdrant", "phoenix", "litellm", "workshop-portal",
@@ -28,6 +29,16 @@ def test_the_default_single_project_plan_has_one_project_and_one_portal() -> Non
     assert plan["estimated_participant_cpu"] == 20 and plan["estimated_participant_memory_gb"] == 80
     assert plan["gpu_requirement"] == {"nvidia_gpu": 1, "applications": ["vllm"], "participant_sessions": 0}
     assert plan["data_backend"] == "csv" and plan["isolation"]["security_boundary"] is False
+
+
+def test_individual_learning_is_explicit_and_remains_capacity_pending() -> None:
+    plan = build_single_project_plan(CONFIG, env={"PARTICIPANT_MODE": "individual_learning"})
+
+    assert plan["requested_session_count"] == 40
+    assert plan["max_concurrent_session_count"] == 10
+    assert plan["waves_needed"] == 4
+    assert plan["individual_learning_status"] == "cai-validation-pending"
+    assert plan["session_waves"][0][0] == "group_01/participant_01"
 
 
 def test_the_plan_reports_unresolved_items_and_never_invents_a_runtime_identifier() -> None:

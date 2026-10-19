@@ -15,6 +15,10 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--group-id", required=True, help="group_01 ... group_10 (required, no default)")
     parser.add_argument(
+        "--participant-ref",
+        help="Optional anonymous participant_01 ... participant_04 in individual mode",
+    )
+    parser.add_argument(
         "--include-notebooks", action="store_true", help="Also restore notebooks (edited ones are backed up)"
     )
     parser.add_argument("--yes", action="store_true", help="Actually reset; without it this is a dry run")
@@ -24,7 +28,11 @@ def main(argv=None) -> int:
     manager = WorkspaceManager(args.runtime_dir or group_paths.runtime_root(), args.templates_dir)
     try:
         actions = manager.reset(
-            args.group_id, include_notebooks=args.include_notebooks, apply=args.yes, yes=args.yes
+            args.group_id,
+            participant_ref=args.participant_ref,
+            include_notebooks=args.include_notebooks,
+            apply=args.yes,
+            yes=args.yes,
         )
     except WorkspaceError as exc:
         print(f"REFUSED: {exc}", file=sys.stderr)

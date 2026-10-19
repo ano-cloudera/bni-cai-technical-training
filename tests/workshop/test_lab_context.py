@@ -138,6 +138,39 @@ def test_outputs_land_only_in_the_resolved_groups_output_folder(runtime) -> None
     assert not list((runtime / "groups/group_03/output").iterdir())
 
 
+def test_individual_outputs_land_only_in_the_anonymous_participant_folder(
+    tmp_path,
+) -> None:
+    root = tmp_path / "runtime"
+    assignments = root / "shared" / "state"
+    assignments.mkdir(parents=True)
+    assignments.joinpath("participant-assignments.csv").write_text(
+        "trainer_ref,participant_ref,group_id,dataset_id,mission_id\n"
+        "runtime-only,participant_02,group_03,d,m\n"
+    )
+    templates = write_templates(tmp_path / "templates-individual")
+    WorkspaceManager(
+        root, templates, participant_mode="individual_learning"
+    ).sync(apply=True)
+    env_file = root / "groups/group_03/participants/participant_02/config/group.env"
+
+    ctx = resolve_lab_context(
+        "cai",
+        {
+            "GROUP_ENV_FILE": str(env_file),
+            "GROUP_WORKSPACE": str(root / "groups/group_03"),
+        },
+    )
+    saved = ctx.write_output("individual.json", "{}")
+
+    expected = root / "groups/group_03/participants/participant_02/output"
+    assert ctx.participant_mode == "individual_learning"
+    assert saved.parent == expected.resolve()
+    assert not list((root / "groups/group_03/output").iterdir())
+    other_output = root / "groups/group_03/participants/participant_01/output"
+    assert not other_output.exists() or not list(other_output.iterdir())
+
+
 def test_the_data_tool_is_bound_to_the_groups_bundle(runtime) -> None:
     ctx = resolve_lab_context("cai", env_for(runtime, "group_02"))
     try:

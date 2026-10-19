@@ -59,8 +59,8 @@ items:
   - id: group-workspaces-in-cai-sessions
     status: cai-validation-pending
     covers: [scripts/prepare_group_workspaces.py, scripts/validate_group_workspaces.py, workshop/runtime]
-    verified_locally: generation, idempotency, preserved edits, reset and archive in a temporary directory; ten groups; no secrets in group.env
-    evidence_needed: The hierarchy is created on the CAI project filesystem, ten Sessions open their own notebooks and write only to their own output folder, and the filesystem permits concurrent writes from ten Sessions
+    verified_locally: group_driver and individual_learning generation, 40 distinct anonymous output folders, idempotency, preserved edits, targeted reset and archive; no secrets in group.env
+    evidence_needed: The hierarchy is created on the CAI project filesystem; ten group-driver Sessions work correctly; and optional 40-Session individual_learning capacity, startup time, and concurrent writes are validated before enabling that mode
     validated_in: [sandbox-l40s, bni-h200]
   - id: notebook-labs-cai-mode
     status: cai-validation-pending
@@ -77,6 +77,6 @@ items:
   - id: participant-assignment-roster
     status: cai-validation-pending
     covers: [scripts/assign_participants.py]
-    verified_locally: 40 synthetic participants over ten groups, capacity of five per group, roster errors
+    verified_locally: 40 synthetic participants over ten groups, anonymous participant_01 through participant_04 labels, capacity of four per group, roster errors
     evidence_needed: The trainer's real roster format and how participants are told their group
     validated_in: [bni-h200]

@@ -80,7 +80,13 @@ def body(args, report):
         )
     else:
         report.skipped("shared_model_endpoint", "Local mode uses an in-process mock model")
-    for variable, lab in (("QDRANT_URL", "07"), ("PHOENIX_ENDPOINT", "09"), ("LITELLM_BASE_URL", "10")):
+    for variable, lab in (
+        ("QDRANT_URL", "07"),
+        ("PHOENIX_COLLECTOR_ENDPOINT", "09"),
+        ("PHOENIX_UI_URL", "09"),
+        ("LITELLM_BASE_URL", "10"),
+        ("WORKSHOP_PORTAL_URL", "12"),
+    ):
         if os.getenv(variable):
             report.passed(f"service_{variable.lower()}", "set")
         else:

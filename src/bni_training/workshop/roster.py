@@ -16,7 +16,7 @@ from bni_training.data.bundles import GROUP_IDS
 
 REF_COLUMNS = ("participant_ref", "participant_id", "name", "email")
 DEFAULT_GROUP_SIZE = 4
-DEFAULT_MAX_PER_GROUP = 5
+DEFAULT_MAX_PER_GROUP = 4
 
 
 class RosterError(ValueError):
@@ -98,3 +98,20 @@ def summarize(assignment: dict[str, str], groups: tuple[str, ...] = GROUP_IDS) -
         "smallest_group": min(counts.get(g, 0) for g in groups),
         "largest_group": max(counts.get(g, 0) for g in groups),
     }
+
+
+def anonymous_refs(assignment: dict[str, str]) -> list[tuple[str, str, str]]:
+    """Return ``(trainer_ref, participant_ref, group_id)`` with group-local anonymous labels."""
+    rows: list[tuple[str, str, str]] = []
+    for group_id in GROUP_IDS:
+        trainer_refs = sorted(
+            (ref for ref, assigned_group in assignment.items() if assigned_group == group_id),
+            key=str.casefold,
+        )
+        if len(trainer_refs) > DEFAULT_GROUP_SIZE:
+            raise RosterError(f"{group_id} exceeds the anonymous participant capacity of 4")
+        rows.extend(
+            (trainer_ref, f"participant_{index:02d}", group_id)
+            for index, trainer_ref in enumerate(trainer_refs, start=1)
+        )
+    return rows
