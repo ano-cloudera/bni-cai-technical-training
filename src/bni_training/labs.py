@@ -212,7 +212,7 @@ def shared_llm_settings(env: dict[str, str] | None = None) -> tuple[str, str, st
     """(base_url, api_key, model) of the ONE shared vLLM endpoint for labs 03-09. Never mocked in cai mode."""
     source = dict(os.environ if env is None else env)
     url = require_env(["VLLM_BASE_URL"], source)["VLLM_BASE_URL"]
-    return url, source.get("VLLM_API_KEY", ""), source.get("SERVED_MODEL_NAME", "qwen3.5-9b")
+    return url, source.get("VLLM_API_KEY", ""), source.get("VLLM_MODEL") or source.get("SERVED_MODEL_NAME", "qwen3.5-9b")
 
 
 def workshop_role(env: dict[str, str] | None = None) -> str:

@@ -49,6 +49,8 @@ print({"mode": LAB_MODE, "group_id": context.group_id, "endpoint_configured": Tr
 
 # %%
 # Build the OpenAI-compatible chat payload participants will send.
+from bni_training.llm_client import model_request_extras, visible_answer
+
 payload = {
     "model": os.getenv("VLLM_MODEL", "qwen3.5-9b"),
     "messages": [
@@ -58,7 +60,12 @@ payload = {
     "temperature": 0.2,
     "max_tokens": 64,
 }
-print({"model": payload["model"], "roles": [item["role"] for item in payload["messages"]], "max_tokens": 64})
+# Qwen3.5 "thinks" before it answers. Thinking text would consume the small max_tokens budget and would show
+# internal reasoning, so we ask the chat template to skip it. Other models are left unchanged.
+extras = model_request_extras(payload["model"])
+payload.update(extras)
+print({"model": payload["model"], "roles": [item["role"] for item in payload["messages"]], "max_tokens": 64,
+       "extra_fields": sorted(extras)})
 
 # %% [markdown]
 # Send with a 30-second timeout and at most two attempts. A 429 means the shared queue is busy; a 5xx means the service failed temporarily. The bounded retry prevents runaway load and should recover from the mock's first 5xx.
@@ -84,7 +91,7 @@ assert response is not None
 response.raise_for_status()
 latency_seconds = round(time.perf_counter() - started, 3)
 body = response.json()
-print({"answer": body["choices"][0]["message"]["content"], "usage": body.get("usage"), "latency_s": latency_seconds})
+print({"answer": visible_answer(body["choices"][0]["message"]["content"]), "usage": body.get("usage"), "latency_s": latency_seconds})
 
 # %% [markdown]
 # Repeat through the reusable client and stream deltas. This keeps parsing visible while showing the convenience boundary. Expect a non-empty concatenated answer.
@@ -93,8 +100,10 @@ print({"answer": body["choices"][0]["message"]["content"], "usage": body.get("us
 # Stream one bounded response from the same configured endpoint.
 from bni_training.llm_client import OpenAICompatibleClient
 
-client = OpenAICompatibleClient(base_url, os.getenv("VLLM_API_KEY", "local-placeholder"), payload["model"])
-streamed_answer = "".join(client.stream_chat(payload["messages"], temperature=0.2, max_tokens=64)).strip()
+client = OpenAICompatibleClient(
+    base_url, os.getenv("VLLM_API_KEY", "local-placeholder"), payload["model"], extra_body=extras
+)
+streamed_answer = visible_answer("".join(client.stream_chat(payload["messages"], temperature=0.2, max_tokens=64)))
 assert streamed_answer, "The stream contained no text; ask the trainer to inspect the shared endpoint."
 print({"streamed_answer": streamed_answer})
 
@@ -111,7 +120,7 @@ exercise_messages = [
     {"role": "user", "content": "Why should analytical queries be read-only?"},
 ]
 exercise_response = client.chat(exercise_messages, temperature=exercise_temperature, max_tokens=80, timeout=30)
-exercise_answer = exercise_response["choices"][0]["message"]["content"]
+exercise_answer = visible_answer(exercise_response["choices"][0]["message"]["content"])
 assert exercise_answer, "No exercise answer was returned."
 print({"exercise_temperature": exercise_temperature, "answer": exercise_answer})
 

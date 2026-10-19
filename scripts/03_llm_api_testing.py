@@ -4,7 +4,7 @@ import sys
 from urllib.error import URLError
 
 from bni_training.labs import run_lab, shared_llm_settings
-from bni_training.llm_client import OpenAICompatibleClient
+from bni_training.llm_client import OpenAICompatibleClient, model_request_extras
 from bni_training.mock_llm import MockOpenAIServer
 
 DESCRIPTION = "Lab 03: test /health, /v1/models, one non-streaming and one streaming chat request."
@@ -28,13 +28,20 @@ def exercise(client: OpenAICompatibleClient, report) -> None:
 def body(args, report):
     if args.mode == "local":
         with MockOpenAIServer() as server:
-            exercise(OpenAICompatibleClient(server.base_url, "local-placeholder"), report)
+            exercise(
+                OpenAICompatibleClient(
+                    server.base_url,
+                    "local-placeholder",
+                    extra_body=model_request_extras("qwen3.5-9b"),
+                ),
+                report,
+            )
         report.skipped(
             "real_vllm_endpoint", "Local mode tests the client against an in-process mock, not vLLM"
         )
         return
     url, key, model = shared_llm_settings()
-    exercise(OpenAICompatibleClient(url, key, model), report)
+    exercise(OpenAICompatibleClient(url, key, model, extra_body=model_request_extras(model)), report)
 
 
 def main(argv=None) -> int:
