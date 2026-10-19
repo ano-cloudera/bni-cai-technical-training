@@ -10,6 +10,12 @@ except ModuleNotFoundError:
     from secret_scan import scan_tree
 
 
+def path_audit(root: Path) -> tuple[bool, list]:
+    from bni_training.path_audit import audit
+
+    return audit(root)
+
+
 def local_checks(root: Path) -> dict:
     import yaml
 
@@ -117,6 +123,22 @@ def local_checks(root: Path) -> dict:
         },
         {"name": "no_env_file", "passed": not root.joinpath(".env").exists()},
         {"name": "secret_scan", "passed": not scan_tree(root)},
+        {"name": "no_real_local_paths_tracked", "passed": path_audit(root)[0]},
+        {
+            "name": "workspace_lifecycle_scripts",
+            "passed": all(
+                root.joinpath(f"scripts/{name}.py").is_file()
+                for name in [
+                    "prepare_group_workspaces",
+                    "validate_group_workspaces",
+                    "assign_participants",
+                    "reset_group_workspace",
+                    "check_group_isolation",
+                    "check_shared_services",
+                    "archive_group_outputs",
+                ]
+            ),
+        },
         {"name": "model_weights_excluded", "passed": not any(root.rglob("*.safetensors"))},
     ]
     return {

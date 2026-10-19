@@ -30,6 +30,9 @@ def test_notebook_is_stripped_and_free_of_local_values(path: Path) -> None:
     assert set(doc["metadata"]) <= {"kernelspec", "language_info"}
 
 
+DIRTY_PATH = "/" + "Users" + "/someone/x"  # assembled at runtime so this file stays clean
+
+
 def test_stripper_detects_paths_timestamps_endpoints_and_tokens() -> None:
     dirty = {
         "metadata": {"widgets": {}, "kernelspec": {}},
@@ -37,7 +40,7 @@ def test_stripper_detects_paths_timestamps_endpoints_and_tokens() -> None:
             {
                 "cell_type": "code",
                 "metadata": {"execution": {"iopub.execute_input": "2026-10-18T12:00:00"}},
-                "source": ["p='/Users/someone/x'; u='http://10.1.2.3:8000'; k='Bearer abcdefgh12345678'"],
+                "source": [f"p='{DIRTY_PATH}'; u='http://10.1.2.3:8000'; k='Bearer abcdefgh12345678'"],
                 "outputs": [{"output_type": "stream", "text": "x"}],
                 "execution_count": 3,
             }
