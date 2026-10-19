@@ -28,7 +28,7 @@ def _markdown_lines(lines: list[str]) -> list[str]:
     for line in lines:
         if line.startswith("# "):
             rendered.append(line[2:])
-        elif line in {"#\n", "#"}:
+        elif line in {"\n", "", "#\n", "#"}:
             rendered.append("\n" if line.endswith("\n") else "")
         else:
             raise AuthoringError("Markdown cells must use '# ' comment lines")

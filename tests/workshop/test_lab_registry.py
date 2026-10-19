@@ -18,6 +18,7 @@ from bni_training.lab_registry import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
+EDUCATIONAL_NOTEBOOKS = {"01", "02"}  # removed when the last wrapper notebook is migrated
 EXPECTED = {
     "00": ("Environment Validation", {"trainer", "participant"}, False, "00_environment_validation"),
     "01": ("Model Artifact Validation", {"trainer"}, True, "01_model_artifact_validation"),
@@ -98,6 +99,8 @@ def test_the_builder_output_is_in_sync_with_the_registry() -> None:
 
 def test_notebook_theory_and_expected_text_come_from_the_registry() -> None:
     for lab in canonical_labs():
+        if lab.id in EDUCATIONAL_NOTEBOOKS:
+            continue
         text = json.dumps(json.loads(lab.notebook_path.read_text()))
         assert lab.title in text and lab.purpose[:30] in text and lab.expected[:30] in text
 
@@ -108,19 +111,32 @@ def test_every_notebook_has_theory_checks_runnable_cells_and_expected_outcomes(l
     kinds = [c["cell_type"] for c in doc["cells"]]
     text = "\n".join("".join(c["source"]) for c in doc["cells"])
     assert kinds.count("code") >= 4 and kinds.count("markdown") >= 5
-    for heading in (
-        "## Purpose",
-        "## Theory",
-        "## How to run",
-        "## Run the lab",
-        "## Expected outcome",
-        "## Checkpoint",
-    ):
+    headings = (
+        (
+            "## Learning objectives",
+            "## Architecture context",
+            "## Expected result",
+            "## Completion checkpoint",
+        )
+        if lab.id in EDUCATIONAL_NOTEBOOKS
+        else (
+            "## Purpose",
+            "## Theory",
+            "## How to run",
+            "## Run the lab",
+            "## Expected outcome",
+            "## Checkpoint",
+        )
+    )
+    for heading in headings:
         assert heading in text, (lab.id, heading)
     assert (
         "TRAINER ONLY" in text
         if lab.trainer_only
         else "TRAINER ONLY" not in text.replace("TRAINER ONLY' if lab.trainer_only", "")
     )
-    assert re.search(r"module\.main\(\['--mode', LAB_MODE\]\)", text)
+    if lab.id in EDUCATIONAL_NOTEBOOKS:
+        assert not re.search(r"module\.main\(|get_lab\(|load_script_module", text)
+    else:
+        assert re.search(r"module\.main\(\['--mode', LAB_MODE\]\)", text)
     assert "data/csv" not in text and "credit_portfolio" not in text

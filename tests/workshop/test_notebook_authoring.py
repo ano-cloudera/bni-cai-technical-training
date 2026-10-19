@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -7,12 +8,15 @@ import pytest
 from bni_training.workshop.notebook_support import lab_status, participant_settings
 from scripts.build_notebooks import AuthoringError, parse_percent_source
 
+ROOT = Path(__file__).resolve().parents[2]
+
 
 def test_percent_source_becomes_stripped_notebook_cells(tmp_path: Path) -> None:
     source = tmp_path / "sample.py"
     source.write_text(
         "# %% [markdown]\n"
         "# # Teaching title\n"
+        "\n"
         "# What the next cell does and what output to expect.\n"
         "# %%\n"
         "# Show a visible value.\n"
@@ -26,6 +30,7 @@ def test_percent_source_becomes_stripped_notebook_cells(tmp_path: Path) -> None:
     assert [cell["cell_type"] for cell in notebook["cells"]] == ["markdown", "code"]
     assert notebook["cells"][0]["source"] == [
         "# Teaching title\n",
+        "\n",
         "What the next cell does and what output to expect.\n",
     ]
     assert notebook["cells"][1]["execution_count"] is None
@@ -63,3 +68,40 @@ def test_lab_status_has_the_executor_contract(capsys: pytest.CaptureFixture[str]
     assert capsys.readouterr().out.strip() == (
         "LAB_STATUS: lab=03 mode=local status=PASS passed=4 skipped=1 failed=0"
     )
+
+
+@pytest.mark.parametrize(
+    ("lab_id", "key", "visible_artifacts"),
+    [
+        ("01", "model_artifact_validation", ("MODEL_PATH", "directory_manifest", "config.json")),
+        ("02", "vllm_deployment", ("build_vllm_command", "/v1/models", "max_tokens")),
+    ],
+)
+def test_trainer_notebooks_are_authored_as_direct_lessons(
+    lab_id: str, key: str, visible_artifacts: tuple[str, ...]
+) -> None:
+    source = ROOT / "notebooks" / "authoring" / f"{lab_id}_{key}.py"
+    notebook = ROOT / "notebooks" / "templates" / f"{lab_id}_{key}.ipynb"
+
+    assert source.is_file()
+    document = json.loads(notebook.read_text(encoding="utf-8"))
+    rendered = "\n".join("".join(cell["source"]) for cell in document["cells"])
+    for heading in (
+        "Learning objectives",
+        "Architecture context",
+        "Prerequisites",
+        "Configuration validation",
+        "Step-by-step implementation",
+        "Hands-on exercise",
+        "Expected result",
+        "Common errors",
+        "Completion checkpoint",
+        "Reference implementation",
+        "Cleanup",
+    ):
+        assert heading in rendered
+    assert "TRAINER ONLY" in rendered
+    assert all(artifact in rendered for artifact in visible_artifacts)
+    assert "get_lab(" not in rendered
+    assert "load_script_module" not in rendered
+    assert "module.main(" not in rendered
