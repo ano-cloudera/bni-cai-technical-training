@@ -100,6 +100,12 @@ def test_lab_status_has_the_executor_contract(capsys: pytest.CaptureFixture[str]
             ("validate_input", "validate_sql", "validate_grounded_answer"),
             False,
         ),
+        (
+            "12",
+            "end_to_end_portal",
+            ("WORKSHOP_PORTAL_URL", "PortalService", "state.locked"),
+            False,
+        ),
     ],
 )
 def test_migrated_notebooks_are_authored_as_direct_lessons(

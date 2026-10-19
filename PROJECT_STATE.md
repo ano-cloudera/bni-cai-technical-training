@@ -156,6 +156,10 @@ Not run and not claimed: a live Qdrant server (only local mode and a captured RE
 - Regression after the Labs 09-11 milestone: 716 tests passed; scoped Ruff and authoring/template
   synchronization passed. The two initial hygiene failures (credential-header examples matching the
   token scanner) were corrected before this passing run.
+- Lab 12 now teaches the one-replica Portal flow directly: health, bounded queue states, session
+  group lock, session-scoped output identity, and comparison with the Lab 05 group-bound SQL path.
+  Its local in-process Portal execution passed, the migration allow-list was removed, and regression
+  remained at 716 passing tests with scoped Ruff and authoring/template synchronization passing.
 
 ## Environment-dependent validation (pending, not claimed)
 
