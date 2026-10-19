@@ -13,8 +13,9 @@ Local development status: `local_validation_passed` (Python 3.10, macOS arm64, n
 Branch `feature/single-project-csv-workshop`, cut from the unmodified tag `v0.2.0-rc1`. `main`, the tag and the legacy
 multi-project topology are untouched. Nothing from this branch has been pushed, deployed, or run on Cloudera AI.
 
-Local validation passed (Python 3.10, macOS arm64): 471 tests pass, Ruff clean, secret scan clean, local acceptance
-`local_validation_passed`, notebook hygiene 13 of 13, dataset validator 22 of 22 checks, clean-clone run repeated.
+Local validation passed (Python 3.10, macOS arm64): 697 tests pass, Ruff clean, secret scan clean, local
+acceptance `local_validation_passed`, all 13 notebook templates execute in local mode, notebook hygiene clean,
+dataset validator 21 of 21 checks, tracked-file path audit PASS, clean-clone validation `CLEAN_CLONE: PASS`.
 This is **not** CAI readiness.
 
 What exists locally:
@@ -35,18 +36,27 @@ What exists locally:
   tracked or written to disk; the generator keeps the answer key in memory for the validator and tests only.
 - **Guarded read-only CSV engine** (SQLite, sqlglot, authorizer, row cap, timeout). CSV is the default backend;
   Impala is optional, only with `DATA_BACKEND=impala`, never required and never a silent fallback.
-- **Single-project dry-run plan** (`plan --topology single_project`): 1 project, 10 group workspaces, up to 10 Sessions,
-  5 shared Applications, no per-group Streamlit Applications, active Application counts per phase never above 5.
-  `multi_project` remains the default of `plan` (11 projects, 4 waves) and is unchanged.
-
-Not done yet: notebooks and labs 00-12 still use the rc1 placeholder dataset in `data/csv` (temporary); the workspace
-scripts (`prepare_group_workspaces.py`, `assign_participants.py`, `reset_group_workspace.py`, ...) are not implemented;
-the default of the `plan` command has not been switched to `single_project`.
+- **Single-project dry-run plan** (the default of `plan`): 1 project, 10 group workspaces, up to 10 Sessions, 5 shared
+  Applications, no per-group Streamlit Applications, active Application counts per phase never above 5.
+  `WORKSHOP_TOPOLOGY=multi_project` (or `--topology multi_project`) returns the unchanged rc1 plan (11 projects,
+  4 waves); an unknown value fails; the rc1 apply/wave commands require `multi_project`.
+- **Ten-group workspace lifecycle**: seven scripts (`prepare_group_workspaces`, `validate_group_workspaces`,
+  `assign_participants`, `reset_group_workspace`, `check_group_isolation`, `check_shared_services`,
+  `archive_group_outputs`), dry run by default, idempotent, edited notebooks preserved, one group per reset, no
+  secrets in `group.env`, 40 participants assigned with at most five per group. The `workshop/runtime/` hierarchy is
+  generated and git-ignored.
+- **Labs and notebooks 00-12 on the synthetic dataset**: registry `config/workshop/labs.yaml`, 13 notebook templates
+  in `notebooks/templates/`, `--mode local|cai` (cai never mocks), labs 01-02 trainer-only (participants never
+  start vLLM or download the model), rc1 script paths kept as thin wrappers, rc1 notebooks unchanged.
+- **No anomaly answers anywhere in Git**: no flag column, manifest or incident IDs; the validator regenerates the
+  patterns in memory.
+- **Clean-clone validation**: `scripts/audit_local_paths.py` (fails on real local paths, does not match its own
+  source) and `scripts/validate_clean_clone.py` (overall PASS or FAIL from a clone of HEAD).
 
 Pending on CAI (registered in `config/cai-validation-pending.yaml`, all `cai-validation-pending`): GPU dependency
 matrix; CPU-only PyTorch strategy for Linux RAG sessions; live Qdrant server; vLLM and Qwen model loading; CAI API v2
 fields and the runtime identifier; live Impala authentication; real Portal capacity and sizing for about 40 browsers;
-the single-replica setting and heartbeat behavior on CAI; running the dataset inside the CAI Application. No CAI
+the single-replica setting and heartbeat behavior on CAI; running the dataset inside the CAI Application; group workspaces and the 13 notebooks inside ten CAI Sessions (`--mode cai`); live shared-service checks; the trainer's real roster. No CAI
 readiness is claimed.
 
 ## Local Validation Passed
@@ -67,7 +77,7 @@ That baseline also exposed defects that the 29 tests did not cover, now fixed (s
 - Python-native CAI Application entrypoints for shared vLLM, Qdrant, Phoenix, LiteLLM, and Streamlit.
 - Streamlit group Application rotation in four waves (groups 01-03, 04-06, 07-09, 10) that enforces five active Applications in total.
 - CAI API v2 lifecycle commands for one shared project and ten group projects (dry-run first).
-- English scripts and notebooks 00 through 12.
+- English scripts and notebooks 00 through 12 (registry-driven and migrated to the synthetic dataset).
 - Local tests, acceptance runner, secret scan, and reproducible ZIP packaging.
 
 ## Local hardening completed
@@ -99,7 +109,7 @@ Python 3.10.22, macOS arm64, no NVIDIA GPU. GPU, CUDA, vLLM, NFS and CAI checks 
 | CAI API v2 dry-run plan | PASS: 11 projects, 4 Application waves, no API call |
 | Clean temporary Git clone: acceptance, ruff, pytest, smoke, plan, notebooks | PASS |
 | Notebooks: outputs, execution counts, timestamps, local paths, endpoints and tokens (`scripts/strip_notebooks.py --check`) | PASS, 13 of 13 clean |
-| Tracked-file audit (no Mac paths, secrets, caches, generated artifacts) | PASS; `.DS_Store` files were tracked and are now untracked and ignored |
+| Tracked-file audit (no real local paths, secrets, caches, generated artifacts) | PASS (`scripts/audit_local_paths.py`, `scripts/validate_clean_clone.py`) |
 
 Not run and not claimed: a live Qdrant server (only local mode and a captured REST request), real vLLM, real Impala, any CAI call.
 

@@ -44,7 +44,13 @@ Use this exact sequence in a new Workbench session. It makes no CAI API call and
    ```
    Compare the generated fields with the target `/api/v2/swagger.html` and set the runtime identifier from the
    catalog before any live write.
-8. **Labs.** Run notebooks 00-12 in order with `LAB_MODE=cai`, or the matching scripts with `--mode cai`.
+8. **Group workspaces (trainer).** Generate the ten workspaces and check them; participants then open their own copies.
+   ```bash
+   PYTHONPATH=src:. python scripts/prepare_group_workspaces.py --apply
+   PYTHONPATH=src:. python scripts/validate_group_workspaces.py
+   ```
+9. **Labs.** Run the notebooks of your group workspace (templates in `notebooks/templates/`) in order with
+   `LAB_MODE=cai`, or the matching scripts with `--mode cai`. Labs 01 and 02 are trainer-only.
    A lab that cannot reach its service prints `status=FAIL`; it never mocks and never falls back silently.
 
 Never paste credentials into notebooks, terminals that are logged, or commits. Stop only your own group Application.

@@ -3,6 +3,46 @@
 You work in a group of about four people. All ten groups use the same **Workshop Portal**, the same synthetic
 banking dataset and the same shared AI model. Each group has a different **mission**.
 
+## 0. Your Session and your notebooks
+
+Your trainer gives you a CPU-only Jupyter **Session** and your group number. Your group has its own folder,
+`workshop/runtime/groups/<your group>/`, prepared for you:
+
+| Folder | Use |
+|---|---|
+| `config/group.env` | Your group id, dataset bundle, mission and workspace. No secrets. |
+| `notebooks/` | Your copies of notebooks 00-12. Edit and run these. |
+| `output/` | Everything you save. Write only here. |
+
+Work in this order:
+
+1. Open `notebooks/00_environment_validation.ipynb` and run it. It prints your `GROUP_ID`, `DATASET_ID`,
+   `MISSION_ID` and `GROUP_WORKSPACE`; check they match what your trainer told you.
+2. Run notebooks **03 to 11** in order (see *Lab guide* below). Read **01 and 02** if you are curious, but they are
+   trainer-only: you never download the model and you never start vLLM. The trainer runs the one shared endpoint.
+3. Finish with notebook **12** and the Workshop Portal (next section).
+
+Every notebook is safe to run again. Each one ends with a status line: `PASS`, `SKIPPED` (with a reason) or `FAIL`
+(with what to fix). If a notebook says a shared service is not reachable, tell your trainer; do not start your own.
+
+## Lab guide
+
+| Lab | What you do | Who |
+|---|---|---|
+| 00 Environment Validation | Check Python, your group settings and the dataset | everyone |
+| 01 Model Artifact Validation | Check the model files on shared storage | trainer only |
+| 02 vLLM Deployment | Start the shared model server | trainer only |
+| 03 LLM API Testing | Call the shared model | participant |
+| 04 CSV Data Access | Read your mission's tables with guarded SQL | participant |
+| 05 Semantic Layer | Ask for metrics and breakdowns | participant |
+| 06 CrewAI Tools | Give an agent a data tool limited to your group | participant |
+| 07 Qdrant RAG | Search the glossary and your mission notes | participant |
+| 08 Agent Workflow | Run the two-step agent workflow | participant |
+| 09 Phoenix Monitoring | See your traces in the shared Phoenix | participant |
+| 10 LiteLLM Routing | Use the shared gateway | participant |
+| 11 Input and Output Guardrails | Block unsafe input and output | participant |
+| 12 End-to-End Workshop Portal | Ask your mission questions in the Portal | participant |
+
 ## 1. Open the Portal and choose your group
 
 1. Open the Workshop Portal link from your trainer.

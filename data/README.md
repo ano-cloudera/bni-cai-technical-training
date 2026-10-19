@@ -36,7 +36,7 @@ CSV is the default participant backend (`DATA_BACKEND=csv`). Impala is an option
 ## `data/csv/` - rc1 placeholder (temporary)
 
 The rc1 dataset (six tables, loan-account oriented) is **only a temporary placeholder**. It is kept so the legacy
-multi-project topology and the rc1 labs keep working, and it is not used by the single-project Workshop Portal.
+multi-project topology and the rc1 labs keep working, and it is used by neither the single-project Workshop Portal nor the migrated labs and notebook templates 00-12.
 
 ## Other folders
 

@@ -53,6 +53,30 @@ items:
   - id: dataset-in-cai-portal
     status: cai-validation-pending
     covers: [data/raw, src/bni_training/data/engine.py]
-    verified_locally: 22/22 validator checks, ten missions, guarded read-only SQLite engine on a Mac
+    verified_locally: 21/21 validator checks, ten missions, guarded read-only SQLite engine on a Mac
     evidence_needed: The Portal loads the 12 MB dataset in memory and answers all ten missions inside the CAI Application within its memory limit; data/raw is readable from the Application and Sessions
     validated_in: [sandbox-l40s, bni-h200]
+  - id: group-workspaces-in-cai-sessions
+    status: cai-validation-pending
+    covers: [scripts/prepare_group_workspaces.py, scripts/validate_group_workspaces.py, workshop/runtime]
+    verified_locally: generation, idempotency, preserved edits, reset and archive in a temporary directory; ten groups; no secrets in group.env
+    evidence_needed: The hierarchy is created on the CAI project filesystem, ten Sessions open their own notebooks and write only to their own output folder, and the filesystem permits concurrent writes from ten Sessions
+    validated_in: [sandbox-l40s, bni-h200]
+  - id: notebook-labs-cai-mode
+    status: cai-validation-pending
+    covers: [notebooks/templates, scripts/03_llm_api_testing.py, scripts/12_end_to_end_portal.py, config/workshop/labs.yaml]
+    verified_locally: all 13 templates execute through nbclient in --mode local; trainer-only labs refuse participants
+    evidence_needed: Labs 00 and 03-12 with --mode cai from a participant Session against the live shared vLLM, Qdrant, Phoenix, LiteLLM and Portal; labs 01 and 02 run by a trainer against the NFS model
+    validated_in: [sandbox-l40s, bni-h200]
+  - id: shared-service-health-checks-live
+    status: cai-validation-pending
+    covers: [scripts/check_shared_services.py, config/workshop/application-lifecycle.yaml]
+    verified_locally: PASS, FAIL and SKIPPED handling against local stub servers and unreachable hosts
+    evidence_needed: The checks reach the real Application URLs from a participant Session for each lifecycle phase
+    validated_in: [sandbox-l40s, bni-h200]
+  - id: participant-assignment-roster
+    status: cai-validation-pending
+    covers: [scripts/assign_participants.py]
+    verified_locally: 40 synthetic participants over ten groups, capacity of five per group, roster errors
+    evidence_needed: The trainer's real roster format and how participants are told their group
+    validated_in: [bni-h200]

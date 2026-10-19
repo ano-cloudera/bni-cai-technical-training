@@ -11,7 +11,7 @@ Follow `docs/cai-workbench-clean-clone.md` for the runtime, clone and `.env` ste
 ## 2. Check the dataset
 
 ```bash
-python scripts/validate_dataset.py          # expects 22/22 checks PASS
+python scripts/validate_dataset.py          # expects 21/21 checks PASS
 python scripts/generate_synthetic_data.py --preview
 ```
 
@@ -24,7 +24,7 @@ regenerates them in memory and checks that ordinary queries find them.
 
 ```bash
 PYTHONPATH=src:. python -m automation.cai_api_v2.cli --config config/env.sandbox-l40s.example.yaml \
-  plan --topology single_project --output build/cai-plan.json
+  plan --output build/cai-plan.json      # single_project is the default; multi_project must be explicit
 ```
 
 Expect 1 project, 10 group workspaces, up to 10 Sessions, 5 shared Applications, no per-group Streamlit
@@ -47,7 +47,9 @@ Environment (names only; values come from the project environment):
 To try it on a laptop: `PORTAL_MODE=local streamlit run apps/workshop-portal/app.py` (mock model, in-memory Qdrant;
 the page says LOCAL MODE).
 
-## 5. Not built yet
+## 5. Group workspaces and participants
 
-`prepare_group_workspaces.py`, `assign_participants.py`, `reset_group_workspace.py` and the other workspace scripts
-from the plan are not implemented. The Portal creates each session's folders on demand.
+`scripts/prepare_group_workspaces.py`, `validate_group_workspaces.py`, `assign_participants.py`,
+`reset_group_workspace.py`, `check_group_isolation.py`, `check_shared_services.py` and `archive_group_outputs.py`
+manage the generated `workshop/runtime/` hierarchy. See `docs/trainer/workshop-runbook.md` for the order and
+`docs/architecture/workspace-lifecycle.md` for the design.

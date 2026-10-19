@@ -23,4 +23,4 @@ a security boundary.
 **Backends:** CSV is the default (`DATA_BACKEND=csv`). Impala is optional, trainer-controlled, and only active with
 `DATA_BACKEND=impala`; there is never a silent fallback in either direction.
 
-**rc1 placeholder:** `data/csv` is only a temporary placeholder kept for the legacy topology and the rc1 labs.
+**rc1 placeholder:** `data/csv` is only a temporary placeholder kept for the legacy topology and the rc1 notebooks and wrapper scripts.

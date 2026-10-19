@@ -1,6 +1,6 @@
 # Single-project topology (default)
 
-`WORKSHOP_TOPOLOGY=single_project` is the default workshop topology on this branch. The rc1 `multi_project`
+`WORKSHOP_TOPOLOGY=single_project` is the default workshop topology (`plan` uses it when neither `--topology` nor `WORKSHOP_TOPOLOGY` is set; any other value is rejected). The rc1 `multi_project`
 topology (one shared project plus ten group projects) is preserved and documented in
 `docs/group-rotation-runbook.md`.
 
@@ -39,10 +39,15 @@ fully synthetic.
 
 ## Datasets
 
-The Portal uses the single-project dataset in `data/raw` through ten logical group bundles in `data/scenarios`
-(see `docs/architecture/dataset-and-semantic-layer.md`). The rc1 CSV dataset in `data/csv` is **only a temporary
-placeholder**: it is kept for the legacy topology and for notebooks 00-12, which are not yet migrated to the new
-dataset.
+The Portal and labs 00-12 use the dataset in `data/raw` through ten logical group bundles in `data/scenarios`
+(see `docs/architecture/dataset-and-semantic-layer.md`). The rc1 CSV dataset in `data/csv` is kept only for the
+legacy `multi_project` topology and the rc1 notebooks.
+
+## Group workspaces
+
+Each group has a generated, git-ignored folder with its notebooks, settings and outputs; see
+`docs/architecture/workspace-lifecycle.md`. Participant flow: Session, notebook 00, notebooks 03-11, then lab 12 in
+the Portal. Trainer flow: `docs/trainer/workshop-runbook.md`.
 
 ## Pending on CAI
 

@@ -12,5 +12,5 @@ Use these to check your progress with your trainer. Each is something you can se
 5. **Limits:** you tried a metric outside your mission and read the friendly message.
 6. **Saved:** *My outputs* lists at least two saved answers.
 
-The notebooks 00-12 still use the earlier rc1 sample data until they are migrated; follow your trainer for which
-notebook to use.
+Notebook checkpoints: notebook 00 shows your group and mission; notebooks 03-11 each end with `LAB_STATUS`
+`PASS` (or `SKIPPED` with a reason); your saved lab reports are in `output/` of your group folder.
