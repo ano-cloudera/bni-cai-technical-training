@@ -57,3 +57,35 @@ def question_for(group_id: str, marker: str = "") -> str:
 
 def wait_done(ticket, timeout: float = 15.0) -> None:
     assert ticket.wait(timeout), f"ticket still {ticket.state}"
+
+
+def write_templates(directory, names=("00_a.ipynb", "01_b.ipynb", "02_c.ipynb"), marker: str = "v1"):
+    """Minimal notebook templates for workspace tests (the canonical ones are tested separately)."""
+    import json
+    from pathlib import Path
+
+    directory = Path(directory)
+    directory.mkdir(parents=True, exist_ok=True)
+    for name in names:
+        notebook = {
+            "cells": [{"cell_type": "markdown", "metadata": {}, "source": [f"# {name} {marker}"]}],
+            "metadata": {},
+            "nbformat": 4,
+            "nbformat_minor": 5,
+        }
+        (directory / name).write_text(json.dumps(notebook, indent=1) + "\n")
+    return directory
+
+
+def last_json(text: str):
+    """The last complete JSON object printed in ``text`` (several commands may have printed before it)."""
+    import json
+
+    decoder, found, index = json.JSONDecoder(), None, 0
+    while (index := text.find("{", index)) != -1:
+        try:
+            found, end = decoder.raw_decode(text[index:])
+            index += end
+        except ValueError:
+            index += 1
+    return found

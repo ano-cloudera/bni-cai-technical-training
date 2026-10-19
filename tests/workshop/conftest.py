@@ -52,3 +52,17 @@ def make_service(tmp_path, registry, shared_engine):
     yield factory
     for service in created:
         service.gate.close()
+
+
+@pytest.fixture
+def templates(tmp_path):
+    from helpers import write_templates
+
+    return write_templates(tmp_path / "templates")
+
+
+@pytest.fixture
+def manager(tmp_path, templates):
+    from bni_training.workshop.workspace_manager import WorkspaceManager
+
+    return WorkspaceManager(tmp_path / "runtime", templates)

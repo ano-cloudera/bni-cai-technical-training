@@ -387,20 +387,7 @@ class PortalService:
 
     # outputs (group and session scoped, through the safe-path gate) -----------------------------------
     def write_output(self, ctx: SessionContext, name: str, text: str) -> Path:
-        group_paths.check_filename(name)
-        data = text.encode("utf-8")
-        if len(data) > group_paths.MAX_OUTPUT_BYTES:
-            raise ValueError("Output is too large")
-        out_dir = group_paths.session_output_dir(self._runtime, ctx.group_id, ctx.session_id)
-        tmp_dir = group_paths.session_tmp_dir(self._runtime, ctx.group_id, ctx.session_id)
-        out_dir.mkdir(parents=True, exist_ok=True)
-        tmp_dir.mkdir(parents=True, exist_ok=True)
-        fd, tmp_name = tempfile.mkstemp(dir=tmp_dir, prefix=".write-")
-        with os.fdopen(fd, "wb") as handle:
-            handle.write(data)
-        target = group_paths.safe_join(out_dir, name)
-        os.replace(tmp_name, target)
-        return target
+        return group_paths.write_session_file(self._runtime, ctx.group_id, ctx.session_id, name, text)
 
     def list_outputs(self, ctx: SessionContext) -> list[str]:
         out_dir = group_paths.session_output_dir(self._runtime, ctx.group_id, ctx.session_id)

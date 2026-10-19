@@ -69,3 +69,41 @@ def session_output_dir(root: Path, group_id: str, session_id: str) -> Path:
 
 def session_tmp_dir(root: Path, group_id: str, session_id: str) -> Path:
     return safe_join(group_workspace(root, group_id), "tmp", session_id)
+
+
+def write_session_file(root: Path, group_id: str, session_id: str, name: str, text: str) -> Path:
+    """Atomically write ``text`` into the session's output folder through the safe-path gate."""
+    import tempfile
+
+    check_filename(name)
+    data = text.encode("utf-8")
+    if len(data) > MAX_OUTPUT_BYTES:
+        raise ValueError("Output is too large")
+    out_dir = session_output_dir(root, group_id, session_id)
+    tmp_dir = session_tmp_dir(root, group_id, session_id)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(dir=tmp_dir, prefix=".write-")
+    with os.fdopen(fd, "wb") as handle:
+        handle.write(data)
+    target = safe_join(out_dir, name)
+    os.replace(tmp_name, target)
+    return target
+
+
+def write_group_output(root: Path, group_id: str, name: str, text: str) -> Path:
+    """Atomically write ``text`` into the group's own ``output`` folder (used by the labs)."""
+    import tempfile
+
+    check_filename(name)
+    data = text.encode("utf-8")
+    if len(data) > MAX_OUTPUT_BYTES:
+        raise ValueError("Output is too large")
+    out_dir = safe_join(group_workspace(root, group_id), "output")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(dir=out_dir, prefix=".write-")
+    with os.fdopen(fd, "wb") as handle:
+        handle.write(data)
+    target = safe_join(out_dir, name)
+    os.replace(tmp_name, target)
+    return target
