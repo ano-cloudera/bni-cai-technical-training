@@ -8,6 +8,29 @@ Local development status: `local_validation_passed` (Python 3.10, macOS arm64, n
 
 **CAI readiness is NOT claimed.** GPU, CUDA, vLLM, NFS model, live Impala and live CAI API validation are pending. A green local run proves the code, locks and mocks are sound; it does not prove the CAI environment.
 
+## Verified Local Baseline
+
+Commit `6529e38` on `feature/single-project-csv-workshop` (local only). Evidence that passed on the committed tree and
+again from a fresh clean clone: 697 tests passed, Ruff clean, secret scan clean, all 13 notebooks executed locally,
+dataset validator 21 of 21, tracked-file path audit and clean-clone validation PASS, `single_project` is the default
+topology and explicit `multi_project` still returns the rc1 plan. Nothing is pushed. CAI readiness is NOT claimed.
+
+## Next Milestone: Educational Notebook Redesign
+
+Plan and handoff: `docs/plans/2026-10-19-educational-notebook-redesign.md` (plan only; nothing implemented yet).
+
+- The current notebooks are executable but too wrapper-oriented: each one imports a lab script and calls `main()`.
+- The notebook order and the 13 lab ids are retained.
+- The trainer owns notebooks 01 and 02; participant hands-on begins with notebook 03.
+- Participant notebooks will expose the meaningful code cell by cell (requests, SQL, semantic plans, agents, tools,
+  Qdrant filters, spans, routes, guardrails). The Python files stay as reusable implementation and reference solutions.
+- Shared vLLM remains one GPU Application, already running before hands-on; participant notebooks run on CPU Sessions.
+- Streamlit remains one shared final Workshop Portal (single process, single replica).
+- Two execution modes will be supported: `individual_learning` (preferred, about 40 CPU Sessions, one notebook copy
+  and output folder per participant) and `group_driver` (fallback, 10 Sessions, one rotating driver per group).
+- A folder is not a CAI Session. Real Session capacity (40 concurrent CPU Sessions), concurrent writes on the project
+  filesystem and the participant dependency profile for notebooks 07 and 09 remain `cai-validation-pending`.
+
 ## Single-project CSV workshop branch (local only, not pushed)
 
 Branch `feature/single-project-csv-workshop`, cut from the unmodified tag `v0.2.0-rc1`. `main`, the tag and the legacy
