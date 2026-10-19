@@ -1,0 +1,11 @@
+# Valid joins. Every relationship is many-to-one from the child column to the parent key.
+# Metrics only join from a table toward its parents, so a join never multiplies rows.
+schema_version: 1
+relationships:
+  - {name: customer_home_branch, child: customers.home_branch_id, parent: branches.branch_id, cardinality: many_to_one, description: Each customer has one home branch.}
+  - {name: account_customer, child: accounts.customer_id, parent: customers.customer_id, cardinality: many_to_one, description: Each account belongs to one customer.}
+  - {name: account_branch, child: accounts.branch_id, parent: branches.branch_id, cardinality: many_to_one, description: Each account is held at one branch.}
+  - {name: transaction_account, child: transactions.account_id, parent: accounts.account_id, cardinality: many_to_one, description: Each transaction belongs to one account.}
+  - {name: loan_customer, child: loans.customer_id, parent: customers.customer_id, cardinality: many_to_one, description: Each loan has one borrower.}
+  - {name: loan_account, child: loans.account_id, parent: accounts.account_id, cardinality: many_to_one, description: Each loan is linked to one account.}
+  - {name: loan_branch, child: loans.branch_id, parent: branches.branch_id, cardinality: many_to_one, description: Each loan is booked at one branch.}

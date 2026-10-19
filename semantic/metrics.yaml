@@ -1,0 +1,50 @@
+# Metrics and dimensions of the synthetic banking dataset. Each metric is one SQL aggregate over a base table.
+# Dimensions break a metric down; a dimension is only available when its table is the metric's base table or a
+# parent of it that the group's bundle allows (joins always follow many-to-one links, so rows are never doubled).
+schema_version: 1
+default_limit: 50
+max_limit: 200
+metrics:
+  total_customers: {description: Number of customers., base_table: customers, expression: "COUNT(*)", synonyms: [customers, customer count, number of customers]}
+  active_customers: {description: Customers whose status is ACTIVE., base_table: customers, expression: "COUNT(*)", where: "customers.customer_status = 'ACTIVE'", synonyms: [active customer count]}
+  total_accounts: {description: Number of accounts of any status., base_table: accounts, expression: "COUNT(*)", synonyms: [accounts, account count, number of accounts]}
+  active_accounts: {description: Accounts with activity in the last 180 days., base_table: accounts, expression: "COUNT(*)", where: "accounts.account_status = 'ACTIVE'", synonyms: [active account count]}
+  dormant_accounts: {description: Accounts with no activity for more than 180 days that are not closed., base_table: accounts, expression: "COUNT(*)", where: "accounts.account_status = 'DORMANT'", synonyms: [dormant account count, inactive accounts]}
+  total_balance: {description: Sum of balances of all accounts (closed accounts hold zero)., base_table: accounts, expression: "SUM(accounts.balance)", synonyms: [balance, balances, total balances]}
+  average_account_balance: {description: Average balance of accounts that are not closed., base_table: accounts, expression: "AVG(accounts.balance)", where: "accounts.account_status <> 'CLOSED'", synonyms: [average balance, avg balance]}
+  transaction_count: {description: Number of completed transactions., base_table: transactions, expression: "COUNT(*)", where: "transactions.transaction_status = 'COMPLETED'", synonyms: [transactions, number of transactions, transaction volume]}
+  transaction_amount: {description: Sum of completed transaction amounts., base_table: transactions, expression: "SUM(transactions.amount)", where: "transactions.transaction_status = 'COMPLETED'", synonyms: [transaction value, transaction total]}
+  average_transaction_amount: {description: Average completed transaction amount., base_table: transactions, expression: "AVG(transactions.amount)", where: "transactions.transaction_status = 'COMPLETED'", synonyms: [average transaction value, avg transaction amount, average amount]}
+  digital_transaction_ratio: {description: Share of completed transactions made on MOBILE or ONLINE channels., base_table: transactions, expression: "AVG(CASE WHEN transactions.channel IN ('MOBILE', 'ONLINE') THEN 1.0 ELSE 0.0 END)", where: "transactions.transaction_status = 'COMPLETED'", synonyms: [digital ratio, digital share, digital transaction share]}
+  total_loans: {description: Number of loans., base_table: loans, expression: "COUNT(*)", synonyms: [loans, loan count, number of loans]}
+  total_outstanding: {description: Sum of outstanding loan amounts., base_table: loans, expression: "SUM(loans.outstanding_amount)", synonyms: [outstanding, outstanding amount, loan exposure]}
+  delinquent_loans: {description: Loans 30 or more days past due., base_table: loans, expression: "COUNT(*)", where: "loans.days_past_due >= 30", synonyms: [delinquent loan count, past due loans]}
+  delinquency_ratio: {description: Share of loans that are not paid off and are 30 or more days past due., base_table: loans, expression: "AVG(CASE WHEN loans.days_past_due >= 30 THEN 1.0 ELSE 0.0 END)", where: "loans.loan_status <> 'PAID_OFF'", synonyms: [delinquency rate, delinquency]}
+  product_adoption_rate: {description: Share of all customers who hold at least one open account of the product (the denominator is every customer)., base_table: accounts, expression: "COUNT(DISTINCT accounts.customer_id) * 1.0 / (SELECT COUNT(*) FROM customers)", where: "accounts.account_status <> 'CLOSED'", requires: [customers], synonyms: [adoption rate, product adoption, adoption]}
+  branch_customer_count: {description: Distinct customers with an open account, usually broken down by branch., base_table: accounts, expression: "COUNT(DISTINCT accounts.customer_id)", where: "accounts.account_status <> 'CLOSED'", synonyms: [customers per branch, branch customers]}
+  branch_transaction_amount: {description: Completed transaction amount, usually broken down by branch., base_table: transactions, expression: "SUM(transactions.amount)", where: "transactions.transaction_status = 'COMPLETED'", synonyms: [branch transaction value, branch transactions]}
+dimensions:
+  segment: {description: Customer segment., sources: [{table: customers, column: segment}], synonyms: [customer segment]}
+  region: {description: Region (the branch region when branches are available, otherwise the customer region)., sources: [{table: branches, column: region}, {table: customers, column: region}]}
+  province: {description: Branch province., sources: [{table: branches, column: province}]}
+  city_tier: {description: City tier of the branch., sources: [{table: branches, column: city_tier}], synonyms: [tier]}
+  branch_name: {description: Branch name., sources: [{table: branches, column: branch_name}], synonyms: [branch]}
+  branch_id: {description: Branch identifier., sources: [{table: branches, column: branch_id}]}
+  age_band: {description: Customer age band., sources: [{table: customers, column: age_band}], synonyms: [age]}
+  income_band: {description: Customer income band., sources: [{table: customers, column: income_band}], synonyms: [income]}
+  occupation_category: {description: Customer occupation group., sources: [{table: customers, column: occupation_category}], synonyms: [occupation]}
+  digital_adoption_level: {description: Customer digital adoption level., sources: [{table: customers, column: digital_adoption_level}], synonyms: [digital adoption]}
+  customer_status: {description: Customer lifecycle status., sources: [{table: customers, column: customer_status}]}
+  product_code: {description: Product code of the account or loan., sources: [{table: accounts, column: product_code}, {table: loans, column: product_code}], synonyms: [product]}
+  account_type: {description: Account family., sources: [{table: accounts, column: account_type}]}
+  account_status: {description: Account status., sources: [{table: accounts, column: account_status}]}
+  channel_preference: {description: Preferred channel of the account., sources: [{table: accounts, column: channel_preference}]}
+  account_id: {description: Account identifier., sources: [{table: transactions, column: account_id}, {table: accounts, column: account_id}]}
+  transaction_type: {description: Kind of transaction., sources: [{table: transactions, column: transaction_type}]}
+  channel: {description: Channel used for the transaction., sources: [{table: transactions, column: channel}]}
+  merchant_category: {description: Merchant group., sources: [{table: transactions, column: merchant_category}], synonyms: [merchant]}
+  transaction_date: {description: Day of the transaction., sources: [{table: transactions, column: transaction_date}], synonyms: [day, date], ordered_by_dimension: true}
+  month: {description: Calendar month of the transaction (YYYY-MM)., sources: [{table: transactions, expression: "substr(transactions.transaction_date, 1, 7)"}], synonyms: [transaction month, monthly], ordered_by_dimension: true}
+  loan_status: {description: Descriptive loan status., sources: [{table: loans, column: loan_status}]}
+  risk_band: {description: Descriptive risk label derived from days past due., sources: [{table: loans, column: risk_band}], synonyms: [risk]}
+  origination_month: {description: Month the loan started (YYYY-MM)., sources: [{table: loans, expression: "substr(loans.origination_date, 1, 7)"}], synonyms: [origination], ordered_by_dimension: true}

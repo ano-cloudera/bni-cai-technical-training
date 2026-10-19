@@ -1,0 +1,89 @@
+{
+  "dataset": "synthetic_banking_workshop",
+  "schema_version": 1,
+  "generator_version": "1.0.0",
+  "seed": 20260630,
+  "scale": 1.0,
+  "reference_date": "2026-06-30",
+  "history_window": {
+    "start": "2024-07-01",
+    "end": "2026-06-30",
+    "months": 24
+  },
+  "fully_synthetic": true,
+  "contains_personal_data": false,
+  "row_counts": {
+    "branches": 100,
+    "customers": 10000,
+    "accounts": 19259,
+    "transactions": 101903,
+    "loans": 5000
+  },
+  "columns": {
+    "branches": [
+      "branch_id",
+      "branch_name",
+      "region",
+      "province",
+      "city",
+      "city_tier",
+      "size_class",
+      "open_date",
+      "operational_status"
+    ],
+    "customers": [
+      "customer_id",
+      "home_branch_id",
+      "segment",
+      "region",
+      "age_band",
+      "income_band",
+      "occupation_category",
+      "join_date",
+      "customer_status",
+      "digital_adoption_level"
+    ],
+    "accounts": [
+      "account_id",
+      "customer_id",
+      "branch_id",
+      "product_code",
+      "account_type",
+      "open_date",
+      "account_status",
+      "balance",
+      "average_monthly_balance",
+      "last_activity_date",
+      "channel_preference"
+    ],
+    "transactions": [
+      "transaction_id",
+      "account_id",
+      "transaction_date",
+      "transaction_type",
+      "channel",
+      "amount",
+      "merchant_category",
+      "transaction_status",
+      "is_seeded_anomaly"
+    ],
+    "loans": [
+      "loan_id",
+      "customer_id",
+      "account_id",
+      "branch_id",
+      "product_code",
+      "origination_date",
+      "maturity_date",
+      "principal_amount",
+      "outstanding_amount",
+      "days_past_due",
+      "loan_status",
+      "risk_band"
+    ]
+  },
+  "total_size_bytes": 12088815,
+  "total_size_mb": 12.089,
+  "size_limit_mb": 50,
+  "determinism": "Only random() with +,-,*,/ on floats; no exp/log/pow; identical on Linux and macOS."
+}
