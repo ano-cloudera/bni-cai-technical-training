@@ -39,6 +39,11 @@ def _repo_root() -> Path:
 
 ROOT = _repo_root()
 sys.path[:0] = [str(ROOT / "src"), str(ROOT)]
+from bni_training.workshop.notebook_support import load_group_env
+
+# A generated workspace provides config/group.env (LAB_MODE, GROUP_ID, GROUP_WORKSPACE, VLLM_BASE_URL, VLLM_MODEL).
+# Values already set in the Session environment win. No manual setup is needed.
+load_group_env(Path.cwd().parent / "config" / "group.env")
 LAB_MODE = os.getenv("LAB_MODE", "local").lower()
 ROLE = os.getenv("WORKSHOP_ROLE", "participant").lower()
 assert LAB_MODE in {"local", "cai"}, "LAB_MODE must be local or cai"

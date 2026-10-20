@@ -61,7 +61,8 @@ Findings applied in the hotfix branch `fix/cai-vllm-runtime-validation`:
   `chat_template_kwargs.enable_thinking=false` for Qwen3.5 (Lab 03 shows the payload and why).
 - Lab 03 needed `LAB_MODE`, `GROUP_ID` and `GROUP_WORKSPACE` set by hand. Generated group workspaces now write them
   (plus `VLLM_BASE_URL` and `VLLM_MODEL`) and the Lab 03 notebook loads `group.env` itself. Other notebooks still
-  need the same loading step.
+  need the same loading step. (Fixed afterwards: every notebook now loads `group.env` before it chooses the mode; the first
+  sandbox notebook runs had shown `mode=local` for labs 04 to 08.)
 
 PENDING (not validated): full local regression and clean-clone validation after this hotfix; CAI Application
 deployment; access from a different CAI Session; the live shared Application URL; H200 validation in BNI; CrewAI

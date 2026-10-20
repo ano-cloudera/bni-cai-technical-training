@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased (notebooks load group.env)
+
+- Notebooks 00 to 12: every notebook now loads the generated `config/group.env` (non-secret, never overrides the Session
+  environment) before it reads `LAB_MODE`. Only Lab 03 did, so labs 04 to 12 opened from a generated group workspace still
+  ran the local mock (`mode=local`) in the sandbox. Templates are regenerated; a test checks all 13 authoring files.
+
 ## Unreleased (vllm tool calling)
 
 - CrewAI labs: the CrewAI `LLM` now sends `chat_template_kwargs.enable_thinking=false` for Qwen3.5 (through `extra_body`), like
