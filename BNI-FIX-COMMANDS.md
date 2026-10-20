@@ -351,6 +351,29 @@ the vLLM Application; the restart reloads the model and takes several minutes):
 If vLLM refuses to start because it does not know the parser, send the log lines (the parser name may differ in this vLLM
 version, for example `hermes`). Stop all GPU Sessions before the restart: one GPU per node.
 
+## A12. Lab 08: `crewai_tool_call` fails with `0 data tool call(s)`
+
+Seen at BNI after A11 worked (the `400` is gone): `plain_workflow` passes (4 checks pass in total) but the CrewAI agent
+answered without calling the data tool. Suspected cause: Qwen3.5 was still thinking inside the CrewAI call, because the CrewAI
+`LLM` did not send `enable_thinking=false` like the other clients. The repository now sends it
+(`bni_training.labs.crewai_llm`, commit "fix: switch Qwen thinking off in the CrewAI LLM"). Pull it and run the lab again;
+no vLLM restart is needed:
+
+```bash
+cd /home/cdsw/bni-cai-technical-training && git pull --ff-only origin main && git log --oneline -1
+```
+
+```bash
+LABS="08_multi_agent_workflow"
+```
+
+```bash
+for s in $LABS; do echo "== $s"; env -u PYTHONPATH EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3 /home/cdsw/.venvs/bni-rag/bin/python scripts/$s.py --mode cai 2>&1 | grep -E -B1 -A1 '"status": "FAIL"|LAB_STATUS'; done
+```
+
+If it still shows `0 data tool call(s)`, the model is not choosing the tool. Then check the parser name in the vLLM
+startup line (`--tool-call-parser qwen3_coder`) and send the lines of the lab output around `crewai_tool_call`.
+
 ## B. Embedding model bge-m3 (optional; needed for Portal retrieval and Lab 07)
 
 Upload `bge-m3.zip` (1.27 GB) to `/home/cdsw/` with the JupyterLab file panel, then:

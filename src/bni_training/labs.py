@@ -205,7 +205,12 @@ def crewai_llm(base_url: str, api_key: str, model: str = "qwen3.5-9b"):
         raise RuntimeError(
             "CrewAI is not installed. Install the participant (or rag/observability/dev-test) profile"
         ) from exc
-    return LLM(model=f"openai/{model}", base_url=base_url, api_key=api_key or "none", temperature=0)
+    from .llm_client import model_request_extras
+
+    # Qwen3.5 thinking is switched off like in every other client, so the budget goes to the tool call and the answer.
+    extra_body = model_request_extras(model)
+    kwargs = {"extra_body": extra_body} if extra_body else {}
+    return LLM(model=f"openai/{model}", base_url=base_url, api_key=api_key or "none", temperature=0, **kwargs)
 
 
 def shared_llm_settings(env: dict[str, str] | None = None) -> tuple[str, str, str]:

@@ -85,3 +85,24 @@ def test_raw_reasoning_is_never_shown_to_participants() -> None:
     assert visible_answer("Thinking Process:\n1. analyze the request") == ""
     assert visible_answer("plain answer") == "plain answer"
     assert visible_answer("hidden</think>shown") == "shown"
+
+
+def test_the_crewai_llm_switches_qwen_thinking_off(monkeypatch) -> None:
+    import sys
+    import types
+
+    from bni_training.labs import crewai_llm
+
+    seen: dict = {}
+
+    class FakeLLM:
+        def __init__(self, **kwargs):
+            seen.update(kwargs)
+
+    monkeypatch.setitem(sys.modules, "crewai", types.SimpleNamespace(LLM=FakeLLM))
+    monkeypatch.delenv("VLLM_DISABLE_THINKING", raising=False)
+    crewai_llm("https://example.invalid/v1", "", "qwen3.5-9b")
+    assert seen["extra_body"] == {"chat_template_kwargs": {"enable_thinking": False}}
+    seen.clear()
+    crewai_llm("https://example.invalid/v1", "", "other-model")
+    assert "extra_body" not in seen

@@ -2,6 +2,9 @@
 
 ## Unreleased (vllm tool calling)
 
+- CrewAI labs: the CrewAI `LLM` now sends `chat_template_kwargs.enable_thinking=false` for Qwen3.5 (through `extra_body`), like
+  every other client. At BNI, Lab 08 reached the model after tool calling was enabled but made `0 data tool call(s)`.
+
 - vLLM launcher: `VLLM_TOOL_CALL_PARSER` (for example `qwen3_coder`) adds `--enable-auto-tool-choice --tool-call-parser`.
   At BNI, Lab 08 (CrewAI) failed with `400 "auto" tool choice requires --enable-auto-tool-choice and --tool-call-parser to
   be set`. Off by default; the parser name comes from the vLLM Qwen3.5 recipe and is confirmed by Lab 08 after a restart.
