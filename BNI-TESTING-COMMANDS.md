@@ -183,6 +183,24 @@ cd /home/cdsw/bni-cai-technical-training; for s in 00_environment_validation 03_
 Send the whole output (it holds no keys). Then fix only the labs that show `status=FAIL`, one at a time, with the sections
 below as the detail for each lab.
 
+### 5.0b Run only some labs (to repeat the ones that failed)
+
+Set the list once, then run the loop. Change the names in the first line to the labs you want. Run it from the repository
+folder, with the section 0b variables set:
+
+```bash
+LABS="08_multi_agent_workflow 09_phoenix_monitoring"
+```
+
+```bash
+for s in $LABS; do echo "== $s"; env -u PYTHONPATH EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3 /home/cdsw/.venvs/bni-rag/bin/python scripts/$s.py --mode cai 2>&1 | grep -E -B1 -A1 '"status": "FAIL"|LAB_STATUS'; done
+```
+
+Lab names: `00_environment_validation`, `03_llm_api_testing`, `04_csv_data_access`, `05_semantic_layer`, `06_crewai_tools`,
+`07_qdrant_rag`, `08_multi_agent_workflow`, `09_phoenix_monitoring`, `10_litellm_routing`, `11_guardrails`,
+`12_end_to_end_portal`. Labs 08 and 09 need the vLLM Application to run with `VLLM_TOOL_CALL_PARSER=qwen3_coder` and one
+GPU (`BNI-FIX-COMMANDS.md`, A11).
+
 ### 5.1 Lab 00 and Lab 03 (vLLM only)
 
 Lab 00 needs the BNI runtime profile first:
