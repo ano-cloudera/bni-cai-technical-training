@@ -57,6 +57,10 @@ Choose the GPU resource group in the vLLM Application and turn **Enable GPU** on
 
 ## 2. Prepare once, from a CPU Session
 
+First check what is already in place with the read-only script (it installs and changes nothing; run it from a Session on
+the GPU resource group and stop that Session afterwards): `bash scripts/preflight_gpu_env.sh`. Lines marked `CHECK` need
+attention. Override the defaults with `VENV`, `MODEL_PATH`, `EXPECT_GPU` (for example `EXPECT_GPU=A10G`) when needed.
+
 Open a PBJ JupyterLab Python 3.10 Session and a terminal.
 
 ### 2.1 Code
