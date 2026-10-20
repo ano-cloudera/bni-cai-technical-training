@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased (portal launcher)
+
+- Workshop Portal and legacy Streamlit launchers: a CAI Application starts in `/home/cdsw`, not in the repository, so
+  the relative `apps/workshop-portal/app.py` failed with "File does not exist". The script path is now resolved from
+  the repository, the process runs from the repository root, and a missing script gives a clear error. Checked by
+  starting Streamlit through the launcher from a different working directory.
+
 ## Unreleased (phoenix launcher)
 
 - Phoenix Application launcher: `phoenix serve` has no `--host` or `--port` option (the Application failed with
