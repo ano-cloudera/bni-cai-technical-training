@@ -46,6 +46,31 @@ Check the key length without showing it (must be 67 for a key made with the guid
 echo "${#LITELLM_API_KEY}"
 ```
 
+## 0b. After a new Session (all terminal variables are gone)
+
+Files in `/home/cdsw` stay (repository, venvs, models, workspaces, lab output). Variables do not. Run these, one line at
+a time, in the new terminal. Step 1 asks for the apps domain (see section 0), then step 2 sets the URLs and TLS trust:
+
+```bash
+read -r APPS_DOMAIN; export APPS_DOMAIN
+```
+
+```bash
+export VLLM_URL="https://bni-vllm-qwen35-9b.$APPS_DOMAIN"; export QDRANT_URL="https://bni-qdrant.$APPS_DOMAIN:443"; export PHOENIX_UI_URL="https://bni-phoenix.$APPS_DOMAIN"; export LITELLM_URL="https://bni-litellm-gateway.$APPS_DOMAIN"; export PORTAL_URL="https://bni-workshop-portal.$APPS_DOMAIN"; export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt; export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt; export RUNTIME_PROFILE=bni-h200; export WORKSHOP_RUNTIME_DIR=/home/cdsw/workshop-runtime
+```
+
+```bash
+read -rs LITELLM_API_KEY; export LITELLM_API_KEY
+```
+
+```bash
+set -a; source /home/cdsw/workshop-runtime/groups/group_03/config/group.env; set +a; export LAB_MODE=cai; export PHOENIX_COLLECTOR_ENDPOINT="$PHOENIX_UI_URL/v1/traces"; export LITELLM_BASE_URL="$LITELLM_URL/v1"; echo "$GROUP_ID $MISSION_ID $LAB_MODE"
+```
+
+The last line must print `group_03 loan_portfolio_monitoring cai`. Then continue from section 1 (or the lab you were on).
+Note: `QDRANT_URL` ends with `:443` because the Python Qdrant client otherwise uses port 6333 (see
+`BNI-FIX-COMMANDS.md`, A7). Use `cd /home/cdsw/bni-cai-technical-training` before any lab command.
+
 ## 1. Code version
 
 ```bash
