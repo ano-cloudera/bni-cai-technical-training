@@ -130,3 +130,15 @@ def test_logged_command_never_contains_the_api_key(tmp_path) -> None:
     )
     assert "s3cr3t-value" in command
     assert "s3cr3t-value" not in " ".join(app.redacted(command))
+
+
+def test_the_tool_call_parser_turns_on_auto_tool_choice(tmp_path) -> None:
+    command = app.build_command(env_for(model_dir(tmp_path), VLLM_TOOL_CALL_PARSER="qwen3_coder"))
+    assert "--enable-auto-tool-choice" in command
+    assert command[command.index("--tool-call-parser") + 1] == "qwen3_coder"
+
+
+def test_tool_calling_is_off_unless_a_parser_is_set(tmp_path) -> None:
+    command = app.build_command(env_for(model_dir(tmp_path)))
+    assert "--enable-auto-tool-choice" not in command
+    assert "--tool-call-parser" not in command

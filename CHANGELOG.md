@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased (vllm tool calling)
+
+- vLLM launcher: `VLLM_TOOL_CALL_PARSER` (for example `qwen3_coder`) adds `--enable-auto-tool-choice --tool-call-parser`.
+  At BNI, Lab 08 (CrewAI) failed with `400 "auto" tool choice requires --enable-auto-tool-choice and --tool-call-parser to
+  be set`. Off by default; the parser name comes from the vLLM Qwen3.5 recipe and is confirmed by Lab 08 after a restart.
+
 ## Unreleased (portal thinking)
 
 - Portal: a first sandbox answer began with `Thinking Process` and was truncated. The Portal client now sends

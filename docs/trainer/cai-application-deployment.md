@@ -182,6 +182,7 @@ MAX_NUM_SEQS=32
 TENSOR_PARALLEL_SIZE=1
 VLLM_USE_FLASHINFER_SAMPLER=0
 VLLM_DISABLE_THINKING=true
+VLLM_TOOL_CALL_PARSER=qwen3_coder
 APP_STARTUP_TIMEOUT_MINUTES=15
 ```
 
@@ -218,6 +219,10 @@ supports CUDA 13.
   `PYTHONPATH` must let that first process import `bni_training` and `deployments`.
 - `VLLM_DISABLE_THINKING` is read by the notebooks and clients (`model_request_extras`), **not** by the server. It is
   harmless here; the real switch is `chat_template_kwargs.enable_thinking=false` in each request.
+- `VLLM_TOOL_CALL_PARSER=qwen3_coder` adds `--enable-auto-tool-choice --tool-call-parser qwen3_coder` to the server. Lab 08
+  (CrewAI) sends `tool_choice="auto"`, and without these options vLLM answers `400 "auto" tool choice requires
+  --enable-auto-tool-choice and --tool-call-parser to be set`. `qwen3_coder` is the parser the official vLLM recipe for
+  Qwen3.5 names; confirm it with Lab 08 after the restart. Restarting vLLM reloads the model.
 - `PIP_USER=false` only matters when you run `pip`; it is not needed in the Application.
 - The names `VLLM_MAX_MODEL_LEN` and `VLLM_GPU_MEMORY_UTILIZATION` are **ignored**; use `MAX_MODEL_LEN` and
   `GPU_MEMORY_UTILIZATION`. Without them the profile supplies the defaults (`h200`: 8192, 0.75, 32; `l40s`: 8192,

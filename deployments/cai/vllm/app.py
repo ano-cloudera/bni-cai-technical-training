@@ -87,6 +87,9 @@ def build_command(env: Mapping[str, str]) -> list[str]:
     ]
     if env.get("VLLM_REASONING_PARSER"):
         command.extend(["--reasoning-parser", env["VLLM_REASONING_PARSER"]])
+    if env.get("VLLM_TOOL_CALL_PARSER"):
+        # CrewAI sends tool_choice="auto"; vLLM answers 400 unless both options are set.
+        command.extend(["--enable-auto-tool-choice", "--tool-call-parser", env["VLLM_TOOL_CALL_PARSER"]])
     if env.get("VLLM_CHAT_TEMPLATE"):
         command.extend(["--chat-template", env["VLLM_CHAT_TEMPLATE"]])
     if env.get("SERVICE_AUTH_MODE") == "bearer" and env.get("VLLM_API_KEY"):

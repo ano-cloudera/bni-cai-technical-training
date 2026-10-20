@@ -308,6 +308,49 @@ If it still says `Connection refused` with `:443`, run the two connection tests 
 
 Use section 0b of `BNI-TESTING-COMMANDS.md`; it already contains `:443`, `SSL_CERT_FILE` and `RUNTIME_PROFILE`.
 
+## A10. Lab 09: `Missing required environment variables: PHOENIX_COLLECTOR_ENDPOINT`
+
+Seen at BNI: the variable was not set in that terminal (it is lost with a new Session). Set it, then run the lab again:
+
+```bash
+export PHOENIX_COLLECTOR_ENDPOINT="$PHOENIX_UI_URL/v1/traces"
+```
+
+```bash
+cd /home/cdsw/bni-cai-technical-training; env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python scripts/09_phoenix_monitoring.py --mode cai 2>&1 | grep -E -B1 -A1 '"status": "FAIL"|LAB_STATUS'
+```
+
+If it then fails with `CERTIFICATE_VERIFY_FAILED`, set `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` (A6). If it fails on the
+endpoint itself (404 or connection error), try `$PHOENIX_UI_URL/v1/traces` without a trailing slash, then send the
+exact error: this path is still a guess.
+
+## A11. Lab 08: `400 "auto" tool choice requires --enable-auto-tool-choice and --tool-call-parser to be set`
+
+Seen at BNI: Lab 06 passes and Lab 08's `plain_workflow` passes (3 rows with SQL), but the CrewAI part fails with
+`BadRequestError 400`. CrewAI sends `tool_choice="auto"` and the vLLM **server** must be started with
+`--enable-auto-tool-choice --tool-call-parser <parser>`. This is a vLLM Application setting, not a Session setting.
+
+Fix (needs the repository version with the launcher change: `git pull --ff-only origin main` in the Session, then restart
+the vLLM Application; the restart reloads the model and takes several minutes):
+
+1. In the `bni-vllm-qwen35-9b` Application environment add one variable (parser name from the official vLLM recipe for
+   Qwen3.5):
+
+   ```text
+   VLLM_TOOL_CALL_PARSER=qwen3_coder
+   ```
+
+2. **Update Application** and wait for `Application startup complete.` in the log. The startup configuration line must
+   now show `--enable-auto-tool-choice` and `--tool-call-parser qwen3_coder`.
+3. Run Lab 08 again:
+
+   ```bash
+   cd /home/cdsw/bni-cai-technical-training; env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python scripts/08_multi_agent_workflow.py --mode cai 2>&1 | grep -E -B1 -A1 '"status": "FAIL"|LAB_STATUS'
+   ```
+
+If vLLM refuses to start because it does not know the parser, send the log lines (the parser name may differ in this vLLM
+version, for example `hermes`). Stop all GPU Sessions before the restart: one GPU per node.
+
 ## B. Embedding model bge-m3 (optional; needed for Portal retrieval and Lab 07)
 
 Upload `bge-m3.zip` (1.27 GB) to `/home/cdsw/` with the JupyterLab file panel, then:
