@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased (notebook redesign, Lab 03)
+
+- Lab 03 follows the guided pattern: the request as two tables, thinking switched off (the reason stays in a code comment), a bounded retry,
+  the answer and token usage, streaming with the time to the first piece, two temperatures, a max_tokens cut-off with `finish_reason`,
+  an exercise and a closing list. Tried in the sandbox as a draft first (`mode=cai`, passed=9).
+
 ## Unreleased (service addresses in the notebooks)
 
 - Labs 00, 07, 09, 10 and 12 start with a "Service addresses" cell. The participant pastes the Applications domain once (or the trainer sets
