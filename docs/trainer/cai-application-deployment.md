@@ -117,7 +117,8 @@ Validate it from a Session with lab 01 if you have not yet.
 ## 3. Create the Applications
 
 Create in this order and confirm each one before the next. In every Application, **Enable GPU is off except vLLM**.
-Replace `<...>` with your own values. `<repo>` means `/home/cdsw/bni-cai-technical-training`.
+Paths below are the real BNI paths (the repository is `/home/cdsw/bni-cai-technical-training`). Only values written as
+`<...>` (Application URLs, the embedding model path, keys) are yours to fill in.
 
 ### 3.1 vLLM
 
@@ -132,7 +133,7 @@ Set every value explicitly, so the effective configuration is visible and does n
 The values below are for **BNI (H200)**. The table after the block lists what changes in the **sandbox (L40S)**.
 
 ```text
-PYTHONPATH=<repo>/src:<repo>
+PYTHONPATH=/home/cdsw/bni-cai-technical-training/src:/home/cdsw/bni-cai-technical-training
 PYTHON_EXECUTABLE=/home/cdsw/.venvs/bni-vllm-h200/bin/python
 MODEL_PATH=/home/cdsw/models/Qwen3.5-9B
 GPU_PROFILE=h200
@@ -186,7 +187,7 @@ APP_STARTUP_TIMEOUT_MINUTES=15
 | Resources | 4 vCPU, 16 GB, no GPU |
 
 ```text
-PYTHONPATH=<repo>/src:<repo>
+PYTHONPATH=/home/cdsw/bni-cai-technical-training/src:/home/cdsw/bni-cai-technical-training
 QDRANT_BINARY=/home/cdsw/tools/qdrant/qdrant
 QDRANT_STORAGE_PATH=/home/cdsw/bni-qdrant-storage
 APP_STARTUP_TIMEOUT_MINUTES=5
@@ -205,7 +206,7 @@ APP_STARTUP_TIMEOUT_MINUTES=5
 | Resources | 4 vCPU, 16 GB, no GPU |
 
 ```text
-PYTHONPATH=<repo>/src:<repo>
+PYTHONPATH=/home/cdsw/bni-cai-technical-training/src:/home/cdsw/bni-cai-technical-training
 PYTHON_EXECUTABLE=/home/cdsw/.venvs/bni-phoenix/bin/python
 PHOENIX_WORKING_DIR=/home/cdsw/bni-phoenix-data
 APP_STARTUP_TIMEOUT_MINUTES=5
@@ -226,9 +227,10 @@ APP_STARTUP_TIMEOUT_MINUTES=5
 | Replicas | **1** (never scale out) |
 
 ```text
-PYTHONPATH=<repo>/src:<repo>
+PYTHONPATH=/home/cdsw/bni-cai-technical-training/src:/home/cdsw/bni-cai-technical-training
 PYTHON_EXECUTABLE=/home/cdsw/.venvs/bni-rag/bin/python
 WORKSHOP_RUNTIME_DIR=/home/cdsw/workshop-runtime
+PORTAL_APP=apps/workshop-portal/app.py
 PORTAL_MODE=cai
 PORTAL_LLM_ROUTE=vllm
 VLLM_BASE_URL=https://<vllm-app-url>/v1
@@ -245,7 +247,7 @@ PORTAL_MAX_RETRIES=2
 PORTAL_ENFORCE_SINGLE_INSTANCE=true
 ```
 
-- `PORTAL_APP` is optional; the launcher resolves `apps/workshop-portal/app.py` from the repository.
+- `PORTAL_APP` is set explicitly here; the launcher resolves this relative path from the repository.
 - Add the API key variables (`VLLM_API_KEY`, `QDRANT_API_KEY`) as CAI secrets only if those services need them.
 - Without both `QDRANT_URL` and `EMBEDDING_MODEL_PATH` the Portal has no retrieval.
 - Validate: `curl -i https://<portal-app-url>/_stcore/health`, then open the UI and ask a sample question.
@@ -260,9 +262,9 @@ PORTAL_ENFORCE_SINGLE_INSTANCE=true
 | Resources | 2 vCPU, 4 GB, no GPU |
 
 ```text
-PYTHONPATH=<repo>/src:<repo>
+PYTHONPATH=/home/cdsw/bni-cai-technical-training/src:/home/cdsw/bni-cai-technical-training
 LITELLM_EXECUTABLE=/home/cdsw/.venvs/bni-litellm/bin/litellm
-LITELLM_CONFIG=<repo>/config/litellm.yaml
+LITELLM_CONFIG=/home/cdsw/bni-cai-technical-training/config/litellm.yaml
 VLLM_BASE_URL=https://<vllm-app-url>/v1
 VLLM_API_KEY=<value from a CAI secret, or a placeholder if vLLM has no key>
 MOCK_FALLBACK_BASE_URL=<fallback endpoint; see the note>
