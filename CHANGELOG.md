@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased (notebook redesign, Lab 04)
+
+- Lab 04 notebook rewritten as a guided lesson: one setup cell, ten explained steps (what, why, what to look for, a prediction),
+  results as pandas tables, one exercise with guards, and a closing list of what the participant proved. The saved
+  `04_dataset_preview.json` and the final `LAB_STATUS` line are unchanged. Tried by the trainer in the sandbox as a draft first.
+
 ## Unreleased (notebook 11 model call)
 
 - Lab 11 notebook: its model client now sends `enable_thinking=false` for Qwen3.5 (`model_request_extras`). It did not, so the
