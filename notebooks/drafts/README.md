@@ -14,3 +14,10 @@ Guided version of Lab 09 (tracer, secret filter shown as a table, parent and chi
 parent link, finding the trace, proving the secret never arrived, group_id as a search label, an exercise, a closing list). It keeps the
 required section titles and the saved `09_trace_summary.json`. Executed locally for group_03, group_05 and group_09 (in-memory exporter,
 PASS). Not yet run against the shared Phoenix. To try it, copy the `.ipynb` into a group workspace and open the copy there.
+
+## 03_llm_api_testing_v2
+
+Guided version of Lab 03 (the request as two tables, thinking switched off, a bounded retry, the answer and token usage, streaming with the time
+to the first piece, two temperatures, a max_tokens cut-off with finish_reason, an exercise, a closing list). It keeps the saved
+`03_llm_api_result.json`. Executed locally (mock model) for group_03, group_05 and group_09: PASS. Not yet run against the shared vLLM.
+Copy the `.ipynb` into a group workspace and open the copy there; Lab 03 needs no service-address cell.
