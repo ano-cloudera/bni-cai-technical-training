@@ -147,10 +147,10 @@ def test_lab_08_explicitly_executes_and_hands_off_group_scoped_evidence() -> Non
 
     assert "bound_tool = context.data_tool().bind(context.request())" in source
     assert "evidence_sql, evidence_result = bound_tool.query(question)" in source
-    assert 'print("Generated SQL:", evidence_sql)' in source
-    assert 'print("Returned rows:", evidence_rows)' in source
+    assert 'print("SQL:", evidence_sql)' in source
+    assert "display(pd.DataFrame(evidence_rows, columns=evidence[\"columns\"]))" in source
     assert "evidence_sql in analyst_task.description" in source
     assert "evidence_sql in reviewer_task.description" in source
-    assert "evidence_request_count = sum(evidence_sql in text for text in request_texts)" in source
-    assert "assert evidence_request_count >= 2" in source
+    assert "sum(evidence_sql in text for text in request_texts) >= 2" in source
+    assert "Question: {question}" in source  # the question is written into both tasks
     assert "recording_tool.calls" not in source

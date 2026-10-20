@@ -105,13 +105,12 @@ def test_lab_08_execution_exposes_tool_evidence_and_both_agent_outputs(tmp_path)
     executed = nbformat.read(tmp_path / notebook.name, as_version=4)
     rendered_output = "\n".join(output_text(cell) for cell in executed.cells if cell.cell_type == "code")
     for label in (
-        "User question:",
-        "Generated SQL:",
-        "Returned rows:",
-        "Analyst output:",
-        "Reviewer output:",
-        "'tool_executed': True",
-        "'evidence_passed_to_both_agents': True",
+        "Question:",
+        "SQL:",
+        "Evidence is in the analyst task: True",
+        "Evidence is in the reviewer task: True",
+        "{'grounding': 'PASS'}",
+        "Rejected:",
     ):
         assert label in rendered_output
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased (notebook redesign, Labs 04 to 08)
+
+- Labs 05 to 08 follow Lab 04: guided lessons with explained steps, pandas tables and a real exercise. Lab 06's exercise runs a second
+  agent with the participant's goal; Lab 07 teaches embeddings, similarity and the group filter; Lab 08 shows which numbers the final
+  answer contains, a rejected invented number, and a reviewer whose criterion the participant changes, and writes the question into both
+  tasks. The notebooks keep the required section titles, file names and saved outputs. The Lab 08 tests now check the same hand-off
+  (tool before agents, evidence in both tasks) against the new wording. Each notebook was first tried as a draft in the sandbox.
+
 ## Unreleased (notebook redesign, Lab 04)
 
 - Lab 04 notebook rewritten as a guided lesson: one setup cell, ten explained steps (what, why, what to look for, a prediction),

@@ -1,28 +1,43 @@
 # %% [markdown]
 # # Lab 05: Semantic Layer
 #
-# **Audience:** Participant  
+# **Audience:** Participant
 # **Estimated duration:** 30–40 minutes
 #
 # ## Learning objectives
-# Inspect metrics and relationships, plan SQL from business language, execute the plan, and observe mission-scoped metric validation.
+# By the end you can: explain what a metric and a dimension are, see the SQL a business question turns into, check that a
+# metric outside your mission is refused, and ask the semantic layer a question of your own.
 #
-# ## Architecture context
-# The semantic layer maps banking terms to deterministic read-only SQL. Joins move toward parent tables to avoid double counting, and every plan stays inside the group's bundle.
+# ## How this notebook is organised
+# 1. **Setup (one cell).** It opens your group's data tool and the semantic model. You do not edit it.
+# 2. **Eight steps.** Each step says what the next cell does and why, you run it, and you read what it prints.
+# 3. **Your turn.** You choose one business question.
+# 4. **Closing.** A list of what you proved, and the questions to explain back to your trainer.
+#
+# Run the cells from top to bottom. They are safe to run again. Complete Lab 04 first.
 #
 # ## Prerequisites
-# Complete Lab 04 and use the same validated group context and CSV backend.
+# Complete Lab 04. It uses the same group context and the same CSV data.
+#
+# ## Architecture context
+# In Lab 04 you wrote SQL by hand. A **semantic layer** is a small dictionary of business words (metrics such as "total
+# outstanding", and dimensions such as "risk band") that it turns into safe, read-only SQL for you. Joins move toward
+# parent tables to avoid double counting, and every plan stays inside your group's tables and metrics.
 
 # %% [markdown]
-# ## Configuration validation
-# Load the group bundle, guarded data tool, and semantic model. Expect the mission's metric names and a non-empty relationship graph.
+# ## Configuration validation (setup)
+# This cell finds the repository, reads your group's settings (`config/group.env`), and opens the data tool and the
+# semantic model. You do not need to change anything. It ends by printing your group and the mode.
 
 # %%
-# Resolve group context and load the explicit semantic model.
+# Setup: find the repository, load your group's settings, open the guarded data tool and the semantic model. Nothing to edit.
 import json
 import os
 import sys
 from pathlib import Path
+
+import pandas as pd
+from IPython.display import display
 
 def _repo_root() -> Path:
     # A generated group workspace records the repository in config/group.env, so no setup is needed.
@@ -39,11 +54,10 @@ ROOT = _repo_root()
 sys.path[:0] = [str(ROOT / "src"), str(ROOT)]
 from bni_training.workshop.notebook_support import load_group_env
 
-# A generated workspace provides config/group.env (LAB_MODE, GROUP_ID, GROUP_WORKSPACE, VLLM_BASE_URL, VLLM_MODEL).
-# Values already set in the Session environment win. No manual setup is needed.
-load_group_env(Path.cwd().parent / "config" / "group.env")
-LAB_MODE = os.getenv("LAB_MODE", "local").lower()
+# Values already set in the Session environment win over config/group.env.
 group_env = Path.cwd().parent / "config" / "group.env"
+load_group_env(group_env)
+LAB_MODE = os.getenv("LAB_MODE", "local").lower()
 if group_env.is_file() and not os.getenv("GROUP_ENV_FILE"):
     os.environ["GROUP_ENV_FILE"] = str(group_env)
 from bni_training.data.semantic_layer import SemanticError, SemanticModel
@@ -53,14 +67,40 @@ context = resolve_lab_context(LAB_MODE)
 semantic = SemanticModel.load()
 tool = context.data_tool()
 bundle = context.bundle
-print({"metrics": list(bundle.allowed_metrics), "tables": list(bundle.tables), "terms": len(semantic.terms)})
+proved = []  # one sentence per thing you prove; printed in the closing
+print({"mode": LAB_MODE, "group_id": context.group_id})
 
 # %% [markdown]
 # ## Step-by-step implementation
-# Plan the first allowed metric directly. `allowed_tables` and `allowed_metrics` are explicit validation boundaries, while `limit` caps output. Expect readable SQL ending in a bounded limit.
+# Each step says what the cell does, why it matters and what to look for.
+#
+# ## Step 1. What can I ask for?
+# **What it does:** lists the metrics and the tables your mission allows, and how many business terms the semantic model knows.
+#
+# **Why it matters:** a metric is a named calculation ("total outstanding"). You ask for the name, and the layer writes the SQL.
+# Your mission allows only some metrics and tables. Other groups have other lists.
+#
+# **Predict first:** which metric would you ask for to find how much money is still owed?
 
 # %%
-# Build a visible semantic plan with the mission's first allowed metric.
+print("Mission:", bundle.mission_title)
+display(pd.DataFrame({"metric you may ask for": list(bundle.allowed_metrics)}))
+print("Your tables:", ", ".join(bundle.tables))
+print("Business terms known to the semantic model:", len(semantic.terms))
+assert bundle.allowed_metrics, "Your mission has no metric; ask the trainer."
+proved.append(f"I know my mission's metrics: {', '.join(bundle.allowed_metrics)}")
+
+# %% [markdown]
+# ## Step 2. From a metric name to SQL
+# **What it does:** asks the semantic layer to plan your first allowed metric. It prints the tables it will use and the SQL.
+# `limit=25` caps the number of rows.
+#
+# **Why it matters:** this is the heart of the lab. You gave a business name and got a complete, readable `SELECT` that
+# stays inside your tables and ends with a limit.
+#
+# **Look for:** `FROM`, any `GROUP BY`, and `LIMIT 25` at the end.
+
+# %%
 metric_name = bundle.allowed_metrics[0]
 planned = semantic.plan(
     metric_name,
@@ -71,21 +111,36 @@ planned = semantic.plan(
 print({"metric": planned.metric, "tables": sorted(planned.tables)})
 print("Planned SQL:", planned.sql)
 assert "SELECT" in planned.sql and "LIMIT 25" in planned.sql
+proved.append(f"I planned the metric '{metric_name}' into SQL with a row limit")
 
 # %% [markdown]
-# Execute the planned SQL through the guarded data tool. This preserves the same bundle and row policies as Lab 04. Expect at least one result row.
+# ## Step 3. Run the plan
+# **What it does:** sends the planned SQL through the same guarded data tool you used in Lab 04, then shows the result as a table.
+#
+# **Why it matters:** planning does not touch any data. Running does, and the tool still enforces your tables, read-only SQL
+# and the row cap.
+#
+# **Predict first:** how many rows do you expect? Then compare.
 
 # %%
-# Run the planned read-only SQL and inspect its bounded result.
 planned_result = tool.run_sql(planned.sql, context.request())
+display(pd.DataFrame(planned_result.rows, columns=planned_result.columns))
+print("Rows returned:", planned_result.row_count)
 assert planned_result.row_count > 0
-print({"columns": list(planned_result.columns), "rows": planned_result.rows[:5]})
+assert planned_result.row_count <= 25, "The plan's limit of 25 was not applied."
+proved.append("I ran a planned query and the limit kept it small")
 
 # %% [markdown]
-# Resolve a mission sample question to show how synonyms and dimensions become SQL. Expect the question, chosen metric, breakdowns, and SQL to remain visible.
+# ## Step 4. A business question
+# **What it does:** takes the first sample question of your mission, written in plain English, and resolves it into a metric,
+# a breakdown (a **dimension**, such as "by risk band") and SQL.
+#
+# **Why it matters:** this is how a non-technical user can ask in their own words. Synonyms ("outstanding", "exposure") map to
+# one metric, and "by ..." maps to a dimension.
+#
+# **Look for:** the metric and the dimension printed in the first line, and the SQL below it.
 
 # %%
-# Translate one business question through the semantic layer.
 sample_question = bundle.sample_questions[0]
 question_plan = semantic.resolve_question(
     sample_question,
@@ -95,13 +150,36 @@ question_plan = semantic.resolve_question(
 question_result = tool.run_sql(question_plan.sql, context.request())
 print({"question": sample_question, "metric": question_plan.metric, "dimensions": question_plan.dimensions})
 print("Question SQL:", question_plan.sql)
+display(pd.DataFrame(question_result.rows, columns=question_result.columns))
 assert question_result.row_count > 0
+proved.append("I turned a business question into a metric, a dimension and SQL")
 
 # %% [markdown]
-# Request a metric outside the mission. The semantic validator should refuse it before SQL execution. Expect a friendly scope message when such a metric exists.
+# ## Step 5. Two ways to the same answer
+# **What it does:** asks the data tool for the same question in one call (`tool.query`) and prints its SQL next to the plan from
+# Step 4.
+#
+# **Why it matters:** `tool.query` is the shortcut the Portal uses. Seeing both side by side shows that the Portal and your
+# notebook follow the same rules. Lab 12 compares them for you.
+#
+# **Look for:** whether the two SQL texts look the same.
 
 # %%
-# Demonstrate mission-level metric validation.
+shortcut_sql, shortcut_result = tool.query(sample_question, context.request())
+print("Plan SQL:     ", question_plan.sql)
+print("tool.query SQL:", shortcut_sql)
+print("Same rows:", shortcut_result.row_count == question_result.row_count)
+proved.append("I saw that the one-call shortcut and my own plan use the same rules")
+
+# %% [markdown]
+# ## Step 6. A metric that is not in my mission
+# **What it does:** picks a metric that exists in the semantic model but not in your mission and asks for it.
+#
+# **Why it matters:** the check happens in the planner, before any SQL runs. The refusal is a friendly message, not a crash.
+#
+# **Look for:** the line that starts with "Out-of-mission metric refused".
+
+# %%
 outside_metric = next((name for name in semantic.metrics if name not in bundle.allowed_metrics), None)
 if outside_metric:
     try:
@@ -112,25 +190,52 @@ if outside_metric:
         )
     except SemanticError as exc:
         print("Out-of-mission metric refused:", exc)
+        proved.append(f"A metric outside my mission ({outside_metric}) is refused")
     else:
         raise AssertionError("An out-of-mission metric unexpectedly planned.")
+else:
+    print("Your mission allows every metric, so there is nothing to refuse here.")
 
 # %% [markdown]
-# ## Hands-on exercise
-# Change `exercise_question` to another listed sample or a safe metric question. The default uses the mission's first sample and must return rows.
+# ## Step 7. Which questions can I try?
+# **What it does:** lists the sample questions of your mission.
+#
+# **Why it matters:** the semantic layer understands a limited vocabulary. These questions are known to work, so they are a safe
+# place to start your own.
+
+# %%
+display(pd.DataFrame({"sample question": list(bundle.sample_questions)}))
+proved.append("I know which sample questions my mission offers")
+
+# %% [markdown]
+# ## Hands-on exercise: your turn
+# Choose a business question from Step 7 (or change a word, for example the dimension) and set `exercise_question`.
+#
+# - Easy: pick another sample question.
+# - Medium: change the dimension, for example "by segment" instead of "by risk band", if your mission lists it.
+# - Hard: predict the number of result rows before you run the cell, then check.
+#
+# **Predict first:** what will the table look like? The default is the first sample question, so the cell passes until you
+# change it. If your question is not understood you get a teaching message: use words from Step 1 and Step 7.
 
 # %%
 # EXERCISE: edit only the business question; group and metric scope stay fixed.
 exercise_question = bundle.sample_questions[0]
 exercise_sql, exercise_result = tool.query(exercise_question, context.request())
 assert exercise_result.row_count > 0, "Try a mission question containing one allowed metric."
-print({"exercise_question": exercise_question, "sql": exercise_sql, "rows": exercise_result.row_count})
+print(exercise_question)
+print("SQL:", exercise_sql)
+display(pd.DataFrame(exercise_result.rows, columns=exercise_result.columns).head(10))
+proved.append("I asked the semantic layer a question of my own")
 
 # %% [markdown]
-# Save the semantic checkpoint without modifying tracked metric files. A custom production metric would require review; participant experiments stay in their output workspace.
+# ## Save your checkpoint
+# **What it does:** writes your question, its SQL and the row count as one JSON file in your group's output folder.
+#
+# **Why it matters:** results stay in your own folder, and no tracked metric file is changed. A new production metric would
+# need review; your experiments stay in your workspace.
 
 # %%
-# Persist only the visible plan and row count for the checkpoint.
 summary = {
     "group_id": context.group_id,
     "question": exercise_question,
@@ -139,26 +244,35 @@ summary = {
 }
 saved = context.write_output("05_semantic_summary.json", json.dumps(summary, indent=2))
 print({"saved": saved.name})
+proved.append("I saved a checkpoint in my group's output folder")
 
 # %% [markdown]
+# ## Closing: what you proved
+# The next cell prints one line for every step you completed. If a line is missing, a step did not run: scroll up and run it.
+#
 # ## Expected result
-# Metrics are visible, direct and question-based plans print SQL, results are bounded, and an out-of-mission metric is refused.
+# Nine to ten lines. Your metrics are visible, plans print readable SQL, results are small tables, a metric outside your mission
+# is refused, and one checkpoint file is saved.
 #
 # ## Common errors
-# An unknown metric or breakdown produces a teaching message. Use the mission's available metrics and no more than two dimensions.
+# An unknown metric or breakdown produces a teaching message. Use the metrics of Step 1 and no more than two dimensions.
 #
 # ## Completion checkpoint
-# Explain how metrics, dimensions, parent joins, and bundle restrictions shape the planned SQL.
+# Explain in your own words:
+# 1. What is the difference between a metric and a dimension?
+# 2. Why does the plan stay inside your tables and end with a limit?
+# 3. Why is it useful that the Portal and your notebook use the same rules?
 #
 # ## Reference implementation
 # `bni_training.data.semantic_layer` is reusable production code; `scripts/05_semantic_layer.py` is the automation reference.
 #
 # ## Cleanup
-# Close the in-memory data engine. Keep the semantic summary in the assigned output folder.
+# The next cell closes the in-memory data engine. Keep the checkpoint file.
 
 # %%
-# Close resources and print one executor status line.
 from bni_training.workshop.notebook_support import lab_status
 
+for number, sentence in enumerate(proved, start=1):
+    print(f"{number:>2}. {sentence}")
 context.close()
-lab_status("05", LAB_MODE, passed=6)
+lab_status("05", LAB_MODE, passed=len(proved))

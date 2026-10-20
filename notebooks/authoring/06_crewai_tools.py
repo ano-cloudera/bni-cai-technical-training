@@ -1,28 +1,43 @@
 # %% [markdown]
 # # Lab 06: CrewAI Tools
 #
-# **Audience:** Participant  
+# **Audience:** Participant
 # **Estimated duration:** 45–60 minutes
 #
 # ## Learning objectives
-# Define a group-scoped CrewAI tool, configure an agent and task, run a lightweight crew, and inspect recorded tool calls.
+# By the end you can: explain what an AI agent is, give it one tool that can only read your group's data, watch it use that
+# tool, see a forged group identity refused, and change the agent's goal to see how its answer changes.
 #
-# ## Architecture context
-# An agent is an LLM with instructions and tools. The data tool is bound to one validated group request, so an agent cannot select another group's dataset.
+# ## How this notebook is organised
+# 1. **Setup (one cell).** It opens your group's data tool and connects the model. You do not edit it.
+# 2. **Seven steps.** Each step says what the next cell does and why, you run it, and you read what it prints.
+# 3. **Your turn.** You change the agent's goal and compare two answers.
+# 4. **Closing.** A list of what you proved, and the questions to explain back to your trainer.
+#
+# Run the cells from top to bottom. Complete Labs 03 to 05 first.
 #
 # ## Prerequisites
-# Complete Labs 03–05. CAI mode needs the shared `VLLM_BASE_URL`; local mode announces an explicit mock.
+# Complete Labs 03 to 05. In `cai` mode this lab needs the shared model endpoint (`VLLM_BASE_URL`).
+#
+# ## Architecture context
+# An **agent** is a language model with a role, a goal, and tools it may call. Here the only tool reads your group's data. It
+# is bound to one validated request, so the agent cannot choose another group or another table. In `cai` mode the model is
+# the shared vLLM endpoint; in `local` mode a clearly labelled mock answers instead.
 
 # %% [markdown]
-# ## Configuration validation
-# Resolve group context and configure CrewAI against either the shared endpoint or explicit local mock. Expect mode and group labels, never credentials.
+# ## Configuration validation (setup)
+# This cell finds the repository, reads your group's settings, opens the data tool and connects CrewAI to the model. You do not
+# need to change anything. It prints your group and the mode, and never a credential.
 
 # %%
-# Load workshop context and configure the LLM boundary.
+# Setup: find the repository, load your group's settings and connect the model. Nothing to edit.
 import json
 import os
 import sys
 from pathlib import Path
+
+import pandas as pd
+from IPython.display import display
 
 def _repo_root() -> Path:
     # A generated group workspace records the repository in config/group.env, so no setup is needed.
@@ -39,11 +54,10 @@ ROOT = _repo_root()
 sys.path[:0] = [str(ROOT / "src"), str(ROOT)]
 from bni_training.workshop.notebook_support import load_group_env
 
-# A generated workspace provides config/group.env (LAB_MODE, GROUP_ID, GROUP_WORKSPACE, VLLM_BASE_URL, VLLM_MODEL).
-# Values already set in the Session environment win. No manual setup is needed.
-load_group_env(Path.cwd().parent / "config" / "group.env")
-LAB_MODE = os.getenv("LAB_MODE", "local").lower()
+# Values already set in the Session environment win over config/group.env.
 group_env = Path.cwd().parent / "config" / "group.env"
+load_group_env(group_env)
+LAB_MODE = os.getenv("LAB_MODE", "local").lower()
 if group_env.is_file() and not os.getenv("GROUP_ENV_FILE"):
     os.environ["GROUP_ENV_FILE"] = str(group_env)
 from bni_training.labs import crewai_llm
@@ -55,14 +69,41 @@ mock_server = MockOpenAIServer(reply="The tool result is summarised without chan
 base_url = mock_server.base_url if mock_server else os.environ.get("VLLM_BASE_URL", "")
 assert base_url, "VLLM_BASE_URL is required in CAI mode."
 crew_llm = crewai_llm(base_url, os.getenv("VLLM_API_KEY", "local-placeholder"))
+proved = []  # one sentence per thing you prove; printed in the closing
 print({"mode": LAB_MODE, "group_id": context.group_id, "mission_id": context.mission_id})
 
 # %% [markdown]
 # ## Step-by-step implementation
-# Bind the data tool to the current request and wrap it with CrewAI's `@tool`. The wrapper returns visible SQL, columns, rows, and row count. Expect a named tool with no way to accept a group id.
+# Each step says what the cell does, why it matters and what to look for.
+#
+# ## Step 1. Ask the data yourself first
+# **What it does:** asks the sample question of your mission directly through the group-bound data tool, with no agent, and
+# shows the result as a table.
+#
+# **Why it matters:** this is the ground truth. Later you compare it with what the agent reports, so you can tell whether the
+# agent really used the data or invented an answer.
+#
+# **Predict first:** what columns do you expect?
 
 # %%
-# Define a visible, request-bound CrewAI tool and record its calls.
+question = context.bundle.sample_questions[0]
+hand_sql, hand_result = context.data_tool().bind(context.request()).query(question)
+print("Question:", question)
+print("SQL:", hand_sql)
+display(pd.DataFrame(hand_result.rows, columns=hand_result.columns))
+proved.append("I asked the data myself, so I know the true answer")
+
+# %% [markdown]
+# ## Step 2. Give the agent a tool
+# **What it does:** wraps the same data tool with CrewAI's `@tool`. The tool takes only a `question`. There is no parameter for a
+# group, a dataset or a table. A `RecordingDataTool` notes every call so you can check later what the agent really did.
+#
+# **Why it matters:** the agent can only do what its tools allow. Because the group is fixed inside the tool, a clever prompt
+# cannot make it read another group's data.
+#
+# **Look for:** the tool name and the group it is bound to.
+
+# %%
 from crewai.tools import tool
 from bni_training.crew import RecordingDataTool
 
@@ -77,13 +118,19 @@ def query_group_banking_data(question: str) -> str:
         default=str,
     )
 
-print({"tool": query_group_banking_data.name, "bound_group": context.group_id})
+print({"tool": query_group_banking_data.name, "bound_group": context.group_id, "calls so far": len(recording_tool.calls)})
+proved.append("I gave an agent one tool that can only read my group's data")
 
 # %% [markdown]
-# Define the banking analyst explicitly. Role, goal, backstory, LLM, and tools are visible so participants can see what changes agent behavior. Expect one agent with exactly one group-scoped tool.
+# ## Step 3. Define the agent
+# **What it does:** creates the analyst agent with a role, a goal and a backstory, the model, and the one tool.
+#
+# **Why it matters:** these four lines of text are all that steers the agent. Changing the goal changes how it behaves. You do
+# that in "Your turn".
+#
+# **Look for:** exactly one tool in the agent's tool list.
 
 # %%
-# Create the agent whose only data access is the bound workshop tool.
 from crewai import Agent, Crew, Process, Task
 
 analyst_agent = Agent(
@@ -94,16 +141,22 @@ analyst_agent = Agent(
     tools=[query_group_banking_data],
     verbose=False,
 )
-print({"role": analyst_agent.role, "tools": [item.name for item in analyst_agent.tools]})
+display(pd.DataFrame({"field": ["role", "goal", "tools"], "value": [analyst_agent.role, analyst_agent.goal, ", ".join(item.name for item in analyst_agent.tools)]}))
+assert len(analyst_agent.tools) == 1
+proved.append("I defined an agent with a role, a goal and exactly one tool")
 
 # %% [markdown]
-# Create a task and sequential crew, then use `kickoff_blocking` because Jupyter already runs an event loop. The task requires tool use; expect a final answer and at least one recorded SQL call.
+# ## Step 4. Let the agent work
+# **What it does:** gives the agent a task that requires the tool, runs it, then prints the answer. `kickoff_blocking` is used
+# because JupyterLab already runs an event loop. In `cai` mode this calls the real model, so it can take up to a minute.
+#
+# **Why it matters:** this is the whole idea of an agent: you state a task, and the model decides to call the tool.
+#
+# **Predict first:** how many times will the agent call the tool?
 
 # %%
-# Run one small CrewAI task and inspect its actual tool activity.
 from bni_training.crew import kickoff_blocking
 
-question = context.bundle.sample_questions[0]
 analysis_task = Task(
     description="Answer the participant question: {question}. You must use the data tool.",
     expected_output="A concise answer grounded in the tool rows",
@@ -112,13 +165,37 @@ analysis_task = Task(
 crew = Crew(agents=[analyst_agent], tasks=[analysis_task], process=Process.sequential, verbose=False)
 crew_output = kickoff_blocking(crew, {"question": question})
 assert recording_tool.calls, "The agent did not call the data tool; inspect its goal and task."
-print({"question": question, "tool_calls": recording_tool.calls, "answer": str(crew_output)})
+print("Answer:", str(crew_output))
+print("Tool calls:", len(recording_tool.calls))
+proved.append("My agent called the data tool and answered")
 
 # %% [markdown]
-# A forged request is rejected before an agent could use it. This demonstrates operational group separation at the application layer. Expect a friendly cross-group refusal.
+# ## Step 5. Did the agent use the data?
+# **What it does:** shows every tool call the agent made (the question it sent, the SQL, the number of rows), next to the SQL you got
+# by hand in Step 1.
+#
+# **Why it matters:** an answer is only trustworthy if it comes from a real tool call. The recorded SQL is your evidence.
+#
+# **Look for:** a row count above zero, and whether the agent's SQL looks like yours.
 
 # %%
-# Prove the underlying tool refuses a request carrying another group identity.
+calls = pd.DataFrame(recording_tool.calls)
+display(calls)
+print("SQL by hand:", hand_sql)
+print("Agent used the same SQL:", any(call["sql"] == hand_sql for call in recording_tool.calls))
+assert (calls["row_count"] > 0).any(), "No tool call returned rows."
+proved.append("I checked the agent's tool calls against my own query")
+
+# %% [markdown]
+# ## Step 6. A forged group identity
+# **What it does:** builds a request that claims to belong to another group and tries to bind the tool to it.
+#
+# **Why it matters:** the group is checked before any agent could use the tool. This is an application rule for the workshop,
+# not a security boundary.
+#
+# **Look for:** the line that starts with "Cross-group binding refused".
+
+# %%
 from bni_training.data.tool import CrossGroupAccessError, DataRequest
 
 other_group = "group_02" if context.group_id != "group_02" else "group_03"
@@ -127,51 +204,90 @@ try:
     context.data_tool().bind(forged)
 except CrossGroupAccessError as exc:
     print("Cross-group binding refused:", exc)
+    proved.append("A request in another group's name cannot bind the tool")
 else:
     raise AssertionError("A cross-group request unexpectedly bound to the tool.")
 
 # %% [markdown]
-# ## Hands-on exercise
-# Change only the goal sentence below, then compare how the agent frames the same mission question. The runnable default keeps tool use mandatory.
+# ## Hands-on exercise: your turn
+# Change `exercise_goal` and run the cell. It builds a **second agent** with your goal, gives it the same task and the same tool,
+# and prints both answers so you can compare how the framing changed.
+#
+# - Easy: ask for a one-sentence answer.
+# - Medium: ask for a bulleted answer, or for a formal tone.
+# - Hard: ask for the answer to start with the largest value.
+#
+# **Predict first:** how will the second answer differ? Keep the word "synthetic" in the goal. The agent must still call the tool.
+# With the local mock both answers are the same, because the mock always gives one reply; the real model in `cai` mode differs.
 
 # %%
-# EXERCISE: edit this safe instruction while preserving tool grounding.
+# EXERCISE: edit only this goal. Keep the word "synthetic" and keep using the tool.
 exercise_goal = "Explain the result concisely and mention that the data is synthetic."
-assert "synthetic" in exercise_goal.lower()
-print({"exercise_goal": exercise_goal, "recorded_calls": len(recording_tool.calls)})
+assert "synthetic" in exercise_goal.lower(), 'Keep the word "synthetic" in the goal.'
+calls_before = len(recording_tool.calls)
+second_agent = Agent(
+    role=analyst_agent.role,
+    goal=exercise_goal,
+    backstory=analyst_agent.backstory,
+    llm=crew_llm,
+    tools=[query_group_banking_data],
+    verbose=False,
+)
+second_task = Task(
+    description="Answer the participant question: {question}. You must use the data tool.",
+    expected_output="A concise answer grounded in the tool rows",
+    agent=second_agent,
+)
+second_output = kickoff_blocking(
+    Crew(agents=[second_agent], tasks=[second_task], process=Process.sequential, verbose=False), {"question": question}
+)
+display(pd.DataFrame({"agent": ["first (original goal)", "second (your goal)"], "answer": [str(crew_output), str(second_output)]}))
+if len(recording_tool.calls) == calls_before:
+    print("The second agent answered without the tool. Strengthen the task wording and run again.")
+proved.append("I changed the agent's goal and compared two answers")
 
 # %% [markdown]
-# Save the question, final answer, and recorded SQL. No credential or endpoint is written.
+# ## Save your checkpoint
+# **What it does:** writes your question, the first agent's answer and the recorded SQL calls as one JSON file in your group's output
+# folder. No credential or endpoint is written.
 
 # %%
-# Persist a credential-free agent checkpoint.
 saved = context.write_output(
     "06_tool_test.json",
     json.dumps({"question": question, "answer": str(crew_output), "tool_calls": recording_tool.calls}, indent=2),
 )
 print({"saved": saved.name})
+proved.append("I saved a credential-free checkpoint")
 
 # %% [markdown]
+# ## Closing: what you proved
+# The next cell prints one line for every step you completed. If a line is missing, a step did not run: scroll up and run it.
+#
 # ## Expected result
-# The crew calls the group-bound tool at least once, returns an answer, records SQL, and refuses a forged group identity.
+# Eight lines. You asked the data yourself, the agent called the group-bound tool, its SQL is recorded, a forged group identity is refused, and
+# two goals gave two answers.
 #
 # ## Common errors
 # If no tool call appears, strengthen the task instruction. If CAI cannot reach vLLM, ask the trainer; never fall back to the local mock in CAI mode.
 #
 # ## Completion checkpoint
-# Explain how role, goal, task, tool description, and request binding work together.
+# Explain in your own words:
+# 1. How do role, goal, task, tool description and request binding work together?
+# 2. How can you tell an answer came from the data and not from the model's imagination?
+# 3. Why can the agent not read another group's data, however it is prompted?
 #
 # ## Reference implementation
 # `bni_training.crew` and `bni_training.data.crewai_tool` are reusable references; `scripts/06_crewai_tools.py` is the automation entrypoint.
 #
 # ## Cleanup
-# Stop only the explicit local mock and close the local CSV engine.
+# The next cell stops the explicit local mock (if one was started) and closes the data engine.
 
 # %%
-# Release local resources and print one executor status line.
 from bni_training.workshop.notebook_support import lab_status
 
+for number, sentence in enumerate(proved, start=1):
+    print(f"{number:>2}. {sentence}")
 if mock_server:
     mock_server.stop()
 context.close()
-lab_status("06", LAB_MODE, passed=6, skipped=1 if LAB_MODE == "local" else 0)
+lab_status("06", LAB_MODE, passed=len(proved), skipped=1 if LAB_MODE == "local" else 0)

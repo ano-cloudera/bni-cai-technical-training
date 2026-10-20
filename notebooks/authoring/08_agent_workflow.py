@@ -1,28 +1,46 @@
 # %% [markdown]
 # # Lab 08: Multi-Agent Workflow
 #
-# **Audience:** Participant  
+# **Audience:** Participant
 # **Estimated duration:** 45–60 minutes
 #
 # ## Learning objectives
-# Define an analyst and reviewer, hand explicit data evidence and analyst output to the reviewer, and validate the final grounded answer.
+# By the end you can: explain why evidence is collected before any agent writes, hand the same evidence to an analyst and a
+# reviewer, check that every number in the final answer comes from the data, see a made-up number rejected, and change what the
+# reviewer looks for.
 #
-# ## Architecture context
-# The analyst retrieves mission data; the reviewer checks clarity and preserves facts. The workflow stays sequential and lightweight for one shared model endpoint.
+# ## How this notebook is organised
+# 1. **Setup (one cell).** It opens your group's data tool and connects the model. You do not edit it.
+# 2. **Nine steps.** Each step says what the next cell does and why, you run it, and you read what it prints.
+# 3. **Your turn.** You change the reviewer's criterion and compare answers.
+# 4. **Closing.** A list of what you proved, and the questions to explain back to your trainer.
+#
+# Run the cells from top to bottom. Complete Lab 06 first. In `cai` mode the two agents call the real model, so Step 4 can take
+# up to a minute.
 #
 # ## Prerequisites
-# Complete Lab 06. CAI mode requires the shared `VLLM_BASE_URL`; local mode uses an explicit deterministic mock.
+# Complete Lab 06. In `cai` mode this lab needs the shared model endpoint (`VLLM_BASE_URL`).
+#
+# ## Architecture context
+# In Lab 06 one agent chose to call a tool. Here the data is fetched **first**, by plain code, so you can see the question, the SQL and
+# the rows before any agent writes a word. Then an **analyst** drafts an answer from that evidence and a **reviewer** checks the draft
+# against the same evidence. A final rule rejects any number that is not in the data.
 
 # %% [markdown]
-# ## Configuration validation
-# Resolve group context and configure CrewAI against the selected endpoint. Expect mode, group, and mission labels without credentials.
+# ## Configuration validation (setup)
+# This cell finds the repository, reads your group's settings, opens the data tool and connects CrewAI to the model. You do not
+# need to change anything. It prints your group, the mission and the mode, never a credential.
 
 # %%
-# Load context and configure the shared-or-explicit-local LLM boundary.
+# Setup: find the repository, load your group's settings and connect the model. Nothing to edit.
 import json
 import os
+import re
 import sys
 from pathlib import Path
+
+import pandas as pd
+from IPython.display import display
 
 def _repo_root() -> Path:
     # A generated group workspace records the repository in config/group.env, so no setup is needed.
@@ -39,11 +57,10 @@ ROOT = _repo_root()
 sys.path[:0] = [str(ROOT / "src"), str(ROOT)]
 from bni_training.workshop.notebook_support import load_group_env
 
-# A generated workspace provides config/group.env (LAB_MODE, GROUP_ID, GROUP_WORKSPACE, VLLM_BASE_URL, VLLM_MODEL).
-# Values already set in the Session environment win. No manual setup is needed.
-load_group_env(Path.cwd().parent / "config" / "group.env")
-LAB_MODE = os.getenv("LAB_MODE", "local").lower()
+# Values already set in the Session environment win over config/group.env.
 group_env = Path.cwd().parent / "config" / "group.env"
+load_group_env(group_env)
+LAB_MODE = os.getenv("LAB_MODE", "local").lower()
 if group_env.is_file() and not os.getenv("GROUP_ENV_FILE"):
     os.environ["GROUP_ENV_FILE"] = str(group_env)
 from bni_training.labs import crewai_llm
@@ -55,14 +72,22 @@ mock_server = MockOpenAIServer(reply="The reviewed answer preserves the supplied
 base_url = mock_server.base_url if mock_server else os.environ.get("VLLM_BASE_URL", "")
 assert base_url, "VLLM_BASE_URL is required in CAI mode."
 workflow_llm = crewai_llm(base_url, os.getenv("VLLM_API_KEY", "local-placeholder"))
+proved = []  # one sentence per thing you prove; printed in the closing
 print({"mode": LAB_MODE, "group_id": context.group_id, "mission": context.bundle.mission_title})
 
 # %% [markdown]
 # ## Step-by-step implementation
-# Execute the group-bound data tool before agent orchestration. This makes the evidence deterministic and inspectable: participants see the question, SQL, columns, and rows before either agent writes prose. We do not rely on CrewAI's mutable tool recorder because orchestration may copy tool objects.
+# Each step says what the cell does, why it matters and what to look for.
+#
+# ## Step 1. Collect the evidence first
+# **What it does:** runs the group-bound data tool once with the sample question of your mission, and shows the SQL and the rows.
+#
+# **Why it matters:** agents write fluent text, but fluent is not true. By fetching the data first with plain code, the evidence is
+# fixed and visible before any agent speaks. Both agents will receive exactly this evidence.
+#
+# **Predict first:** what will the rows contain?
 
 # %%
-# Run the request-bound tool once and keep a bounded evidence package.
 question = context.bundle.sample_questions[0]
 bound_tool = context.data_tool().bind(context.request())
 evidence_sql, evidence_result = bound_tool.query(question)
@@ -75,16 +100,21 @@ evidence = {
     "row_count": evidence_result.row_count,
 }
 assert evidence_sql.upper().startswith("SELECT") and evidence_rows
-print("User question:", question)
-print("Generated SQL:", evidence_sql)
-print("Returned rows:", evidence_rows)
-print({"tool_executed": True, "group_id": context.group_id, "row_count": evidence_result.row_count})
+print("Question:", question)
+print("SQL:", evidence_sql)
+display(pd.DataFrame(evidence_rows, columns=evidence["columns"]))
+proved.append("I collected the evidence (question, SQL and rows) before any agent")
 
 # %% [markdown]
-# Define two agents with distinct responsibilities. Neither agent re-runs the tool: both receive the exact validated evidence package, while the reviewer also receives the Analyst task output.
+# ## Step 2. Two agents, two jobs
+# **What it does:** creates an **analyst**, who explains the evidence, and a **reviewer**, who checks the draft. Neither agent has a
+# tool: both only receive the evidence as text.
+#
+# **Why it matters:** splitting the work gives you a second pair of eyes. Different goals make the agents behave differently.
+#
+# **Look for:** the two roles and their goals in the table.
 
 # %%
-# Create the analyst and reviewer agents explicitly.
 from crewai import Agent, Crew, Process, Task
 
 analyst_agent = Agent(
@@ -101,71 +131,169 @@ reviewer_agent = Agent(
     llm=workflow_llm,
     verbose=False,
 )
-print({"agents": [analyst_agent.role, reviewer_agent.role]})
+display(pd.DataFrame({"role": [analyst_agent.role, reviewer_agent.role], "goal": [analyst_agent.goal, reviewer_agent.goal]}))
+proved.append("I defined an analyst and a reviewer with different goals")
 
 # %% [markdown]
-# Serialize the same evidence into both task descriptions. `Process.sequential` then passes Analyst output to the Reviewer as additional context. Assertions verify the evidence is not lost before execution.
+# ## Step 3. Give both the same answer sheet
+# **What it does:** writes two tasks. Each task starts with the **question** and then holds the **evidence** from Step 1 (the SQL
+# and the rows) as plain text. The reviewer's task also receives the analyst's draft (`context=[analyst_task]`), and
+# `Process.sequential` runs the analyst first.
+#
+# **Why it matters:** think of the evidence as an answer sheet. The analyst writes the draft from it, and the reviewer checks the draft
+# against the **same** sheet. If the reviewer had no sheet, it could only trust the analyst.
+#
+# **Look for:** `True` twice. It proves the SQL is inside both tasks. To read the question and evidence the agents receive, run
+# `print(evidence_text)` in a new cell.
 
 # %%
-# Assemble and execute the two-step sequential workflow.
 from bni_training.crew import kickoff_blocking
 
 evidence_text = json.dumps(evidence, default=str)
 analyst_task = Task(
-    description=f"Analyze this validated group-scoped evidence and draft an answer: {evidence_text}",
+    description=f"Question: {question}\nAnalyze this validated group-scoped evidence and draft an answer: {evidence_text}",
     expected_output="SQL, bounded rows, and a factual draft",
     agent=analyst_agent,
 )
 reviewer_task = Task(
-    description=f"Review the draft against this same evidence; add no unsupported number: {evidence_text}",
+    description=f"Question: {question}\nReview the draft against this same evidence; add no unsupported number: {evidence_text}",
     expected_output="A concise grounded final answer",
     agent=reviewer_agent,
     context=[analyst_task],
 )
+print("Evidence is in the analyst task:", evidence_sql in analyst_task.description)
+print("Evidence is in the reviewer task:", evidence_sql in reviewer_task.description)
 assert evidence_sql in analyst_task.description and evidence_sql in reviewer_task.description
+proved.append("I gave the same evidence to both tasks")
+
+# %% [markdown]
+# ## Step 4. Run the workflow
+# **What it does:** runs the analyst, then the reviewer, and puts both outputs side by side. The question already sits inside each task
+# (Step 3), so nothing else is passed in.
+#
+# **Why it matters:** this is the multi-agent idea: one agent's output becomes the next agent's input. In `cai` mode this calls the
+# real model twice.
+#
+# **Predict first:** how will the reviewer's text differ from the analyst's?
+
+# %%
 workflow = Crew(
     agents=[analyst_agent, reviewer_agent],
     tasks=[analyst_task, reviewer_task],
     process=Process.sequential,
     verbose=False,
 )
-kickoff_blocking(workflow, {"question": question})
+kickoff_blocking(workflow)
 analyst_output = str(analyst_task.output)
 reviewer_output = str(reviewer_task.output)
 if mock_server:
     request_texts = [json.dumps(item.get("messages", []), default=str) for item in mock_server.requests]
-    evidence_request_count = sum(evidence_sql in text for text in request_texts)
-    assert evidence_request_count >= 2
-print("Analyst output:", analyst_output)
-print("Reviewer output:", reviewer_output)
+    assert sum(evidence_sql in text for text in request_texts) >= 2, "Both agents must receive the evidence."
+display(pd.DataFrame({"agent": ["analyst (draft)", "reviewer (final)"], "output": [analyst_output, reviewer_output]}))
+proved.append("I ran the analyst and the reviewer in sequence")
 
 # %% [markdown]
-# Apply a deterministic grounding check after the reviewer. Numbers are allowed only when they appeared in tool rows. The mock answer contains no invented numbers, so the default passes.
+# ## Step 5. Which numbers does the final answer contain?
+# **What it does:** finds every number in the reviewer's answer and checks whether it also appears in the evidence rows.
+#
+# **Why it matters:** this is the check a human reader cannot do by eye. A number that is not in the data is a number the model made up.
+#
+# **Look for:** the column `in the evidence?`. Every row should say `True`. With the local mock the answer has no number, so the table is empty.
 
 # %%
-# Validate final numerical grounding against actual tool results.
-from bni_training.guardrails import validate_grounded_answer
-
 known_numbers = [float(value) for row in evidence_rows for value in row if isinstance(value, (int, float))]
-grounded_answer = validate_grounded_answer(reviewer_output, known_numbers)
-assert grounded_answer.strip()
-print({"grounding": "PASS", "evidence_passed_to_both_agents": True})
+allowed = {round(value, 4) for value in known_numbers}
+mentioned = [float(text.replace(",", "")) for text in re.findall(r"\b\d[\d,]*(?:\.\d+)?\b", reviewer_output)]
+if mentioned:
+    display(pd.DataFrame({"number in the answer": mentioned, "in the evidence?": [round(value, 4) in allowed for value in mentioned]}))
+else:
+    print("The answer contains no number, so there is nothing to check.")
+proved.append("I listed the numbers in the final answer and compared them with the evidence")
 
 # %% [markdown]
-# ## Hands-on exercise
-# Add or change one reviewer criterion. The default requires a statement that evidence came from the group-scoped tool and remains safe for automated execution.
+# ## Step 6. The grounding rule
+# **What it does:** applies `validate_grounded_answer`, the same rule as Lab 11. It accepts an answer only when every number in it
+# is among the numbers from the tool rows.
+#
+# **Why it matters:** a rule in code does not get tired and does not trust the model. It is the last gate before an answer is shown.
+#
+# **Look for:** `grounding: PASS`.
+
+# %%
+from bni_training.guardrails import GuardrailError, validate_grounded_answer
+
+grounded_answer = validate_grounded_answer(reviewer_output, known_numbers)
+assert grounded_answer.strip()
+print({"grounding": "PASS"})
+proved.append("The final answer passed the grounding rule")
+
+# %% [markdown]
+# ## Step 7. A made-up number is rejected
+# **What it does:** feeds the rule an answer with a number that is **not** in your data.
+#
+# **Why it matters:** a rule is only trustworthy if you have seen it say no. This is the case the rule exists for.
+#
+# **Look for:** the line that starts with "Rejected".
+
+# %%
+invented = "The verified total is 987654321.12."
+try:
+    validate_grounded_answer(invented, known_numbers)
+except GuardrailError as exc:
+    print("Rejected:", exc)
+    proved.append("A made-up number was rejected by the rule")
+else:
+    raise AssertionError("An invented number unexpectedly passed.")
+
+# %% [markdown]
+# ## Hands-on exercise: your turn
+# Three steps: **change one sentence, run the cell, compare the two answers.**
+#
+# The sentence is `exercise_reviewer_criterion`, an extra instruction for the reviewer. The cell builds a new reviewer with it, gives
+# it the analyst's draft and the same evidence, and shows its answer next to the original. Then the grounding rule checks the new answer.
+#
+# - Easy: ask for one sentence only.
+# - Medium: ask for the highest value first.
+# - Hard: ask it to add a percentage, and see what the rule says about a number that is not in the rows.
+#
+# **If you see "blocked":** that is not an error. It means the new answer contains a number that is not in the data (for example a
+# number copied from the SQL). Read the reason and change the sentence, for example by adding "do not mention any number that is not in the rows".
+# Keep the words "group-scoped" in your sentence.
 
 # %%
 # EXERCISE: edit this reviewer criterion and compare the final answer.
-exercise_reviewer_criterion = "State that the evidence came from the group-scoped data tool."
-assert "group-scoped" in exercise_reviewer_criterion
-print({"reviewer_criterion": exercise_reviewer_criterion})
+exercise_reviewer_criterion = "State that the evidence came from the group-scoped data tool, and do not mention any number that is not in the rows."
+assert "group-scoped" in exercise_reviewer_criterion, 'Keep the words "group-scoped" in the criterion.'
+custom_reviewer = Agent(
+    role="Grounding Reviewer",
+    goal=f"Check the narrative against the evidence and add no unsupported numbers. Also: {exercise_reviewer_criterion}",
+    backstory="You improve clarity without changing the analyst's evidence.",
+    llm=workflow_llm,
+    verbose=False,
+)
+custom_task = Task(
+    description=f"Question: {question}\nAnalyst draft: {analyst_output}\nReview it against this evidence: {evidence_text}",
+    expected_output="A concise grounded final answer",
+    agent=custom_reviewer,
+)
+custom_output = str(
+    kickoff_blocking(Crew(agents=[custom_reviewer], tasks=[custom_task], process=Process.sequential, verbose=False))
+)
+display(pd.DataFrame({"reviewer": ["original", "with your criterion"], "answer": [reviewer_output, custom_output]}))
+try:
+    validate_grounded_answer(custom_output, known_numbers)
+    print("Grounding rule: PASS")
+except GuardrailError as exc:
+    print("Grounding rule blocked this answer:", exc)
+proved.append("I changed the reviewer's criterion and compared the answers")
 
 # %% [markdown]
-# Save the question, generated SQL, bounded rows, and both agent outputs. This checkpoint makes each explicit hand-off inspectable without storing credentials.
+# ## Save your checkpoint
+# **What it does:** writes the question, the SQL, the rows and both agent outputs to your group's output folder.
+#
+# **Why it matters:** each hand-off stays inspectable later, and the file holds no credential.
 
 # %%
-# Persist the visible workflow hand-off and final result.
 summary = {
     "question": question,
     "sql": evidence_sql,
@@ -175,28 +303,39 @@ summary = {
 }
 saved = context.write_output("08_workflow.json", json.dumps(summary, indent=2))
 print({"saved": saved.name})
+proved.append("I saved the workflow checkpoint")
 
 # %% [markdown]
+# ## Closing: what you proved
+# The next cell prints one line for every step you completed. If a line is missing, a step did not run: scroll up and run it.
+#
 # ## Expected result
-# The group-bound tool runs before orchestration; the question, SQL, and returned rows are visible; both agents receive the evidence; and the grounding check passes.
+# Nine lines. The evidence was fetched first, both agents received it, the final answer passed the grounding rule, a made-up number was
+# rejected, and one checkpoint file is saved.
 #
 # ## Common errors
-# If evidence is empty, inspect the group-bound tool before starting the agents. Do not infer execution from a mutable CrewAI recorder. A CAI endpoint error is a FAIL, not permission to start a mock.
+# If the evidence is empty, check the group-bound data tool before starting the agents. A model endpoint error is a failure, not permission
+# to start a mock. If the rule blocks the final answer, the model wrote a number that is not in the rows: run the step again or tighten the
+# reviewer's criterion.
 #
 # ## Completion checkpoint
-# Describe what the explicit tool step produced, what the analyst contributed, what the reviewer changed, and how the SQL proves grounding.
+# Explain in your own words:
+# 1. Why is the evidence collected before the agents run?
+# 2. What did the analyst add, and what did the reviewer change?
+# 3. How does the SQL, together with the grounding rule, prove the answer is grounded?
 #
 # ## Reference implementation
 # `bni_training.crew` contains reusable workflow utilities; `scripts/08_agent_workflow.py` is the automation reference.
 #
 # ## Cleanup
-# Stop only the explicit local mock and close local data resources.
+# The next cell stops the explicit local mock (if one was started) and closes the data engine.
 
 # %%
-# Release local resources and report one executor status line.
 from bni_training.workshop.notebook_support import lab_status
 
+for number, sentence in enumerate(proved, start=1):
+    print(f"{number:>2}. {sentence}")
 if mock_server:
     mock_server.stop()
 context.close()
-lab_status("08", LAB_MODE, passed=7, skipped=1 if LAB_MODE == "local" else 0)
+lab_status("08", LAB_MODE, passed=len(proved), skipped=1 if LAB_MODE == "local" else 0)

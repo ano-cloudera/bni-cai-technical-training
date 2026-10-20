@@ -4,7 +4,7 @@
 # **Audience:** Participant
 # **Estimated duration:** 35–45 minutes
 #
-# ## What you will learn
+# ## Learning objectives
 # By the end you can: look at the tables your mission gives you, ask them questions with SQL, see why some requests
 # are refused, and write one question of your own.
 #
@@ -16,12 +16,15 @@
 #
 # Run the cells from top to bottom. They are safe to run again.
 #
+# ## Prerequisites
+# Complete Lab 00 so your group and settings are ready.
+#
 # ## Architecture context
 # One synthetic dataset serves ten groups. Your group sees only the tables of its mission. The data tool, not
 # the notebook, enforces that: it only allows read-only `SELECT`, only your tables, and at most 200 rows.
 
 # %% [markdown]
-# ## Setup
+# ## Configuration validation (setup)
 # This cell finds the repository, reads your group's settings (`config/group.env`), and opens the read-only data tool.
 # You do not need to change anything. It ends by printing your group and the mode (`cai` means the real shared services).
 
@@ -65,6 +68,9 @@ proved = []  # one sentence per thing you prove; printed in the closing
 print({"mode": LAB_MODE, "group_id": context.group_id})
 
 # %% [markdown]
+# ## Step-by-step implementation
+# Each step says what the cell does, why it matters and what to look for.
+#
 # ## Step 1. What is my assignment?
 # **What it does:** prints your group, your mission, your dataset and the tables you may use.
 #
@@ -225,7 +231,7 @@ else:
     raise AssertionError("A cross-group request unexpectedly ran.")
 
 # %% [markdown]
-# ## Your turn
+# ## Hands-on exercise: your turn
 # Write one question of your own as a `SELECT`. Use only your tables and the column names from Step 2.
 #
 # - Easy: count the rows of your second table.
