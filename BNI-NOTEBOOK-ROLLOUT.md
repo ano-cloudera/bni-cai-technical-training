@@ -95,8 +95,9 @@ the workspace is generated, and set only the LiteLLM key in the Session environm
 
 ## 7. Sandbox results of the notebooks (kernel BNI rag, group_03, `mode=cai`)
 
-Pass: 00, 03, 04, 05, 06, 07, 08, 09, 10, 11 (11 with the thinking fix). Lab 12: waiting for the Portal answer to land in the
-shared runtime folder (item 4). Not run: 01 and 02 (trainer only).
+Pass: 00, 03, 04, 05, 06, 07, 08, 09, 10, 11 (11 with the thinking fix) and 12 (after `WORKSHOP_RUNTIME_DIR` was set on the
+sandbox Portal and one sample question was asked: `LAB_STATUS: lab=12 mode=cai status=PASS passed=7`). Not run: 01 and 02
+(trainer only). Each lab was run with the temporary variable cells of section 5, not with permanent Session variables.
 
 ## 8. Known gaps (not blocking, to fix after the workshop)
 
