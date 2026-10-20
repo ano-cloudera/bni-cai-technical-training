@@ -222,6 +222,37 @@ SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 Open: the repository could default to port 443 for an `https://` Qdrant URL without a port, so a trainer never has to
 add it. Record the Lab 07 result here once it runs.
 
+## A8. Glossary indexing: `ReadTimeout` at `create_payload_index`, then Portal glossary check
+
+Seen at BNI: Lab 07 passed (`passed=5 failed=0`), but `index_glossary.py --execute` ended with
+`ResponseHandlingException: The read operation timed out` at `create_payload_index`. That step runs **before** the points
+are written, so the glossary of `group_03` is probably not stored. The first call on a new collection can be slow through
+the CAI gateway. Running it again is safe (the collection exists and the points are overwritten by id).
+
+Run it again, in the same terminal that has the variables from A7:
+
+```bash
+env -u PYTHONPATH EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3 /home/cdsw/.venvs/bni-rag/bin/python scripts/index_glossary.py --group-id group_03 --execute 2>&1 | tail -4
+```
+
+Pass: a JSON result with `"group_id": "group_03"` and a `documents` count, no traceback. If it times out again, send the last
+lines; the client timeout can be raised.
+
+Check that the points exist for the group (the count must be above 0):
+
+```bash
+env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python -c "import os; from qdrant_client import QdrantClient as C, models as m; c=C(url=os.environ['QDRANT_URL'], timeout=60); print(c.count(collection_name='bni_training_knowledge', count_filter=m.Filter(must=[m.FieldCondition(key='group_id', match=m.MatchValue(value='group_03'))])))" 2>&1 | tail -2
+```
+
+If this reports that the collection does not exist, the collection has another name: print the names with
+`print(c.get_collections())` and use that name.
+
+Portal check, after `QDRANT_URL` (with `:443`), `SSL_CERT_FILE` and `PORTAL_MAX_TOKENS=512` are in the Portal
+environment and you clicked **Update Application**:
+
+1. Open the Portal, choose `group_03`, click one sample question.
+2. Open the panel "Related glossary and scenario notes". It must show notes (not be empty). That proves retrieval.
+
 ## B. Embedding model bge-m3 (optional; needed for Portal retrieval and Lab 07)
 
 Upload `bge-m3.zip` (1.27 GB) to `/home/cdsw/` with the JupyterLab file panel, then:
