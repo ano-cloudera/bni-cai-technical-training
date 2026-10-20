@@ -8,6 +8,10 @@ import urllib.request
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
+# CAI runs an Application script cell by cell in a kernel, where __file__ is not defined. This module is
+# imported normally, so the launchers take the repository root from here.
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
 
 def resolve_cai_port(env: Mapping[str, str]) -> int:
     """Resolve the single port that a CAI Application must expose."""

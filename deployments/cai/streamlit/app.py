@@ -4,10 +4,10 @@ import os
 from collections.abc import Mapping
 from pathlib import Path
 
-from deployments.cai.common import http_ready, resolve_cai_port, run_supervised
+from deployments.cai.common import REPO_ROOT, http_ready, resolve_cai_port, run_supervised
 
-# A CAI Application starts in the project root (/home/cdsw), not the repository: resolve paths here.
-REPO_ROOT = Path(__file__).resolve().parents[3]
+# A CAI Application starts in the project root (/home/cdsw), not the repository, so paths are resolved from
+# REPO_ROOT. Do not use __file__ here: CAI runs this script in a kernel where it is not defined.
 
 
 def resolve_app_path(env: Mapping[str, str]) -> Path:

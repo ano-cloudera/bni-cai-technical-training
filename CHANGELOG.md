@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased (portal launcher in a kernel)
+
+- CAI runs an Application script cell by cell in a kernel where `__file__` is undefined, so the Portal launcher
+  failed with `NameError: name '__file__' is not defined`. The repository root now comes from
+  `deployments.cai.common.REPO_ROOT`; a test runs every launcher without `__file__`.
+
 ## Unreleased (portal launcher)
 
 - Workshop Portal and legacy Streamlit launchers: a CAI Application starts in `/home/cdsw`, not in the repository, so
