@@ -62,6 +62,32 @@ If `bni-rag` fails the same way (Portal, Lab 07), reinstall its lock the same wa
 cd /home/cdsw/bni-cai-technical-training && env -u PYTHONPATH PIP_USER=false /home/cdsw/.venvs/bni-rag/bin/python -m pip install --no-user --retries 10 --timeout 60 -r requirements/rag.lock
 ```
 
+## A3. Portal: "The portal is not configured: FileNotFoundError"
+
+Seen at BNI: the Portal page shows this message and the log ends after the `qdrant_client` warning, just before the
+embedding model loads. The page hides the detail on purpose. Reproduce it in a Session to read the real error (the last
+8 lines):
+
+```bash
+env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python -c "from sentence_transformers import SentenceTransformer as S; S('/home/cdsw/models/bge-m3', device='cpu'); print('loaded')" 2>&1 | tail -8
+```
+
+Most likely cause: `modules.json` names a `2_Normalize` folder, which Hugging Face does not store because it is empty,
+so it is missing from the unzipped model. If the error mentions `2_Normalize`, create it and repeat the test above (it
+must print `loaded`):
+
+```bash
+mkdir -p /home/cdsw/models/bge-m3/2_Normalize
+```
+
+Then restart the `bni-workshop-portal` Application.
+
+Other causes to rule out if the error is something else:
+
+- `EMBEDDING_MODEL_PATH` in the Portal environment must be exactly `/home/cdsw/models/bge-m3`.
+- `QDRANT_URL` must be the Qdrant Application URL (no path), and `WORKSHOP_RUNTIME_DIR` must be
+  `/home/cdsw/workshop-runtime` (it must contain `groups` and `shared`).
+
 ## B. Embedding model bge-m3 (optional; needed for Portal retrieval and Lab 07)
 
 Upload `bge-m3.zip` (1.27 GB) to `/home/cdsw/` with the JupyterLab file panel, then:
