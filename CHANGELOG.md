@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased (notebook redesign, Labs 04 to 08)
+## Unreleased (notebook redesign, Labs 04 to 09)
+
+- Lab 09 follows the same guided pattern: a tracer, the secret filter shown as a table, parent and child spans with kind and duration,
+  a check of the parent link, finding the trace in Phoenix, proof that the secret never arrived, group_id as a search label, an exercise
+  and a closing list. Tried in the sandbox as a draft first (`mode=cai`, passed=9).
 
 - Labs 05 to 08 follow Lab 04: guided lessons with explained steps, pandas tables and a real exercise. Lab 06's exercise runs a second
   agent with the participant's goal; Lab 07 teaches embeddings, similarity and the group filter; Lab 08 shows which numbers the final
