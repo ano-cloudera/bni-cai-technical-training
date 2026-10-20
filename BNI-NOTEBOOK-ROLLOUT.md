@@ -156,9 +156,9 @@ set on the sandbox Portal and one sample question was asked: `LAB_STATUS: lab=12
 and 02 (trainer only). Each lab was run with the temporary variable cells of section 5, not with permanent Session variables.
 
 Guided notebooks (the rewritten Labs 04 to 09), run in the sandbox from a group workspace, `mode=cai`: 04 `passed=10`, 05
-`passed=9`, 06 `passed=8`, 07 `passed=10`, 09 `passed=9`, all PASS. Lab 08 passed (`passed=9`) as a draft; its final text (the
-question written into both tasks, a new default exercise criterion) was reported as passing by the trainer, without the status line
-being recorded here. None of the guided notebooks has run at BNI yet: do step 8 there.
+`passed=9`, 06 `passed=8`, 07 `passed=10`, 09 `passed=9`, all PASS. Lab 08 in its final text (the question written into both
+tasks, a new default exercise criterion): `passed=9`, PASS. All guided notebooks of Day 1 (04 to 09) have now passed in the sandbox
+with `mode=cai`. None of them has run at BNI yet: do step 8 there.
 
 ## 8. Known gaps (not blocking, to fix after the workshop)
 
