@@ -5,17 +5,20 @@ documentation set; delete it when done.
 
 ## A. Phoenix: `No module named 'dateutil'` (still failing after a reinstall)
 
-Cause: in a Session, `PYTHONPATH` also points to CAI runtime folders (`/runtime-addons/...`). pip sees packages there
-(for example `six`, `python-dateutil`), reports "already satisfied" and does **not** install them into the venv. The
-Session can import them; the Application cannot. Always install **without** `PYTHONPATH`.
+Cause (confirmed at BNI): in a Session, `PYTHONPATH` is `/opt/cmladdons/python/site-customize`, and the CAI runtime
+add-ons (`/runtime-addons/...`) provide packages such as `six` and `python-dateutil`. pip sees them there, reports
+"already satisfied" and does **not** install them into the venv. The Session can import them; the Application cannot,
+because its `PYTHONPATH` is only the repository. Always install **without** `PYTHONPATH`.
 
-Prove it (expect `No module named 'dateutil'`):
+Proof (confirmed at BNI): the first command prints `/opt/cmladdons/python/site-customize`, then the import fails with
+`ModuleNotFoundError: No module named 'dateutil'`:
 
 ```bash
 echo "$PYTHONPATH"; env -u PYTHONPATH /home/cdsw/.venvs/bni-phoenix/bin/python -c "import dateutil, pandas; print(dateutil.__file__)"
 ```
 
-Fix: reinstall the lock without `PYTHONPATH` (safe to repeat):
+Fix: reinstall the lock without `PYTHONPATH` (safe to repeat). The output must now show `Collecting` and
+`Installing collected packages`, not only `Requirement already satisfied`:
 
 ```bash
 cd /home/cdsw/bni-cai-technical-training && env -u PYTHONPATH PIP_USER=false /home/cdsw/.venvs/bni-phoenix/bin/python -m pip install --no-user --retries 10 --timeout 60 -r requirements/observability.lock
