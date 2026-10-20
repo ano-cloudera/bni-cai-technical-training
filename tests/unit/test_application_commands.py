@@ -15,9 +15,7 @@ from deployments.cai.vllm.app import build_command as vllm_command
 def test_vllm_l40s_command_uses_one_gpu_and_lower_utilization(tmp_path: Path) -> None:
     (tmp_path / "config.json").write_text("{}")
     (tmp_path / "model.safetensors").write_bytes(b"x")
-    command = vllm_command(
-        {"MODEL_PATH": str(tmp_path), "CDSW_APP_PORT": "8080", "GPU_PROFILE": "l40s"}
-    )
+    command = vllm_command({"MODEL_PATH": str(tmp_path), "CDSW_APP_PORT": "8080", "GPU_PROFILE": "l40s"})
     assert command[:3] == ["python", "-m", "vllm.entrypoints.openai.api_server"]
     assert command[command.index("--tensor-parallel-size") + 1] == "1"
     assert command[command.index("--gpu-memory-utilization") + 1] == "0.82"
@@ -28,9 +26,7 @@ def test_vllm_l40s_command_uses_one_gpu_and_lower_utilization(tmp_path: Path) ->
 def test_vllm_h200_command_uses_validated_baseline(tmp_path: Path) -> None:
     (tmp_path / "config.json").write_text("{}")
     (tmp_path / "model.safetensors").write_bytes(b"x")
-    command = vllm_command(
-        {"MODEL_PATH": str(tmp_path), "CDSW_APP_PORT": "8080", "GPU_PROFILE": "h200"}
-    )
+    command = vllm_command({"MODEL_PATH": str(tmp_path), "CDSW_APP_PORT": "8080", "GPU_PROFILE": "h200"})
     assert command[command.index("--gpu-memory-utilization") + 1] == "0.75"
     assert command[command.index("--dtype") + 1] == "bfloat16"
 
@@ -45,7 +41,7 @@ def test_vllm_rejects_unknown_gpu_profile(tmp_path: Path) -> None:
 def test_service_commands_bind_to_cai_port() -> None:
     env = {"CDSW_APP_PORT": "8123", "QDRANT_BINARY": "/opt/qdrant", "LITELLM_CONFIG": "x.yaml"}
     assert qdrant_command(env) == ["/opt/qdrant"]
-    assert phoenix_command(env)[-1] == "8123"
+    assert phoenix_command(env)[-1] == "serve"  # host and port go through PHOENIX_HOST and PHOENIX_PORT
     assert litellm_command(env)[-1] == "8123"
     assert litellm_command(env)[0] == "litellm"
     assert streamlit_command(env)[-2:] == ["--server.address", "127.0.0.1"]

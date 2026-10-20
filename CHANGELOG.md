@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased (phoenix launcher)
+
+- Phoenix Application launcher: `phoenix serve` has no `--host` or `--port` option (the Application failed with
+  "unrecognized arguments"). The launcher now sets `PHOENIX_HOST` (default 127.0.0.1), `PHOENIX_PORT` (the platform
+  port) and `PHOENIX_WORKING_DIR` in the child environment. Checked by starting the real server through the launcher
+  and calling `/healthz`.
+
 ## Unreleased (qdrant binary preparation)
 
 - Qdrant binary: `requirements/qdrant-binary-manifest.json` pins v1.19.2 (linux musl) with its SHA-256;
