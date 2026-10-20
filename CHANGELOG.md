@@ -2,6 +2,10 @@
 
 ## Unreleased (notebook 11 model call)
 
+- Lab 11 notebook: its model client now sends `enable_thinking=false` for Qwen3.5 (`model_request_extras`). It did not, so the
+  answer began with a numbered "Thinking Process" and the output rule raised `GuardrailError` even after the prompt change.
+  Lab 03 and the CrewAI labs already switched thinking off.
+
 - Lab 11 notebook: the model-call cell now asks for two plain sentences without digits or lists. In `cai` mode a real model
   often answered with a numbered list, and the output rule (no number outside a tool result) raised `GuardrailError`
   (seen in the sandbox). The local mock never writes a number, so local tests could not show it.

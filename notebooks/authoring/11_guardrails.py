@@ -47,7 +47,7 @@ LAB_MODE = os.getenv("LAB_MODE", "local").lower()
 group_env = Path.cwd().parent / "config" / "group.env"
 if group_env.is_file() and not os.getenv("GROUP_ENV_FILE"):
     os.environ["GROUP_ENV_FILE"] = str(group_env)
-from bni_training.llm_client import OpenAICompatibleClient
+from bni_training.llm_client import OpenAICompatibleClient, model_request_extras
 from bni_training.mock_llm import MockOpenAIServer
 from bni_training.workshop.lab_context import resolve_lab_context
 
@@ -55,7 +55,11 @@ context = resolve_lab_context(LAB_MODE)
 mock_server = MockOpenAIServer(reply="The supplied evidence supports the answer.").start() if LAB_MODE == "local" else None
 model_url = mock_server.base_url if mock_server else os.getenv("VLLM_BASE_URL", "")
 assert model_url, "VLLM_BASE_URL is required in CAI mode. Ask the trainer."
-model_client = OpenAICompatibleClient(model_url, os.getenv("VLLM_API_KEY", "local-placeholder"))
+# Qwen3.5 thinking is switched off like in every other lab; with it on, the answer starts with a numbered "Thinking Process".
+model_name = os.getenv("VLLM_MODEL") or os.getenv("SERVED_MODEL_NAME", "qwen3.5-9b")
+model_client = OpenAICompatibleClient(
+    model_url, os.getenv("VLLM_API_KEY", "local-placeholder"), model_name, extra_body=model_request_extras(model_name)
+)
 allowed_tables = set(context.bundle.tables)
 print({"group_id": context.group_id, "allowed_tables": sorted(allowed_tables)})
 
