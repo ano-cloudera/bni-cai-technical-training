@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased (deployment guide update)
+
+- `docs/trainer/cai-application-deployment.md`: vLLM Running in the sandbox on a small GPU (A10G settings and the
+  KV cache error), the CPU and GPU resource groups, the Phoenix Starlette fix, wiring the Application URLs together,
+  and the LiteLLM Admin UI limit (login needs a Postgres database; SQLite is not supported; an embedded Postgres was
+  verified on a laptop only and is postponed).
+
 ## Unreleased (repository tidy-up)
 
 - The 13 rc1 notebooks moved to `notebooks/legacy/` (they find the repository root from `pyproject.toml` now);

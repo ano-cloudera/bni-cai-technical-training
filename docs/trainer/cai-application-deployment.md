@@ -37,13 +37,23 @@ Rules that apply to every Application:
 
 | Application | Last observed | Notes |
 |---|---|---|
-| vLLM | Starting | Model validated in a Session; not yet confirmed Running as an Application |
+| vLLM | **Running** (sandbox, A10G 24 GB, reduced settings) | After `VLLM_HOST=127.0.0.1` and a smaller cache budget. The final values were not recorded here; write them down. Not yet reached from another Application or Session |
 | Qdrant | **Running** | After the binary was prepared (step 2.4) |
-| Phoenix | Launcher fixed, not yet confirmed Running | It failed on `--host`/`--port` before the fix |
-| Workshop Portal | Two launcher bugs fixed, not yet confirmed Running | `File does not exist`, then `__file__` is not defined |
-| LiteLLM | Launcher fixed, not yet confirmed Running | It failed on a relative `config/litellm.yaml` |
+| Phoenix | `/healthz` OK; UI error fixed | The UI failed with Starlette 1.x. Fix the venv (see the errors table), restart, and confirm the UI page |
+| Workshop Portal | Launcher bugs fixed, not yet confirmed Running | `File does not exist`, then `__file__` is not defined |
+| LiteLLM | **Running** with a master key | The API works; the Admin UI login needs a database and is not available (see 3.5) |
 
-Update this table as you confirm each one. Nothing here is validated at BNI yet.
+Update this table as you confirm each one. Nothing here is validated at BNI yet. A successful sandbox run proves the
+Application logic (launcher, port, paths, environment); it does not prove H200 capacity or performance.
+
+### Resource groups in the sandbox
+
+| Group | Instance | Used for |
+|---|---|---|
+| `ano-group` (CPU) | `r6a.24xlarge`, 96 vCPU, 768 GiB, autoscale 0 to 5 | Qdrant, Phoenix, Portal, LiteLLM and CPU Sessions. It has **no GPU**, so vLLM cannot run there |
+| `ano-gpu-group` (GPU) | `g5.16xlarge`, 1 x A10G 24 GB, 64 vCPU, 256 GiB, autoscale 0 to 2 | vLLM only. Nodes are created on demand, so the first start is slow |
+
+Choose the GPU resource group in the vLLM Application and turn **Enable GPU** on. BNI uses its own H200 group.
 
 ## 2. Prepare once, from a CPU Session
 
@@ -77,7 +87,8 @@ python -m pip install $PIPFLAGS -r requirements/rag.lock
 python -m pip install --no-user --no-deps -e . && python -m pip check
 deactivate
 
-# Phoenix (server only)
+# Phoenix (server only). The current lock pins Starlette 0.52.1; an older venv with Starlette 1.x must be fixed
+# with: python -m pip install --no-user "starlette==0.52.1"
 python -m venv /home/cdsw/.venvs/bni-phoenix && source /home/cdsw/.venvs/bni-phoenix/bin/activate
 python -m pip install $PIPFLAGS --upgrade pip
 python -m pip install $PIPFLAGS -r requirements/observability.lock
@@ -170,13 +181,30 @@ VLLM_DISABLE_THINKING=true
 APP_STARTUP_TIMEOUT_MINUTES=15
 ```
 
-| Variable | BNI H200 | Sandbox L40S |
-|---|---|---|
-| `GPU_PROFILE` | `h200` | `l40s` |
-| `PYTHON_EXECUTABLE` venv | `bni-vllm-h200` | `bni-vllm-l40s` (built from `requirements/gpu-l40s.in`) |
-| `GPU_MEMORY_UTILIZATION` | `0.75` | `0.82` (validated in a Session) |
-| `MAX_NUM_SEQS` | `32` | `16` |
-| Application name | `bni-vllm-qwen35-9b` | `bni-vllm-qwen35-l40s` |
+| Variable | BNI H200 | Sandbox L40S 48 GB | Sandbox A10G 24 GB (first try) |
+|---|---|---|---|
+| `GPU_PROFILE` | `h200` | `l40s` | `l40s` (only the profile name; the values below override it) |
+| `PYTHON_EXECUTABLE` venv | `bni-vllm-h200` | `bni-vllm-l40s` (from `requirements/gpu-l40s.in`) | `bni-vllm-l40s` |
+| `MAX_MODEL_LEN` | `8192` | `8192` | `4096` |
+| `GPU_MEMORY_UTILIZATION` | `0.75` | `0.82` (validated in a Session) | `0.92` |
+| `MAX_NUM_SEQS` | `32` | `16` | `4` |
+| `APP_STARTUP_TIMEOUT_MINUTES` | `15` | `15` | `30` (the GPU node is created on demand) |
+| Application name | `bni-vllm-qwen35-9b` | `bni-vllm-qwen35-l40s` | `bni-vllm-qwen35-l40s` |
+
+The weights alone take 17.66 GiB. An A10G has about 22.5 GiB usable, so `0.80` with 4096 and 2 sequences failed with
+`Available KV cache memory: -1.88 GiB`. If a small GPU still fails, lower `MAX_MODEL_LEN` to 2048 and `MAX_NUM_SEQS` to 1.
+A run on this GPU proves the Application, not capacity: do not measure speed or parallel load from it.
+
+Before you start the Application on a GPU group, check it from a Session on that group and **stop the Session
+afterwards** (one GPU per node, so a running Session blocks the Application):
+
+```bash
+nvidia-smi
+/home/cdsw/.venvs/bni-vllm-l40s/bin/python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0), torch.cuda.get_device_capability(0))"
+```
+
+`bfloat16` needs compute capability 8.0 or higher (A10G is 8.6). Note the driver version; torch `cu130` needs a driver that
+supports CUDA 13.
 
 - Do not set `CDSW_APP_PORT`; CAI provides it.
 - The launcher binds `127.0.0.1` by default (`VLLM_HOST` overrides it). `0.0.0.0` failed with `Address already in use`.
@@ -300,7 +328,21 @@ APP_STARTUP_TIMEOUT_MINUTES=5
   `python -c "import secrets; print('sk-' + secrets.token_hex(32))"`. Do not use
   `LITELLM_DANGEROUSLY_PERMIT_WEAK_OR_UNSET_MASTER_KEY`; it is for local development only.
 - The master key is an admin key. Clients (the Portal as `LITELLM_API_KEY`, notebooks) must send it as a Bearer token
-  or use a virtual key. How participants get a key is not decided yet.
+  or use a virtual key. How participants get a key is not decided yet. If the key ever appears in a screenshot or in
+  chat, treat it as leaked: create a new one, replace it in the Application and restart.
+- **The Admin UI cannot be used yet.** Opening the Application URL shows a LiteLLM login page, and signing in with
+  `admin` and the master key fails with `Authentication Error, Not connected to DB!`. The login writes to a database
+  (the proxy source calls `user_update` and `generate_key_helper_fn`), and we run LiteLLM without one. This is not a wrong
+  key. The API does not need a database: check it from a Session without showing the key:
+  `read -rs LITELLM_API_KEY; export LITELLM_API_KEY` and then
+  `curl -s -H "Authorization: Bearer $LITELLM_API_KEY" https://<litellm-app-url>/v1/models`.
+- SQLite does not work: LiteLLM's schema is fixed to Postgres. Virtual keys per group, budgets and the Admin UI all need
+  Postgres. A laptop test showed that an embedded Postgres (the `pgserver` and `prisma` packages) is enough for the
+  UI and for creating virtual keys (login returned 303, a key was created). It is **not implemented**: it needs two
+  more packages in the gateway profile, `prisma generate`, a Prisma toolchain download from the internet (about 75 s,
+  may be blocked at BNI), a launcher that runs two processes, and the data would be lost on restart. The alternative
+  is a Postgres provided by BNI (`DATABASE_URL`). This is postponed.
+- `DISABLE_ADMIN_UI=True` should hide the login page; it is not verified in this version.
 - The warning `trusted_proxy_ranges is not set` is harmless for now.
 - `LITELLM_CONFIG` should be an absolute path. A relative `config/litellm.yaml` also works with the current launcher,
   which resolves it from the repository; with an older launcher it fails with `Config file not found`.
@@ -316,7 +358,37 @@ APP_STARTUP_TIMEOUT_MINUTES=5
   alias `qwen-primary`.
 - When it works, switch the Portal to `PORTAL_LLM_ROUTE=litellm`, `LITELLM_BASE_URL=https://<litellm-app-url>/v1`,
   `PORTAL_LITELLM_MODEL=qwen-primary`.
-- Status: not yet tried as a CAI Application.
+- Status: Running in the sandbox with a master key; the model route to vLLM is not yet tested end to end.
+
+### 3.6 Wiring the Application URLs together
+
+Copy each Application URL from its card in CAI (no trailing slash). **Before wiring anything, check that the vLLM URL
+answers from outside the Application**, from a Session terminal:
+
+```bash
+export VLLM_URL="https://<vllm-app-url>"
+curl -s -o /dev/null -w "health=%{http_code}\n" "$VLLM_URL/health"
+curl -s "$VLLM_URL/v1/models"
+```
+
+`health=200` and a `qwen3.5-9b` entry mean the URL can be used. `302`, `401` or `403` mean CAI authentication is on and
+other Applications will be refused too; stop and decide how to authenticate first (see section 6).
+
+| Put the URL here | Variable | Value |
+|---|---|---|
+| LiteLLM | `VLLM_BASE_URL` | `https://<vllm-app-url>/v1` |
+| LiteLLM | `MOCK_FALLBACK_BASE_URL` | any valid https URL for now, for example the same `/v1` URL |
+| Portal (direct route) | `VLLM_BASE_URL` | `https://<vllm-app-url>/v1` |
+| Portal | `QDRANT_URL` | `https://<qdrant-app-url>` |
+| Portal | `PHOENIX_COLLECTOR_ENDPOINT` | `https://<phoenix-app-url>/v1/traces` (a guess, not yet tested) |
+| Portal (through LiteLLM) | `LITELLM_BASE_URL`, `LITELLM_API_KEY`, `PORTAL_LITELLM_MODEL` | `https://<litellm-app-url>/v1`, the key, `qwen-primary` |
+| Notebook workspaces | `prepare_group_workspaces.py --lab-mode cai --vllm-base-url` | `https://<vllm-app-url>` (`/v1` is added) |
+
+Rules: `VLLM_BASE_URL` and `LITELLM_BASE_URL` end with `/v1`; `QDRANT_URL` has no path; never paste a placeholder such as
+`<actual-vllm-app-url>`. After changing a variable, restart that Application. Wire one Application at a time and test
+after each.
+
+Keep prompts small: the context limit (`MAX_MODEL_LEN`) of the sandbox vLLM may be only 2048 or 4096 tokens.
 
 ## 4. Check and start order
 
@@ -347,6 +419,7 @@ Test one service at a time. A failure then has one obvious cause.
 | FlashInfer or `nvcc` error at vLLM start | No CUDA Toolkit in the runtime | `VLLM_USE_FLASHINFER_SAMPLER=0` |
 | `Config file not found: config/litellm.yaml` (LiteLLM) | The Application starts in `/home/cdsw` | Set `LITELLM_CONFIG` to the absolute path, or use the current launcher (`git pull`) |
 | `UnsafeMasterKeyError: ... no master key is set` (LiteLLM) | `LITELLM_MASTER_KEY` is missing | Create a key and set it (see section 3.5); the launcher now says so before starting |
+| `Authentication Error, Not connected to DB!` on the LiteLLM login page | The Admin UI login needs a database | Not a wrong key. Use the API with the Bearer key; a database is postponed (see 3.5) |
 | `WARNING: litellm.yaml reads variables that are not set` | The config uses `os.environ/NAME` | Define `VLLM_BASE_URL`, `VLLM_API_KEY` and `MOCK_FALLBACK_BASE_URL` |
 | Port 8100 unavailable | A Session may not use it | Applications use `CDSW_APP_PORT`; Sessions can use 8101 |
 | Thinking text in answers, short or empty answers | Qwen3.5 thinking uses the token budget | Send `chat_template_kwargs.enable_thinking=false` |
@@ -361,8 +434,11 @@ If an Application fails, copy the last 30 lines of its Logs (no secrets) before 
 - **Portal and Qwen thinking.** The notebooks disable Qwen3.5 thinking; the Portal's own LLM calls do not yet.
   Answers may show thinking text and use the token budget until that is changed.
 - **Embedding model.** The sentence-transformers model for Qdrant retrieval is not yet prepared on NFS.
-- **LiteLLM keys.** How the Portal and participants authenticate to LiteLLM (master key versus virtual keys) is not
-  decided; the master key must not be handed to participants.
+- **LiteLLM keys and Admin UI.** How the Portal and participants authenticate to LiteLLM (master key versus virtual
+  keys) is not decided; the master key must not be handed to participants. Virtual keys per group and the Admin UI
+  need a Postgres database, which we do not have (postponed; see 3.5).
+- **Small-GPU limits.** The sandbox A10G runs vLLM with a short context and few sequences. It proves the Application
+  only; H200 behaviour, speed and capacity at BNI are not validated.
 - **LiteLLM fallback.** The mock fallback endpoint has no CAI deployment plan yet.
 - **GPU locks.** `requirements/gpu-*.lock` are stubs; resolve them on the target runtime.
 - **Capacity.** The 40-participant Portal capacity, the single replica setting and Session quota are unmeasured.
