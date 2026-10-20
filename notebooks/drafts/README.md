@@ -7,3 +7,10 @@ name) and running `python scripts/build_notebooks.py`.
 Labs 04 to 08 were drafted here, tried in the sandbox, and promoted to `notebooks/authoring/` (they are the canonical guided
 notebooks now; the draft files were removed so there is one source of truth). Use this folder for the next lab to be redesigned.
 Never run a notebook from here: open the copy in a group workspace, so `config/group.env` is found and the mode is `cai`.
+
+## 09_phoenix_monitoring_v2
+
+Guided version of Lab 09 (tracer, secret filter shown as a table, parent and child spans with kind and duration, a check of the
+parent link, finding the trace, proving the secret never arrived, group_id as a search label, an exercise, a closing list). It keeps the
+required section titles and the saved `09_trace_summary.json`. Executed locally for group_03, group_05 and group_09 (in-memory exporter,
+PASS). Not yet run against the shared Phoenix. To try it, copy the `.ipynb` into a group workspace and open the copy there.
