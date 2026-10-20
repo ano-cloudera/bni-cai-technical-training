@@ -27,7 +27,7 @@ Rules while testing:
 | Lab 06 (CrewAI tools) | Pass |
 | Lab 08 (multi-agent) and Lab 09 (Phoenix) | Pass, after `VLLM_TOOL_CALL_PARSER=qwen3_coder` on vLLM (with 1 GPU) and the CrewAI thinking fix |
 | Lab 11 (guardrails) | Pass |
-| Lab 00 | The `bni-h200` profile check needs `DATA_MODE`, `VLLM_API_KEY`, `PHOENIX_COLLECTOR_ENDPOINT`, `LITELLM_BASE_URL`, `WORKSHOP_PORTAL_URL` (now in sections 0 and 0b) |
+| Lab 00 | Pass (`passed=11 skipped=3`), after the five profile variables of sections 0 and 0b |
 | Labs 04, 05, 12 | Not run yet |
 
 Fixes for every problem found are in `BNI-FIX-COMMANDS.md`.
@@ -199,11 +199,11 @@ LABS="08_multi_agent_workflow 09_phoenix_monitoring"
 for s in $LABS; do echo "== $s"; env -u PYTHONPATH EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3 /home/cdsw/.venvs/bni-rag/bin/python scripts/$s.py --mode cai 2>&1 | grep -E -B1 -A1 '"status": "FAIL"|LAB_STATUS'; done
 ```
 
-Labs still to run at BNI (Lab 00 now needs the five profile variables that sections 0 and 0b already set; click one sample
-question in the Portal first, so Lab 12 finds a saved answer):
+Labs still to run at BNI (Labs 00, 03, 06 to 11 passed). Click one sample question in the Portal first, so Lab 12 finds a
+saved answer (done at BNI for `group_03`: the Portal answer and "My outputs (1)" were confirmed):
 
 ```bash
-LABS="00_environment_validation 04_csv_data_access 05_semantic_layer 12_end_to_end_portal"
+LABS="04_csv_data_access 05_semantic_layer 12_end_to_end_portal"
 ```
 
 Lab names: `00_environment_validation`, `03_llm_api_testing`, `04_csv_data_access`, `05_semantic_layer`, `06_crewai_tools`,
