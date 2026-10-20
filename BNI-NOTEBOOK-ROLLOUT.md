@@ -51,7 +51,7 @@ All of these are on `main` after the push. Without them the notebooks run the lo
 | CrewAI `LLM` sends `enable_thinking=false` | Labs 08 and 09 showed `0 data tool call(s)` |
 | vLLM launcher option `VLLM_TOOL_CALL_PARSER` | CrewAI needs tool calling (`400 "auto" tool choice requires ...`) |
 | `scripts/index_all_groups.py` | Indexes glossary and mission notes of all ten groups with bge-m3 |
-| Labs 04 to 08 rewritten as guided lessons | One setup cell, explained steps with a prediction, pandas tables, a real exercise, a closing list of what the participant proved. File names and saved outputs are unchanged. They replace the old notebooks of the same names in the templates, so a workspace refresh (section 2) is what delivers them |
+| Labs 04 to 09 rewritten as guided lessons | One setup cell, explained steps with a prediction, pandas tables, a real exercise, a closing list of what the participant proved. File names and saved outputs are unchanged. They replace the old notebooks of the same names in the templates, so a workspace refresh (section 2) is what delivers them |
 
 After `git pull`, if git says local changes would be overwritten (a notebook was run inside the repository), stash them:
 
@@ -155,11 +155,10 @@ Original notebooks, pass: 00, 03, 04, 05, 06, 07, 08, 09, 10, 11 (11 with the th
 set on the sandbox Portal and one sample question was asked: `LAB_STATUS: lab=12 mode=cai status=PASS passed=7`). Not run: 01
 and 02 (trainer only). Each lab was run with the temporary variable cells of section 5, not with permanent Session variables.
 
-Guided notebooks (the rewritten Labs 04 to 08), run in the sandbox as drafts from a group workspace, `mode=cai`: 05
-`passed=9`, 06 `passed=8`, 07 `passed=10`, 08 `passed=9`, all PASS. **Not yet run in `cai` mode:** Lab 04 (the guided version was
-only run in `local` mode from the drafts folder) and Lab 08 in its final text (the question moved into the tasks and the
-default exercise criterion changed after the sandbox run). Run both once more from a refreshed group workspace (step 8) before
-class, at BNI and in the sandbox if there is time.
+Guided notebooks (the rewritten Labs 04 to 09), run in the sandbox from a group workspace, `mode=cai`: 04 `passed=10`, 05
+`passed=9`, 06 `passed=8`, 07 `passed=10`, 09 `passed=9`, all PASS. Lab 08 passed (`passed=9`) as a draft; its final text (the
+question written into both tasks, a new default exercise criterion) was reported as passing by the trainer, without the status line
+being recorded here. None of the guided notebooks has run at BNI yet: do step 8 there.
 
 ## 8. Known gaps (not blocking, to fix after the workshop)
 
