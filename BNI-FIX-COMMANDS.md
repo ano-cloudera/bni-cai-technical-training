@@ -100,8 +100,8 @@ env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python scripts/00_environment_va
 
 ## A5. Portal: wrong `EMBEDDING_MODEL_PATH` (found at BNI)
 
-Cause of the Portal "not configured: FileNotFoundError" at BNI: the value was `/home/dcsw/models/bge-m3` (`dcsw`, not
-`cdsw`). Fix: `EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3`, then **Update Application**. Also add
+Cause of the Portal "not configured: FileNotFoundError" at BNI: the folder name in the path had two letters swapped (`dcsw`
+instead of `cdsw`). Fix: `EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3`, then **Update Application**. Also add
 `PORTAL_MAX_TOKENS=512`. Confirmed: the Portal then answers a sample question without "Thinking Process".
 
 ## A6. Lab 10: `HTTPError: HTTP Error 500: Internal Server Error`
