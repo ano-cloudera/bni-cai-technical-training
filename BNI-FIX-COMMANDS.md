@@ -107,25 +107,51 @@ Cause of the Portal "not configured: FileNotFoundError" at BNI: the value was `/
 ## A6. Lab 10: `HTTPError: HTTP Error 500: Internal Server Error`
 
 Seen at BNI: `litellm_config` passes (aliases `qwen-primary` and `training-fallback` are read) but the chat call
-returns HTTP 500. The gateway is up; it fails while forwarding to vLLM. Read the real message from the gateway
-(the key is not shown; set it first with `read -rs LITELLM_API_KEY; export LITELLM_API_KEY` if the variable is empty):
+returns HTTP 500. The gateway is up; it fails while forwarding to vLLM. The real message (the key is not shown; set it
+first with `read -rs LITELLM_API_KEY; export LITELLM_API_KEY` if the variable is empty):
 
 ```bash
 curl -s -H "Authorization: Bearer $LITELLM_API_KEY" -H "Content-Type: application/json" "$LITELLM_URL/v1/chat/completions" -d '{"model":"qwen-primary","messages":[{"role":"user","content":"hi"}],"max_tokens":16}'
 ```
 
-Also read the last 20 lines of the `bni-litellm-gateway` Application log (no keys). Likely causes, in order:
+Seen at BNI: `litellm.InternalServerError: OpenAIException - Connection error ... model group 'qwen-primary' failed ...
+No fallback was attempted.` The LiteLLM environment was correct (`VLLM_BASE_URL`, `MOCK_FALLBACK_BASE_URL`,
+`VLLM_API_KEY`), and the Portal and `curl` reach vLLM, so the likely cause is the TLS certificate: the vLLM URL is HTTPS
+with an internal BNI certificate. `curl` in a Session uses the system CA list; LiteLLM (Python, `certifi`) does not.
 
-- **TLS certificate.** The vLLM URL is HTTPS with an internal BNI certificate. `curl` in a Session uses the system CA
-  list; LiteLLM (Python, `certifi`) may not trust it. The message contains `SSL`, `certificate verify failed` or
-  `Connection error`. Fix with one variable in the LiteLLM Application, then restart it (confirm the file exists first
-  with `ls /etc/ssl/certs/ca-certificates.crt`): `SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt`. Never switch TLS
-  verification off.
-- **LiteLLM environment values.** `VLLM_BASE_URL` must end with `/v1` and contain no placeholder; `VLLM_API_KEY` is set
-  (any value, `EMPTY` is fine); `MOCK_FALLBACK_BASE_URL` is the same `/v1` URL.
-- **Model name.** The message says the model does not exist: vLLM must serve `qwen3.5-9b` (`curl -s "$VLLM_URL/v1/models"`).
+Prove it, one command at a time:
 
-Record the cause and fix here once known.
+```bash
+ls /etc/ssl/certs/ca-certificates.crt
+```
+
+```bash
+env -u PYTHONPATH /home/cdsw/.venvs/bni-litellm/bin/python -c "import httpx,os; print(httpx.get(os.environ['VLLM_URL']+'/health').status_code)" 2>&1 | tail -2
+```
+
+```bash
+env -u PYTHONPATH SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt /home/cdsw/.venvs/bni-litellm/bin/python -c "import httpx,os; print(httpx.get(os.environ['VLLM_URL']+'/health').status_code)" 2>&1 | tail -2
+```
+
+If the second command fails with `CERTIFICATE_VERIFY_FAILED` and the third prints `200`, the cause is confirmed. If the
+file in the first command does not exist, look for `/etc/pki/tls/certs/ca-bundle.crt` instead.
+
+Fix: add one variable to the `bni-litellm-gateway` Application environment, **Update Application**, then run Lab 10
+again. Never switch TLS verification off.
+
+```text
+SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+```
+
+If the second command already prints `200`, TLS is not the cause: read the last 20 lines of the `bni-litellm-gateway` log
+(no keys) to see which address LiteLLM tried. Other causes to rule out: `VLLM_BASE_URL` must end with `/v1` with no
+placeholder left, and vLLM must serve `qwen3.5-9b` (`curl -s "$VLLM_URL/v1/models"`).
+
+Key hygiene: a screenshot of the LiteLLM environment screen showed the first characters of `LITELLM_MASTER_KEY`. Treat
+that key as leaked: after Lab 10, create a new one (`python3 -c "import secrets; print('sk-' + secrets.token_hex(32))"`),
+replace it in the Application, restart, and set `LITELLM_API_KEY` again in the Session. Never screenshot the value column.
+
+Record the final cause and fix here once Lab 10 passes.
 
 ## B. Embedding model bge-m3 (optional; needed for Portal retrieval and Lab 07)
 
