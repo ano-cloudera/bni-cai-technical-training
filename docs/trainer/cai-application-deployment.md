@@ -25,9 +25,25 @@ Rules that apply to every Application:
 - Use a Python entrypoint (`app.py`), never a shell script.
 - Do not set `CDSW_APP_PORT` yourself. CAI provides it. Do not hard-code a port.
 - The Application starts in `/home/cdsw`, not in the repository. Use absolute paths for anything you set.
+- CAI runs the Application script **cell by cell in a kernel**, not as `python app.py`. That is why its log shows the
+  source code followed by `Cell In[n]` and `Engine exited with status 1`, and why `__file__` is not defined. The real
+  error is the last lines of the log.
+- Code changes reach an Application only after you `git pull` in a Session **and restart** the Application.
 - An Application has no terminal. Prepare files and environments from a **Session**; they live in `/home/cdsw`,
   which the Session and the Application share.
 - Keep keys out of the environment screen where possible; use CAI secrets for them.
+
+### Where each Application stands (last observed in the sandbox, not at BNI)
+
+| Application | Last observed | Notes |
+|---|---|---|
+| vLLM | Starting | Model validated in a Session; not yet confirmed Running as an Application |
+| Qdrant | **Running** | After the binary was prepared (step 2.4) |
+| Phoenix | Launcher fixed, not yet confirmed Running | It failed on `--host`/`--port` before the fix |
+| Workshop Portal | Two launcher bugs fixed, not yet confirmed Running | `File does not exist`, then `__file__` is not defined |
+| LiteLLM | Launcher fixed, not yet confirmed Running | It failed on a relative `config/litellm.yaml` |
+
+Update this table as you confirm each one. Nothing here is validated at BNI yet.
 
 ## 2. Prepare once, from a CPU Session
 
@@ -40,6 +56,9 @@ cd /home/cdsw/bni-cai-technical-training
 git pull --ff-only origin main          # or replace the folder from the zip (see the update notes)
 git log --oneline -1
 ```
+
+After every pull, **restart** the Applications whose launcher or code changed. A running Application keeps the old
+code until it is restarted.
 
 ### 2.2 One virtual environment per Application type
 
@@ -257,9 +276,9 @@ PORTAL_ENFORCE_SINGLE_INSTANCE=true
 
 | Field | Value |
 |---|---|
-| Name | `bni-litellm` |
+| Name | `bni-litellm` (the name is free; `bni-litellm-gateway` also works) |
 | Script | `bni-cai-technical-training/deployments/cai/litellm/app.py` |
-| Resources | 2 vCPU, 4 GB, no GPU |
+| Resources | 2 vCPU, 4 GB, no GPU (4 vCPU / 8 GiB is also fine for a first test) |
 
 ```text
 PYTHONPATH=/home/cdsw/bni-cai-technical-training/src:/home/cdsw/bni-cai-technical-training
@@ -273,9 +292,14 @@ APP_STARTUP_TIMEOUT_MINUTES=5
 
 - `LITELLM_CONFIG` should be an absolute path. A relative `config/litellm.yaml` also works with the current launcher,
   which resolves it from the repository; with an older launcher it fails with `Config file not found`.
-- `config/litellm.yaml` reads `VLLM_BASE_URL`, `VLLM_API_KEY` and `MOCK_FALLBACK_BASE_URL`. Define all three.
-  The fallback model `training-fallback` points to `MOCK_FALLBACK_BASE_URL`; `apps/litellm/mock_fallback.py` is a
-  small stand-in server for it. How to host that fallback in CAI is not decided yet.
+- `config/litellm.yaml` reads `VLLM_BASE_URL`, `VLLM_API_KEY` and `MOCK_FALLBACK_BASE_URL`. Define all three; the
+  launcher prints a `WARNING` for any that is missing. The fallback model `training-fallback` points to
+  `MOCK_FALLBACK_BASE_URL`; `apps/litellm/mock_fallback.py` is a small stand-in server for it. How to host that
+  fallback in CAI is not decided yet.
+- Interim values for a first test (untested): `VLLM_API_KEY=EMPTY` if vLLM has no key, and any valid https URL for
+  `MOCK_FALLBACK_BASE_URL` (for example the vLLM URL). The fallback only matters when the main route fails.
+- Replace `<vllm-app-url>` with the real Application URL. A literal placeholder such as `<actual-vllm-app-url>` makes
+  every request fail.
 - Validate: `curl -i https://<litellm-app-url>/health/liveliness`, then `/v1/models`, then a chat request with the
   alias `qwen-primary`.
 - When it works, switch the Portal to `PORTAL_LLM_ROUTE=litellm`, `LITELLM_BASE_URL=https://<litellm-app-url>/v1`,
@@ -304,6 +328,7 @@ Test one service at a time. A failure then has one obvious cause.
 | `No such file or directory: '/home/cdsw/tools/qdrant/qdrant'` | The binary was never prepared | Step 2.4, then restart |
 | `unrecognized arguments: --host ... --port ...` (Phoenix) | `phoenix serve` has no such options | Use the current launcher (`git pull`), restart |
 | `File does not exist: apps/workshop-portal/app.py` | The Application starts in `/home/cdsw` | Use the current launcher (`git pull`), restart |
+| `NameError: name '__file__' is not defined` (Portal) | CAI runs the script in a kernel without `__file__` | Use the current launcher (`git pull`), restart |
 | FlashInfer or `nvcc` error at vLLM start | No CUDA Toolkit in the runtime | `VLLM_USE_FLASHINFER_SAMPLER=0` |
 | `Config file not found: config/litellm.yaml` (LiteLLM) | The Application starts in `/home/cdsw` | Set `LITELLM_CONFIG` to the absolute path, or use the current launcher (`git pull`) |
 | `WARNING: litellm.yaml reads variables that are not set` | The config uses `os.environ/NAME` | Define `VLLM_BASE_URL`, `VLLM_API_KEY` and `MOCK_FALLBACK_BASE_URL` |
