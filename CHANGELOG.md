@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased (phoenix ui)
+
+- Phoenix UI returned `Internal Server Error` while `/healthz` was OK: arize-phoenix 12.x calls the old
+  `TemplateResponse(name, context)` signature, which Starlette 1.0 removed. `observability.in` now keeps
+  `starlette>=0.46,<1`; `observability.lock` and `dev-test.lock` pin Starlette 0.52.1. The profile validator and a
+  new test now check the UI page, not only `/healthz`.
+
 ## Unreleased (vllm host)
 
 - vLLM launcher binds `127.0.0.1` by default. The `0.0.0.0` default failed in a CAI Application with

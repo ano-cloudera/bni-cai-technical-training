@@ -244,8 +244,7 @@ sqlean-py==3.49.1
 sqlglot==29.0.1
 sse-starlette==3.5.0
 stack-data==0.6.3
-starlette==1.7.0 ; python_full_version < '3.11'
-starlette==1.8.0 ; python_full_version >= '3.11'
+starlette==0.52.1
 strawberry-graphql==0.287.3
 streamlit==1.65.0 ; python_full_version < '3.11'
 streamlit==1.66.0 ; python_full_version >= '3.11'

@@ -21,6 +21,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -122,6 +123,15 @@ def smoke_env(tmp: Path) -> dict[str, str]:
     return env
 
 
+def phoenix_ui_status(port: int) -> int:
+    """HTTP status of the Phoenix UI page. /healthz can be OK while the UI fails (Starlette 1.x broke it)."""
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=10) as response:
+            return response.status
+    except urllib.error.HTTPError as exc:
+        return exc.code
+
+
 def phoenix_server_smoke(py: Path, env: dict[str, str], tmp: Path) -> dict:
     """Start the real Phoenix server from the observability profile alone and wait for /healthz."""
     port, grpc_port = free_port(), free_port()
@@ -152,10 +162,17 @@ def phoenix_server_smoke(py: Path, env: dict[str, str], tmp: Path) -> dict:
             try:
                 with urllib.request.urlopen(f"http://127.0.0.1:{port}/healthz", timeout=2) as response:
                     if response.status == 200:
+                        ui = phoenix_ui_status(port)
+                        if ui != 200:
+                            return {
+                                "name": "phoenix_server_healthz",
+                                "status": "FAIL",
+                                "detail": f"/healthz is 200 but the UI page returned HTTP {ui}",
+                            }
                         return {
                             "name": "phoenix_server_healthz",
                             "status": "PASS",
-                            "detail": f"HTTP 200 on port {port}",
+                            "detail": f"HTTP 200 on /healthz and on the UI page, port {port}",
                         }
             except OSError:
                 time.sleep(1)

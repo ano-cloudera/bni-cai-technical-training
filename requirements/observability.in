@@ -8,3 +8,6 @@ arize-phoenix-evals>=2.8,<3
 graphql-core>=3.2,<3.3
 # Newer Phoenix (20.x) is no longer blocked by CrewAI now that the server is isolated; moving to it is a
 # separate, CAI-validated change (Python 3.10 support of the newest 20.x releases must be re-checked).
+# arize-phoenix 12.x renders its UI with the old Jinja2Templates.TemplateResponse(name, context) call, which
+# Starlette 1.0 removed: with Starlette 1.x the UI returned "Internal Server Error" while /healthz was still OK.
+starlette>=0.46,<1

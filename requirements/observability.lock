@@ -87,8 +87,7 @@ six==1.17.0
 sqlalchemy==2.0.55 ; python_full_version < '3.11'
 sqlalchemy==2.1.5 ; python_full_version >= '3.11'
 sqlean-py==3.49.1
-starlette==1.7.0 ; python_full_version < '3.11'
-starlette==1.8.0 ; python_full_version >= '3.11'
+starlette==0.52.1
 strawberry-graphql==0.287.3
 threadpoolctl==3.7.0
 tomli==2.0.2 ; python_full_version < '3.11'

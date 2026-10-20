@@ -341,6 +341,7 @@ Test one service at a time. A failure then has one obvious cause.
 | `unrecognized arguments: --host ... --port ...` (Phoenix) | `phoenix serve` has no such options | Use the current launcher (`git pull`), restart |
 | `OSError: [Errno 98] Address already in use` (vLLM) | Binding `0.0.0.0` on the Application port clashed with a loopback listener | The launcher now binds `127.0.0.1` (older launcher: set `VLLM_HOST=127.0.0.1`) |
 | `Available KV cache memory: -N GiB` / `No available memory for the cache blocks` (vLLM) | The weights plus overhead leave no room for the cache on a small GPU | Raise `GPU_MEMORY_UTILIZATION`, lower `MAX_MODEL_LEN` and `MAX_NUM_SEQS`, or use a bigger GPU |
+| Phoenix UI shows `Internal Server Error` while `/healthz` is `OK` | Starlette 1.x is incompatible with arize-phoenix 12.x (`TemplateResponse() missing ... 'name'`) | Reinstall the `bni-phoenix` venv from the updated `requirements/observability.lock` (Starlette 0.52.1), or run `pip install "starlette==0.52.1"` in it, then restart |
 | `File does not exist: apps/workshop-portal/app.py` | The Application starts in `/home/cdsw` | Use the current launcher (`git pull`), restart |
 | `NameError: name '__file__' is not defined` (Portal) | CAI runs the script in a kernel without `__file__` | Use the current launcher (`git pull`), restart |
 | FlashInfer or `nvcc` error at vLLM start | No CUDA Toolkit in the runtime | `VLLM_USE_FLASHINFER_SAMPLER=0` |
