@@ -6,6 +6,34 @@ have not been run at BNI yet**. Delete this note when done.
 
 Status words: **BNI done** (seen at BNI), **sandbox** (seen only in the sandbox), **to do** (not done anywhere).
 
+## 0. Pre-class runbook at BNI (do this in order, before participants arrive)
+
+Each step has a pass criterion. Stop at the first failure and use the matching section below (or `BNI-FIX-COMMANDS.md`).
+Terminal variables come from section 0b of `BNI-TESTING-COMMANDS.md` (`APPS_DOMAIN`, `VLLM_URL`, and so on).
+
+| # | Do | Pass when |
+|---|---|---|
+| 1 | Laptop: `git push origin main` | `git status -sb` shows `main...origin/main` with no "ahead" |
+| 2 | BNI Session: `git pull --ff-only origin main` (stash first if refused, section 1) | `git log --oneline -1` is the pushed commit |
+| 3 | Register the kernel `bni-rag` (section 3) | "BNI rag (py3.10)" is in the kernel list after a browser reload |
+| 4 | Check the Applications (section 4): vLLM has **1 GPU** and `VLLM_TOOL_CALL_PARSER`; Portal has `WORKSHOP_RUNTIME_DIR`; LiteLLM has `SSL_CERT_FILE` | the five health checks of `BNI-TESTING-COMMANDS.md` section 2 print 200 |
+| 5 | Set the **project** environment variables of section 5, then restart the Session | a notebook cell `import os; print(os.getenv("QDRANT_URL"))` prints the URL ending `:443` |
+| 6 | Refresh the group workspaces (section 2) | `grep -c load_group_env .../group_03/notebooks/04_csv_data_access.ipynb` prints 1 or more |
+| 7 | Ask one sample question in the Portal for `group_03` (wait for Completed) | "My outputs (1)" appears |
+| 8 | Run, from `group_03/notebooks`, with the kernel BNI rag: notebooks 00, 03, 07, 08, 12 | each prints `LAB_STATUS: ... mode=cai status=PASS` |
+| 9 | Optional, if time: notebooks 04, 05, 06, 09, 11 | same |
+| 10 | Reset the test group so participants start clean (dry run first, then `--yes`): `scripts/reset_group_workspace.py --group-id group_03`, add `--include-notebooks` to restore the notebooks | the dry run lists only `group_03` |
+| 11 | Rotate `LITELLM_MASTER_KEY` and decide Lab 10 (section 5, last paragraph) | `models=200` with the new key |
+
+Step 5 test cell is the check that a project variable reaches the notebook kernel; this was **not** tested in the sandbox. If it
+prints `None`, restart the Session once more; if it still prints `None`, fall back to the temporary first cell of section 5.
+
+What participants do (put this on a slide or in the guide):
+
+1. Open **Lab 00** from `workshop-runtime/groups/group_XX/notebooks/` (their own group folder, never `notebooks/templates`).
+2. **Kernel, Change Kernel, BNI rag (py3.10)** in every notebook.
+3. Run all cells from the top. Do not edit the setup cell.
+
 ## 1. Repository changes the notebooks need (`git pull` at BNI)
 
 All of these are on `main` after the push. Without them the notebooks run the local mock or fail.
@@ -84,8 +112,30 @@ A `export` in a terminal does not reach a notebook kernel. Today each notebook n
 | 12 | `WORKSHOP_PORTAL_URL` |
 | 03, 04, 05, 06, 08, 11 | none (08 needs vLLM tool calling) |
 
-For 40 participants this is too much to ask. Proposal (not built): write the non-secret service URLs into `group.env` when
-the workspace is generated, and set only the LiteLLM key in the Session environment.
+For 40 participants a temporary cell is too much to ask. Decision: the trainer sets these as **project environment variables** once
+(CAI project settings, Advanced, Environment Variables), and every new Session, and so every notebook kernel, inherits
+them. No code change. Replace `<apps-domain>` with the BNI Applications domain (kept out of the repository on purpose):
+
+```text
+QDRANT_URL=https://bni-qdrant.<apps-domain>:443
+EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3
+PHOENIX_COLLECTOR_ENDPOINT=https://bni-phoenix.<apps-domain>/v1/traces
+PHOENIX_UI_URL=https://bni-phoenix.<apps-domain>
+LITELLM_BASE_URL=https://bni-litellm-gateway.<apps-domain>/v1
+WORKSHOP_PORTAL_URL=https://bni-workshop-portal.<apps-domain>
+SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+RUNTIME_PROFILE=bni-h200
+DATA_MODE=csv
+VLLM_API_KEY=EMPTY
+```
+
+These hold no secret: `VLLM_API_KEY=EMPTY` is a placeholder (the vLLM Application has no key). Restart the Session after changing
+them. **Never put `LITELLM_API_KEY` or `LITELLM_MASTER_KEY` here**: every participant can read project variables.
+
+Lab 10 needs a LiteLLM key, and only the master key exists (per-group virtual keys need Postgres, postponed). Decide before class:
+(a) the trainer runs Lab 10 as a demonstration; or (b) participants type a workshop-only key with `getpass` in the Lab 10
+notebook and the trainer rotates the key right after class. Do not put the key in a notebook, a Session variable or a slide.
 
 ## 6. Data and checks at BNI
 
