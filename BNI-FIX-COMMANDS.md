@@ -151,7 +151,20 @@ Key hygiene: a screenshot of the LiteLLM environment screen showed the first cha
 that key as leaked: after Lab 10, create a new one (`python3 -c "import secrets; print('sk-' + secrets.token_hex(32))"`),
 replace it in the Application, restart, and set `LITELLM_API_KEY` again in the Session. Never screenshot the value column.
 
-Record the final cause and fix here once Lab 10 passes.
+Confirmed at BNI: without the variable, Python fails with `CERTIFICATE_VERIFY_FAILED: unable to get local issuer
+certificate`; with it, the same request returns `200`. After adding `SSL_CERT_FILE` to the `bni-litellm-gateway`
+Application and restarting it, Lab 10 passed (`LAB_STATUS: lab=10 mode=cai status=PASS passed=2 skipped=1 failed=0`).
+
+The same trust problem applies to any Python code that calls an HTTPS BNI Application with `httpx` or `requests`
+(`certifi`), for example the Qdrant client and the Phoenix exporter used by Labs 07 and 09 and by the Portal. Before those
+labs, in the Session terminal:
+
+```bash
+export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt; export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+```
+
+and add `SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt` to the Portal Application environment too. Never switch TLS
+verification off.
 
 ## B. Embedding model bge-m3 (optional; needed for Portal retrieval and Lab 07)
 
