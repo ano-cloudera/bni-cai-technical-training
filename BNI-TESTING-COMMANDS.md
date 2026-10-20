@@ -128,6 +128,12 @@ cd /home/cdsw/bni-cai-technical-training
 
 ### 5.1 Lab 00 and Lab 03 (vLLM only)
 
+Lab 00 needs the BNI runtime profile first:
+
+```bash
+export RUNTIME_PROFILE=bni-h200
+```
+
 ```bash
 env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python scripts/00_environment_validation.py --mode cai
 ```

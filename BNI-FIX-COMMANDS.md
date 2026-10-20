@@ -85,6 +85,48 @@ cd /home/cdsw && env PYTHONPATH=/home/cdsw/bni-cai-technical-training/src:/home/
 - `service ok`: code and data are fine. Compare each value in the Portal Application environment with the command above.
 - A traceback: the file name in its last lines is the missing file. Write the cause and fix here.
 
+## A4. Lab 00 fails only on `runtime_profile`
+
+Seen at BNI: every check passes except `runtime_profile` ("Set RUNTIME_PROFILE to sandbox-l40s or bni-h200"). Set it,
+then run the lab again:
+
+```bash
+export RUNTIME_PROFILE=bni-h200
+```
+
+```bash
+env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python scripts/00_environment_validation.py --mode cai 2>&1 | tail -3
+```
+
+## A5. Portal: wrong `EMBEDDING_MODEL_PATH` (found at BNI)
+
+Cause of the Portal "not configured: FileNotFoundError" at BNI: the value was `/home/dcsw/models/bge-m3` (`dcsw`, not
+`cdsw`). Fix: `EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3`, then **Update Application**. Also add
+`PORTAL_MAX_TOKENS=512`. Confirmed: the Portal then answers a sample question without "Thinking Process".
+
+## A6. Lab 10: `HTTPError: HTTP Error 500: Internal Server Error`
+
+Seen at BNI: `litellm_config` passes (aliases `qwen-primary` and `training-fallback` are read) but the chat call
+returns HTTP 500. The gateway is up; it fails while forwarding to vLLM. Read the real message from the gateway
+(the key is not shown; set it first with `read -rs LITELLM_API_KEY; export LITELLM_API_KEY` if the variable is empty):
+
+```bash
+curl -s -H "Authorization: Bearer $LITELLM_API_KEY" -H "Content-Type: application/json" "$LITELLM_URL/v1/chat/completions" -d '{"model":"qwen-primary","messages":[{"role":"user","content":"hi"}],"max_tokens":16}'
+```
+
+Also read the last 20 lines of the `bni-litellm-gateway` Application log (no keys). Likely causes, in order:
+
+- **TLS certificate.** The vLLM URL is HTTPS with an internal BNI certificate. `curl` in a Session uses the system CA
+  list; LiteLLM (Python, `certifi`) may not trust it. The message contains `SSL`, `certificate verify failed` or
+  `Connection error`. Fix with one variable in the LiteLLM Application, then restart it (confirm the file exists first
+  with `ls /etc/ssl/certs/ca-certificates.crt`): `SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt`. Never switch TLS
+  verification off.
+- **LiteLLM environment values.** `VLLM_BASE_URL` must end with `/v1` and contain no placeholder; `VLLM_API_KEY` is set
+  (any value, `EMPTY` is fine); `MOCK_FALLBACK_BASE_URL` is the same `/v1` URL.
+- **Model name.** The message says the model does not exist: vLLM must serve `qwen3.5-9b` (`curl -s "$VLLM_URL/v1/models"`).
+
+Record the cause and fix here once known.
+
 ## B. Embedding model bge-m3 (optional; needed for Portal retrieval and Lab 07)
 
 Upload `bge-m3.zip` (1.27 GB) to `/home/cdsw/` with the JupyterLab file panel, then:
