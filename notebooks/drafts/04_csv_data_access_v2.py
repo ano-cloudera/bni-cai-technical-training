@@ -32,6 +32,9 @@ import os
 import sys
 from pathlib import Path
 
+import pandas as pd
+from IPython.display import display
+
 def _repo_root() -> Path:
     # A generated group workspace records the repository in config/group.env, so no setup is needed.
     env_file = Path.cwd().parent / "config" / "group.env"
@@ -83,6 +86,9 @@ proved.append(f"I know my assignment: {context.group_id}, tables {', '.join(cont
 #
 # **Why it matters:** you can only write good SQL when you know the column names. `LIMIT 3` keeps the answer small.
 #
+# **New here:** `pd.DataFrame(rows, columns=columns)` turns rows into a table you can read. It is the only pandas you need
+# in this lab.
+#
 # **Look for:** one column that looks like a category (a status, a band, a type). You use it in Step 4.
 
 # %%
@@ -91,9 +97,7 @@ for table in context.bundle.tables:
     sample = tool.run_sql(f"SELECT * FROM {table} LIMIT 3", request)
     structure[table] = {"columns": list(sample.columns), "sample": sample.rows}
     print(f"{table}: {len(sample.columns)} columns")
-    print("  ", ", ".join(sample.columns))
-    for row in sample.rows:
-        print("  ", row)
+    display(pd.DataFrame(sample.rows, columns=sample.columns))
 proved.append("I can list the columns and look at sample rows of every table I may use")
 
 # %% [markdown]
@@ -109,7 +113,7 @@ counts = {}
 for table in context.bundle.tables:
     result = tool.run_sql(f"SELECT COUNT(*) AS row_count FROM {table}", request)
     counts[table] = result.rows[0][0]
-    print(f"{table}: {counts[table]:,} rows")
+display(pd.DataFrame({"table": list(counts), "rows": list(counts.values())}))
 assert all(n > 0 for n in counts.values()), "A table is empty; ask the trainer."
 proved.append("I can count the rows of each table")
 
@@ -131,9 +135,7 @@ summary = tool.run_sql(
     f"GROUP BY {group_column} ORDER BY n DESC LIMIT 5",
     request,
 )
-print(list(summary.columns))
-for row in summary.rows:
-    print(row)
+display(pd.DataFrame(summary.rows, columns=summary.columns))
 assert summary.rows, "The query returned no rows."
 proved.append(f"I can group and count ({first_table} by {group_column})")
 
@@ -153,6 +155,7 @@ except ValueError as exc:
     print("The request was refused:", exc)
 else:
     print("Rows returned:", len(big.rows))
+    display(pd.DataFrame(big.rows, columns=big.columns).head(3))
     assert len(big.rows) <= 200, "The 200-row limit was not applied."
 proved.append("I saw that one answer never returns more than 200 rows")
 
@@ -238,7 +241,8 @@ exercise_sql = f"SELECT COUNT(*) AS row_count FROM {context.bundle.tables[0]}"
 assert exercise_sql.strip().lower().startswith("select"), "Write a single SELECT statement."
 exercise_result = tool.run_sql(exercise_sql, request)
 assert exercise_result.rows, "Your question returned no rows; check the column and table names from Step 2."
-print({"exercise_sql": exercise_sql, "result": exercise_result.rows[:5]})
+print(exercise_sql)
+display(pd.DataFrame(exercise_result.rows, columns=exercise_result.columns).head(10))
 proved.append("I wrote and ran a SQL question of my own")
 
 # %% [markdown]
