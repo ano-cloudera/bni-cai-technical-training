@@ -114,9 +114,7 @@ def participant_workspace(root: Path, group_id: str, participant_ref: str) -> Pa
     return safe_join(group_workspace(root, group_id), "participants", participant_ref)
 
 
-def write_participant_output(
-    root: Path, group_id: str, participant_ref: str, name: str, text: str
-) -> Path:
+def write_participant_output(root: Path, group_id: str, participant_ref: str, name: str, text: str) -> Path:
     """Atomically write into one anonymous participant's output folder."""
     import tempfile
 

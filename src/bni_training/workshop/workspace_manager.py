@@ -125,9 +125,7 @@ class WorkspaceManager:
         self.repo_root = Path(repo_root)
         self._clock = clock
         if participant_mode not in PARTICIPANT_MODES:
-            raise WorkspaceError(
-                "PARTICIPANT_MODE must be group_driver or individual_learning"
-            )
+            raise WorkspaceError("PARTICIPANT_MODE must be group_driver or individual_learning")
         self.participant_mode = participant_mode
         if lab_mode not in ("local", "cai"):
             raise WorkspaceError("LAB_MODE must be local or cai")
@@ -199,6 +197,7 @@ class WorkspaceManager:
             f"DATASET_ID={bundle.dataset_id}",
             f"MISSION_ID={bundle.mission_id}",
             f"GROUP_WORKSPACE={self._group_workspace_value(group_id)}",
+            f"BNI_REPO_ROOT={self.repo_root.resolve().as_posix()}",
             f"PARTICIPANT_MODE={self.participant_mode}",
             "WORKSHOP_TOPOLOGY=single_project",
             "DATA_BACKEND=csv",
@@ -220,18 +219,21 @@ class WorkspaceManager:
         if participant_ref not in PARTICIPANT_REFS:
             raise WorkspaceError("participant_ref must be participant_01 through participant_04")
         participant_workspace = f"{self._workspace_ref(group_id)}/participants/{participant_ref}"
-        return self.group_env_text(group_id) + "\n".join(
-            [
-                f"PARTICIPANT_REF={participant_ref}",
-                f"PARTICIPANT_WORKSPACE={participant_workspace}",
-            ]
-        ) + "\n"
+        return (
+            self.group_env_text(group_id)
+            + "\n".join(
+                [
+                    f"PARTICIPANT_REF={participant_ref}",
+                    f"PARTICIPANT_WORKSPACE={participant_workspace}",
+                ]
+            )
+            + "\n"
+        )
 
     @staticmethod
     def driver_rotation_text(group_id: str) -> str:
         rows = "\n".join(
-            f"- `{ref}`: rotate keyboard control at the trainer's checkpoint."
-            for ref in PARTICIPANT_REFS
+            f"- `{ref}`: rotate keyboard control at the trainer's checkpoint." for ref in PARTICIPANT_REFS
         )
         return (
             f"# Driver rotation for {group_id}\n\n"
@@ -541,11 +543,7 @@ class WorkspaceManager:
             "; ".join(unsafe[:3]),
         )
         templates = self.templates()
-        participants = (
-            self._participants_by_group()
-            if self.participant_mode == "individual_learning"
-            else {}
-        )
+        participants = self._participants_by_group() if self.participant_mode == "individual_learning" else {}
         env_errors, mission_errors, notebook_errors, secret_errors, folder_errors, write_errors = (
             [],
             [],
@@ -598,9 +596,7 @@ class WorkspaceManager:
                 ):
                     secret_errors.append(f"{group_id}: {path.name}")
             if self.participant_mode == "group_driver":
-                missing_notebooks = [
-                    name for name in templates if not (base / "notebooks" / name).is_file()
-                ]
+                missing_notebooks = [name for name in templates if not (base / "notebooks" / name).is_file()]
                 if missing_notebooks:
                     notebook_errors.append(
                         f"{group_id}: missing {len(missing_notebooks)} ({missing_notebooks[0]}...)"
@@ -613,25 +609,17 @@ class WorkspaceManager:
                 expected_refs = participants.get(group_id, ())
                 actual_dir = base / "participants"
                 actual_refs = (
-                    sorted(path.name for path in actual_dir.iterdir())
-                    if actual_dir.is_dir()
-                    else []
+                    sorted(path.name for path in actual_dir.iterdir()) if actual_dir.is_dir() else []
                 )
                 if actual_refs != list(expected_refs):
                     folder_errors.append(f"{group_id}: participant folders {actual_refs}")
                 for participant_ref in expected_refs:
                     participant = base / "participants" / participant_ref
-                    missing_dirs = [
-                        sub for sub in PARTICIPANT_SUBDIRS if not (participant / sub).is_dir()
-                    ]
+                    missing_dirs = [sub for sub in PARTICIPANT_SUBDIRS if not (participant / sub).is_dir()]
                     if missing_dirs:
-                        folder_errors.append(
-                            f"{group_id}/{participant_ref}: missing {missing_dirs}"
-                        )
+                        folder_errors.append(f"{group_id}/{participant_ref}: missing {missing_dirs}")
                     missing_notebooks = [
-                        name
-                        for name in templates
-                        if not (participant / "notebooks" / name).is_file()
+                        name for name in templates if not (participant / "notebooks" / name).is_file()
                     ]
                     if missing_notebooks:
                         notebook_errors.append(
@@ -686,11 +674,7 @@ class WorkspaceManager:
         report.add(
             "the shared dataset is readable", readable, f"missing {csv_missing}" if csv_missing else ""
         )
-        copies = [
-            str(p.relative_to(self.root))
-            for p in _walk(self.root / "groups")
-            if p.suffix == ".csv"
-        ]
+        copies = [str(p.relative_to(self.root)) for p in _walk(self.root / "groups") if p.suffix == ".csv"]
         report.add(
             "the physical dataset is not duplicated into group folders", not copies, "; ".join(copies[:3])
         )
@@ -829,9 +813,7 @@ class WorkspaceManager:
             target_dir = safe_join(self.root, "shared", "state") / "archives"
             target_dir.mkdir(parents=True, exist_ok=True)
             target_name = (
-                f"{group_id}-{participant_ref}-{stamp}.zip"
-                if participant_ref
-                else f"{group_id}-{stamp}.zip"
+                f"{group_id}-{participant_ref}-{stamp}.zip" if participant_ref else f"{group_id}-{stamp}.zip"
             )
             target = target_dir / target_name
             checksums = {}

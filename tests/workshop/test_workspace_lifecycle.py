@@ -66,6 +66,7 @@ def test_group_env_has_the_assigned_dataset_and_mission_and_no_secrets(manager, 
         assert values["MISSION_ID"] == bundle.mission_id and values["DATA_BACKEND"] == "csv"
         assert values["GROUP_WORKSPACE"].endswith(f"groups/{group}") and values["CSV_DATA_DIR"] == "data/raw"
         assert set(values) == {
+            "BNI_REPO_ROOT",
             "LAB_MODE",
             "GROUP_ID",
             "DATASET_ID",

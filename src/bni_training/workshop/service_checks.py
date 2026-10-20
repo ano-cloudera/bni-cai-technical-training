@@ -44,9 +44,7 @@ SPECS = types.MappingProxyType(
         "litellm": ServiceSpec(
             "litellm", "LITELLM_BASE_URL", "/health/liveliness", ("/v1",), "LITELLM_API_KEY"
         ),
-        "workshop-portal": ServiceSpec(
-            "workshop-portal", "WORKSHOP_PORTAL_URL", "/_stcore/health"
-        ),
+        "workshop-portal": ServiceSpec("workshop-portal", "WORKSHOP_PORTAL_URL", "/_stcore/health"),
     }
 )
 

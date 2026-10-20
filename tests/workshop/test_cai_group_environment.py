@@ -98,7 +98,7 @@ def test_lab_03_runs_in_cai_mode_from_a_generated_workspace_without_manual_setup
 ) -> None:
     for name in ("GROUP_ID", "GROUP_WORKSPACE", "GROUP_ENV_FILE", "LAB_MODE", "VLLM_BASE_URL", "VLLM_MODEL"):
         monkeypatch.delenv(name, raising=False)
-    monkeypatch.setenv("BNI_REPO_ROOT", str(ROOT))
+    monkeypatch.delenv("BNI_REPO_ROOT", raising=False)  # the workspace carries it in config/group.env
     monkeypatch.setenv("VLLM_API_KEY", "test-key-not-real")
     with (
         MockOpenAIServer() as shared_endpoint

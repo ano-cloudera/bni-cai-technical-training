@@ -182,22 +182,16 @@ def resolve_lab_context(
             (resolved / "output").mkdir(exist_ok=True)
         participant_workspace = None
         if participant.mode == "individual_learning":
-            configured = source_env.get("PARTICIPANT_WORKSPACE") or from_file.get(
-                "PARTICIPANT_WORKSPACE"
-            )
+            configured = source_env.get("PARTICIPANT_WORKSPACE") or from_file.get("PARTICIPANT_WORKSPACE")
             participant_workspace = (
-                Path(configured)
-                if configured
-                else resolved / "participants" / participant.participant_ref
+                Path(configured) if configured else resolved / "participants" / participant.participant_ref
             )
             if not participant_workspace.is_absolute() and not participant_workspace.exists():
                 participant_workspace = REPO_ROOT / participant_workspace
             participant_workspace = participant_workspace.resolve()
             expected = (resolved / "participants" / participant.participant_ref).resolve()
             if participant_workspace != expected:
-                raise LabContextError(
-                    "PARTICIPANT_WORKSPACE must match this group and PARTICIPANT_REF"
-                )
+                raise LabContextError("PARTICIPANT_WORKSPACE must match this group and PARTICIPANT_REF")
             if not (participant_workspace / "output").is_dir():
                 raise LabContextError(
                     "The participant workspace is not prepared. Ask the trainer to prepare individual mode."

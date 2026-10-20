@@ -27,10 +27,18 @@ from pathlib import Path
 
 import httpx
 
-ROOT = Path(os.getenv("BNI_REPO_ROOT", "")) if os.getenv("BNI_REPO_ROOT") else next(
-    path for path in (Path.cwd().resolve(), *Path.cwd().resolve().parents)
-    if (path / "pyproject.toml").is_file()
-)
+def _repo_root() -> Path:
+    # A generated group workspace records the repository in config/group.env, so no setup is needed.
+    env_file = Path.cwd().parent / "config" / "group.env"
+    saved = dict(line.split("=", 1) for line in env_file.read_text().splitlines() if "=" in line) if env_file.is_file() else {}
+    if os.getenv("BNI_REPO_ROOT") or saved.get("BNI_REPO_ROOT"):
+        return Path(os.getenv("BNI_REPO_ROOT") or saved["BNI_REPO_ROOT"])
+    found = [p for p in (Path.cwd().resolve(), *Path.cwd().resolve().parents) if (p / "pyproject.toml").is_file()]
+    assert found, "Open this notebook from a generated group workspace, or set BNI_REPO_ROOT."
+    return found[0]
+
+
+ROOT = _repo_root()
 sys.path[:0] = [str(ROOT / "src"), str(ROOT)]
 LAB_MODE = os.getenv("LAB_MODE", "local").lower()
 group_env = Path.cwd().parent / "config" / "group.env"

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased (notebook repository root)
+
+- Notebooks run from a workspace outside the repository (for example `/home/cdsw/workshop-runtime`) failed with
+  `StopIteration` in the setup cell. `config/group.env` now records `BNI_REPO_ROOT`, and all 13 notebooks read it
+  (or the environment variable) before looking for `pyproject.toml`. Tests run notebooks from a workspace outside the
+  repository without setting the variable.
+
 ## Unreleased (deployment guide update)
 
 - `docs/trainer/cai-application-deployment.md`: vLLM Running in the sandbox on a small GPU (A10G settings and the
