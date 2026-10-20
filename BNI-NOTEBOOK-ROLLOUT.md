@@ -18,15 +18,20 @@ Terminal variables come from section 0b of `BNI-TESTING-COMMANDS.md` (`APPS_DOMA
 | 3 | Register the kernel `bni-rag` (section 3) | "BNI rag (py3.10)" is in the kernel list after a browser reload |
 | 4 | Check the Applications (section 4): vLLM has **1 GPU** and `VLLM_TOOL_CALL_PARSER`; Portal has `WORKSHOP_RUNTIME_DIR`; LiteLLM has `SSL_CERT_FILE` | the five health checks of `BNI-TESTING-COMMANDS.md` section 2 print 200 |
 | 5 | Set the **project** environment variables of section 5, then restart the Session | a notebook cell `import os; print(os.getenv("QDRANT_URL"))` prints the URL ending `:443` |
-| 6 | Refresh the group workspaces (section 2) | `grep -c load_group_env .../group_03/notebooks/04_csv_data_access.ipynb` prints 1 or more |
+| 6 | Refresh the group workspaces (section 2) | `grep -c "proved" .../group_03/notebooks/05_semantic_layer.ipynb` prints 1 or more (the guided notebooks 04 to 08 arrived) and `grep -c load_group_env` on the same file prints 1 or more |
 | 7 | Ask one sample question in the Portal for `group_03` (wait for Completed) | "My outputs (1)" appears |
-| 8 | Run, from `group_03/notebooks`, with the kernel BNI rag: notebooks 00, 03, 07, 08, 12 | each prints `LAB_STATUS: ... mode=cai status=PASS` |
-| 9 | Optional, if time: notebooks 04, 05, 06, 09, 11 | same |
-| 10 | Reset the test group so participants start clean (dry run first, then `--yes`): `scripts/reset_group_workspace.py --group-id group_03`, add `--include-notebooks` to restore the notebooks | the dry run lists only `group_03` |
+| 8 | **Day 1 notebooks.** Run, from `group_03/notebooks`, with the kernel BNI rag, in this order: 00, 03, 04, 05, 06, 07, 08, 09. Lab 07 needs `QDRANT_URL` and `EMBEDDING_MODEL_PATH`; Lab 09 needs `PHOENIX_COLLECTOR_ENDPOINT` and `PHOENIX_UI_URL` (project variables, step 5) | each prints `LAB_STATUS: ... mode=cai status=PASS`. The line must say `mode=cai`, never `mode=local`. Lab 04 shows `group_03` in its first step, not `group_01`. After Lab 09 a trace for `group_03` is visible in the Phoenix UI |
+| 9 | **Day 2 notebooks**, if time: 10, 11, 12 (12 needs step 7 first; 10 needs a key and the LiteLLM Application, section 5) | same |
+| 10 | Clean the test group so participants start clean: delete any `*_v2.ipynb` copy in `group_03/notebooks`, then reset (dry run first, then `--yes`): `scripts/reset_group_workspace.py --group-id group_03`, add `--include-notebooks` to restore the notebooks | the dry run lists only `group_03`, and `ls group_03/notebooks` shows the 13 standard names only |
 | 11 | Rotate `LITELLM_MASTER_KEY` and decide Lab 10 (section 5, last paragraph) | `models=200` with the new key |
 
 Step 5 test cell is the check that a project variable reaches the notebook kernel; this was **not** tested in the sandbox. If it
 prints `None`, restart the Session once more; if it still prints `None`, fall back to the temporary first cell of section 5.
+
+Day split: **Day 1 is Lab 00 and Labs 03 to 09; Day 2 is Labs 10 to 12.** Applications follow the same split: Day 1 runs vLLM,
+Qdrant, Phoenix and the Portal; LiteLLM joins on Day 2 (never more than five at once). Both days use the same workspaces and
+the same runtime folder; nothing is hidden or moved. The split is only the instruction on the slide, because a second template folder or a
+second runtime root would split the Portal, the validators and the tests (they expect all 13 notebooks).
 
 What participants do (put this on a slide or in the guide):
 
@@ -46,6 +51,7 @@ All of these are on `main` after the push. Without them the notebooks run the lo
 | CrewAI `LLM` sends `enable_thinking=false` | Labs 08 and 09 showed `0 data tool call(s)` |
 | vLLM launcher option `VLLM_TOOL_CALL_PARSER` | CrewAI needs tool calling (`400 "auto" tool choice requires ...`) |
 | `scripts/index_all_groups.py` | Indexes glossary and mission notes of all ten groups with bge-m3 |
+| Labs 04 to 08 rewritten as guided lessons | One setup cell, explained steps with a prediction, pandas tables, a real exercise, a closing list of what the participant proved. File names and saved outputs are unchanged. They replace the old notebooks of the same names in the templates, so a workspace refresh (section 2) is what delivers them |
 
 After `git pull`, if git says local changes would be overwritten (a notebook was run inside the repository), stash them:
 
@@ -145,9 +151,15 @@ notebook and the trainer rotates the key right after class. Do not put the key i
 
 ## 7. Sandbox results of the notebooks (kernel BNI rag, group_03, `mode=cai`)
 
-Pass: 00, 03, 04, 05, 06, 07, 08, 09, 10, 11 (11 with the thinking fix) and 12 (after `WORKSHOP_RUNTIME_DIR` was set on the
-sandbox Portal and one sample question was asked: `LAB_STATUS: lab=12 mode=cai status=PASS passed=7`). Not run: 01 and 02
-(trainer only). Each lab was run with the temporary variable cells of section 5, not with permanent Session variables.
+Original notebooks, pass: 00, 03, 04, 05, 06, 07, 08, 09, 10, 11 (11 with the thinking fix) and 12 (after `WORKSHOP_RUNTIME_DIR` was
+set on the sandbox Portal and one sample question was asked: `LAB_STATUS: lab=12 mode=cai status=PASS passed=7`). Not run: 01
+and 02 (trainer only). Each lab was run with the temporary variable cells of section 5, not with permanent Session variables.
+
+Guided notebooks (the rewritten Labs 04 to 08), run in the sandbox as drafts from a group workspace, `mode=cai`: 05
+`passed=9`, 06 `passed=8`, 07 `passed=10`, 08 `passed=9`, all PASS. **Not yet run in `cai` mode:** Lab 04 (the guided version was
+only run in `local` mode from the drafts folder) and Lab 08 in its final text (the question moved into the tasks and the
+default exercise criterion changed after the sandbox run). Run both once more from a refreshed group workspace (step 8) before
+class, at BNI and in the sandbox if there is time.
 
 ## 8. Known gaps (not blocking, to fix after the workshop)
 
