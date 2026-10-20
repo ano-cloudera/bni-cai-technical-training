@@ -20,7 +20,7 @@ def test_vllm_l40s_command_uses_one_gpu_and_lower_utilization(tmp_path: Path) ->
     assert command[command.index("--tensor-parallel-size") + 1] == "1"
     assert command[command.index("--gpu-memory-utilization") + 1] == "0.82"
     assert command[command.index("--max-model-len") + 1] == "8192"
-    assert command[command.index("--host") + 1] == "0.0.0.0"  # configurable via VLLM_HOST
+    assert command[command.index("--host") + 1] == "127.0.0.1"  # configurable via VLLM_HOST
 
 
 def test_vllm_h200_command_uses_validated_baseline(tmp_path: Path) -> None:

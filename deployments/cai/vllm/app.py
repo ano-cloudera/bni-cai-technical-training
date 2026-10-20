@@ -11,7 +11,7 @@ from bni_training.model_artifact import validate_model_path
 from deployments.cai.common import http_ready, resolve_cai_port, run_supervised
 
 FALLBACK_PORT = 8101  # Session or local testing only; a CAI Application always gets CDSW_APP_PORT
-DEFAULT_HOST = "0.0.0.0"  # noqa: S104 - the CAI Application proxy reaches the process from outside the pod
+DEFAULT_HOST = "127.0.0.1"  # CAI expects Applications on loopback; 0.0.0.0 gave "Address already in use"
 DEFAULT_SERVED_MODEL = "qwen3.5-9b"
 GPU_PROFILES = {
     "l40s": {"gpu_memory_utilization": "0.82", "max_model_len": "8192", "max_num_seqs": "16"},

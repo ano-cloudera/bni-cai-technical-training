@@ -179,6 +179,9 @@ APP_STARTUP_TIMEOUT_MINUTES=15
 | Application name | `bni-vllm-qwen35-9b` | `bni-vllm-qwen35-l40s` |
 
 - Do not set `CDSW_APP_PORT`; CAI provides it.
+- The launcher binds `127.0.0.1` by default (`VLLM_HOST` overrides it). `0.0.0.0` failed with `Address already in use`.
+- vLLM logs `Unknown vLLM environment variable` for `VLLM_MODEL`, `VLLM_DTYPE`, `VLLM_HOST` and
+  `VLLM_DISABLE_THINKING`. It scans every `VLLM_*` variable; the warning is harmless.
 - `app.py` is started first by the Application's own Python runtime, and only then calls the venv Python. So
   `PYTHONPATH` must let that first process import `bni_training` and `deployments`.
 - `VLLM_DISABLE_THINKING` is read by the notebooks and clients (`model_request_extras`), **not** by the server. It is
@@ -336,6 +339,8 @@ Test one service at a time. A failure then has one obvious cause.
 |---|---|---|
 | `No such file or directory: '/home/cdsw/tools/qdrant/qdrant'` | The binary was never prepared | Step 2.4, then restart |
 | `unrecognized arguments: --host ... --port ...` (Phoenix) | `phoenix serve` has no such options | Use the current launcher (`git pull`), restart |
+| `OSError: [Errno 98] Address already in use` (vLLM) | Binding `0.0.0.0` on the Application port clashed with a loopback listener | The launcher now binds `127.0.0.1` (older launcher: set `VLLM_HOST=127.0.0.1`) |
+| `Available KV cache memory: -N GiB` / `No available memory for the cache blocks` (vLLM) | The weights plus overhead leave no room for the cache on a small GPU | Raise `GPU_MEMORY_UTILIZATION`, lower `MAX_MODEL_LEN` and `MAX_NUM_SEQS`, or use a bigger GPU |
 | `File does not exist: apps/workshop-portal/app.py` | The Application starts in `/home/cdsw` | Use the current launcher (`git pull`), restart |
 | `NameError: name '__file__' is not defined` (Portal) | CAI runs the script in a kernel without `__file__` | Use the current launcher (`git pull`), restart |
 | FlashInfer or `nvcc` error at vLLM start | No CUDA Toolkit in the runtime | `VLLM_USE_FLASHINFER_SAMPLER=0` |

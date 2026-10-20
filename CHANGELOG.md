@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased (vllm host)
+
+- vLLM launcher binds `127.0.0.1` by default. The `0.0.0.0` default failed in a CAI Application with
+  `Address already in use` on the Application port. `VLLM_HOST` still overrides it.
+
 ## Unreleased (litellm master key)
 
 - LiteLLM launcher: fails early with instructions when `LITELLM_MASTER_KEY` is not set (LiteLLM refuses to start

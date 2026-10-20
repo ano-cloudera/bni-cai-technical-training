@@ -79,10 +79,10 @@ def test_port_8100_is_never_hard_coded() -> None:
 def test_host_and_served_model_name_are_configurable_with_defaults(tmp_path) -> None:
     path = model_dir(tmp_path)
     default = app.build_command(env_for(path))
-    assert default[default.index("--host") + 1] == "0.0.0.0"
+    assert default[default.index("--host") + 1] == "127.0.0.1"
     assert default[default.index("--served-model-name") + 1] == "qwen3.5-9b"
-    custom = app.build_command(env_for(path, VLLM_HOST="127.0.0.1", VLLM_MODEL="my-model"))
-    assert custom[custom.index("--host") + 1] == "127.0.0.1"
+    custom = app.build_command(env_for(path, VLLM_HOST="0.0.0.0", VLLM_MODEL="my-model"))
+    assert custom[custom.index("--host") + 1] == "0.0.0.0"
     assert custom[custom.index("--served-model-name") + 1] == "my-model"
     legacy = app.build_command(env_for(path, SERVED_MODEL_NAME="legacy-name"))
     assert legacy[legacy.index("--served-model-name") + 1] == "legacy-name"
