@@ -166,6 +166,38 @@ export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt; export REQUESTS_CA_BUND
 and add `SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt` to the Portal Application environment too. Never switch TLS
 verification off.
 
+## A7. Lab 07 / glossary indexing: `[Errno 111] Connection refused` (Qdrant)
+
+Seen at BNI: `scripts/index_glossary.py ... --execute` fails in `qdrant_client` (`collection_exists`) with
+`ResponseHandlingException: [Errno 111] Connection refused`. This is not a certificate problem. `curl` to
+`$QDRANT_URL/readyz` returns 200 because `curl` uses port 443 for `https://`. Suspected cause: the Python Qdrant client
+uses its default port 6333 when the URL has no port, and CAI exposes only 443. Prove it, one command at a time:
+
+```bash
+env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python -c "import os; from qdrant_client import QdrantClient as C; print(C(url=os.environ['QDRANT_URL']).get_collections())" 2>&1 | tail -2
+```
+
+```bash
+env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python -c "import os; from qdrant_client import QdrantClient as C; print(C(url=os.environ['QDRANT_URL']+':443').get_collections())" 2>&1 | tail -2
+```
+
+The first fails with `Connection refused` and the second prints `collections=[...]` (it may be empty): confirmed. If the
+second fails with `CERTIFICATE_VERIFY_FAILED`, set the CA variables from A6 and repeat.
+
+Fix: add `:443` to the Qdrant URL.
+
+In the Session terminal (then run the glossary indexing and Lab 07 again):
+
+```bash
+export QDRANT_URL="https://bni-qdrant.$APPS_DOMAIN:443"
+```
+
+In the **Portal** Application environment, set `QDRANT_URL` to `https://bni-qdrant.<apps-domain>:443`, then
+**Update Application**. Without it the Portal glossary search fails the same way.
+
+Record the confirmed result here. If it is confirmed, the code can default to port 443 for an `https://` URL without a
+port, so a trainer never has to add it.
+
 ## B. Embedding model bge-m3 (optional; needed for Portal retrieval and Lab 07)
 
 Upload `bge-m3.zip` (1.27 GB) to `/home/cdsw/` with the JupyterLab file panel, then:
