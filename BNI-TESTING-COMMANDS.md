@@ -391,8 +391,24 @@ thinking off). Run it from the repository folder with `VLLM_URL` set:
 env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python scripts/vllm_concurrency_test.py --url "$VLLM_URL/v1" --api-key EMPTY --groups 10
 ```
 
-Send the one-line result. A realistic test (40 parallel requests of about 200 tokens, thinking off, correct throughput,
-p50 and p95 latency) is still to be written.
+Confirmed at BNI: `{'requests': 10, 'max_latency_seconds': 0.857, ...}`, all ten small requests finished at the same time. Do not
+read the `requests_per_second` value; it is not a throughput.
+
+### 5c.4 vLLM load test with workshop-sized requests
+
+`scripts/vllm_load_test.py` sends 40 requests at the same moment (four per group), each asking for about 200 tokens with Qwen
+thinking switched off, and prints wall time, requests and output tokens per second, and p50 / p95 / max latency. Failures
+are counted, not hidden. Run it from the repository folder with `VLLM_URL` set, and **no other lab or Portal user at the
+same time**:
+
+```bash
+env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python scripts/vllm_load_test.py --url "$VLLM_URL/v1" --concurrency 40 --max-tokens 200
+```
+
+Send the whole JSON. How to read it: `failed` must be 0; `latency_p95_seconds` is what the slowest participants wait (compare
+it with the Portal timeouts: `PORTAL_REQUEST_TIMEOUT_S=60` and `PORTAL_QUEUE_TIMEOUT_S=120`). The Portal itself lets only 3
+requests run at once, so this test is the worst case of direct vLLM use (notebooks), not of the Portal. Repeat once with
+`--concurrency 10` to see how latency grows with load.
 
 ## 6. Whole-service check (read only)
 
