@@ -313,13 +313,24 @@ Portal glossary panel needs the glossary **and** the mission note of every group
 (or for the groups you name). Every point carries its own `group_id` (the point id includes it), so groups never overwrite
 each other, and repeating it is safe. Run it from the repository folder, with the section 0b variables set.
 
-Dry run first (writes nothing, lists 6 documents per group):
+Variables needed (a new Session loses them; without `QDRANT_URL` the script stops with `QDRANT_URL is not set`). Two lines,
+one at a time; the second must print a URL that ends with `:443`:
+
+```bash
+read -r APPS_DOMAIN; export APPS_DOMAIN
+```
+
+```bash
+export QDRANT_URL="https://bni-qdrant.$APPS_DOMAIN:443"; export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt; export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt; echo "$QDRANT_URL"
+```
+
+Dry run first (writes nothing). Confirmed at BNI: it lists 6 documents for each of `group_01` to `group_10`:
 
 ```bash
 cd /home/cdsw/bni-cai-technical-training; env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python scripts/index_all_groups.py
 ```
 
-Then write (about a minute; one JSON line per group):
+Then write (about a minute; one JSON line per group, each with `"documents": 6`; a `ReadTimeout` is safe to repeat):
 
 ```bash
 env -u PYTHONPATH EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3 /home/cdsw/.venvs/bni-rag/bin/python scripts/index_all_groups.py --execute
