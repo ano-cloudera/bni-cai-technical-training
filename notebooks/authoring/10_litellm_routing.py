@@ -14,6 +14,27 @@
 # Complete Lab 09. CAI mode requires `LITELLM_BASE_URL`; local mode uses explicit mock endpoints.
 
 # %% [markdown]
+# ## Service addresses (fill in once)
+# This lab calls shared services. All of their addresses end with the same **Applications domain**. Ask your trainer for it and paste it
+# between the quotes below. If your trainer already set the variable `APPS_DOMAIN`, leave the quotes empty. Nothing secret goes in
+# this cell, and a value that is already set elsewhere is never replaced.
+
+# %%
+import os
+
+APPS_DOMAIN = ""  # paste the Applications domain from your trainer between the quotes
+APPS_DOMAIN = APPS_DOMAIN or os.getenv("APPS_DOMAIN", "")
+
+
+def service_url(app, path="", port=""):
+    """The address of a shared Application: its name, the domain you pasted above, an optional port and path."""
+    from urllib.parse import urlunsplit
+
+    return urlunsplit(("https", f"{app}.{APPS_DOMAIN}{port}", path, "", ""))
+if APPS_DOMAIN:
+    os.environ.setdefault("LITELLM_BASE_URL", service_url("bni-litellm-gateway", "/v1"))
+
+# %% [markdown]
 # ## Configuration validation
 # Resolve group context and start local-only endpoints. The key is reported only as configured or absent, never partially printed.
 

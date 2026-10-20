@@ -14,6 +14,27 @@
 # Complete Labs 00 and 03-11. CAI mode requires `WORKSHOP_PORTAL_URL`; local mode creates an in-process Portal with explicit mock services.
 
 # %% [markdown]
+# ## Service addresses (fill in once)
+# This lab calls shared services. All of their addresses end with the same **Applications domain**. Ask your trainer for it and paste it
+# between the quotes below. If your trainer already set the variable `APPS_DOMAIN`, leave the quotes empty. Nothing secret goes in
+# this cell, and a value that is already set elsewhere is never replaced.
+
+# %%
+import os
+
+APPS_DOMAIN = ""  # paste the Applications domain from your trainer between the quotes
+APPS_DOMAIN = APPS_DOMAIN or os.getenv("APPS_DOMAIN", "")
+
+
+def service_url(app, path="", port=""):
+    """The address of a shared Application: its name, the domain you pasted above, an optional port and path."""
+    from urllib.parse import urlunsplit
+
+    return urlunsplit(("https", f"{app}.{APPS_DOMAIN}{port}", path, "", ""))
+if APPS_DOMAIN:
+    os.environ.setdefault("WORKSHOP_PORTAL_URL", service_url("bni-workshop-portal"))
+
+# %% [markdown]
 # ## Configuration validation
 # Resolve the same group, dataset, and mission used by earlier notebooks. The Portal session locks to this group after its first action.
 

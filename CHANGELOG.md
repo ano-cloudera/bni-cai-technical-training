@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased (service addresses in the notebooks)
+
+- Labs 00, 07, 09, 10 and 12 start with a "Service addresses" cell. The participant pastes the Applications domain once (or the trainer sets
+  the project variable `APPS_DOMAIN`), and `service_url(...)` builds the Qdrant, Phoenix, LiteLLM and Portal addresses from it. Values that are
+  already set are never replaced, and nothing happens in local mode. The notebooks contain no address literal, because the notebook hygiene
+  test forbids one. Lab 00 also sets `DATA_MODE=csv` and `VLLM_API_KEY=EMPTY` (non-secret workshop constants) and an optional `RUNTIME_PROFILE`.
+
 ## Unreleased (notebook redesign, Labs 04 to 09)
 
 - Lab 09 follows the same guided pattern: a tracer, the secret filter shown as a table, parent and child spans with kind and duration,

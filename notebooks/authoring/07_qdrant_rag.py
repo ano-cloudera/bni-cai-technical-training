@@ -25,6 +25,28 @@
 # closest. Storing and searching must use the same embedding model: a small stand-in in `local` mode, bge-m3 in `cai` mode.
 
 # %% [markdown]
+# ## Service addresses (fill in once)
+# This lab calls shared services. All of their addresses end with the same **Applications domain**. Ask your trainer for it and paste it
+# between the quotes below. If your trainer already set the variable `APPS_DOMAIN`, leave the quotes empty. Nothing secret goes in
+# this cell, and a value that is already set elsewhere is never replaced.
+
+# %%
+import os
+
+APPS_DOMAIN = ""  # paste the Applications domain from your trainer between the quotes
+APPS_DOMAIN = APPS_DOMAIN or os.getenv("APPS_DOMAIN", "")
+
+
+def service_url(app, path="", port=""):
+    """The address of a shared Application: its name, the domain you pasted above, an optional port and path."""
+    from urllib.parse import urlunsplit
+
+    return urlunsplit(("https", f"{app}.{APPS_DOMAIN}{port}", path, "", ""))
+if APPS_DOMAIN:
+    os.environ.setdefault("QDRANT_URL", service_url("bni-qdrant", port=":443"))
+    os.environ.setdefault("EMBEDDING_MODEL_PATH", "/home/cdsw/models/bge-m3")
+
+# %% [markdown]
 # ## Configuration validation (setup)
 # This cell finds the repository, reads your group's settings, connects to Qdrant and loads the embedding model. In `cai` mode
 # loading the model takes about half a minute. You do not need to change anything. It prints the mode, the collection name and

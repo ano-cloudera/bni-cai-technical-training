@@ -14,6 +14,37 @@
 # Open the notebook inside the repository or a generated group workspace. CAI mode requires `GROUP_ID`, `DATASET_ID`, `MISSION_ID`, and `GROUP_WORKSPACE` from `group.env`.
 
 # %% [markdown]
+# ## Service addresses (fill in once)
+# This lab calls shared services. All of their addresses end with the same **Applications domain**. Ask your trainer for it and paste it
+# between the quotes below. If your trainer already set the variable `APPS_DOMAIN`, leave the quotes empty. Nothing secret goes in
+# this cell, and a value that is already set elsewhere is never replaced.
+
+# %%
+import os
+
+APPS_DOMAIN = ""  # paste the Applications domain from your trainer between the quotes
+APPS_DOMAIN = APPS_DOMAIN or os.getenv("APPS_DOMAIN", "")
+
+
+def service_url(app, path="", port=""):
+    """The address of a shared Application: its name, the domain you pasted above, an optional port and path."""
+    from urllib.parse import urlunsplit
+
+    return urlunsplit(("https", f"{app}.{APPS_DOMAIN}{port}", path, "", ""))
+if APPS_DOMAIN:
+    os.environ.setdefault("QDRANT_URL", service_url("bni-qdrant", port=":443"))
+    os.environ.setdefault("PHOENIX_COLLECTOR_ENDPOINT", service_url("bni-phoenix", "/v1/traces"))
+    os.environ.setdefault("PHOENIX_UI_URL", service_url("bni-phoenix"))
+    os.environ.setdefault("LITELLM_BASE_URL", service_url("bni-litellm-gateway", "/v1"))
+    os.environ.setdefault("WORKSHOP_PORTAL_URL", service_url("bni-workshop-portal"))
+# Workshop constants: CSV is the data backend and the shared model needs no key (a placeholder, not a secret).
+os.environ.setdefault("DATA_MODE", "csv")
+os.environ.setdefault("VLLM_API_KEY", "EMPTY")
+RUNTIME_PROFILE = ""  # ask your trainer for the profile name, or leave empty if it is already set
+if RUNTIME_PROFILE:
+    os.environ.setdefault("RUNTIME_PROFILE", RUNTIME_PROFILE)
+
+# %% [markdown]
 # ## Configuration validation
 # This bootstrap locates the installed workshop code and validates local versus CAI mode. Expect Python and mode labels; it does not print secrets or service URLs.
 

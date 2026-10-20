@@ -26,6 +26,28 @@
 # shows them in a web page. Labels such as your `group_id` make a trace easy to find, but they are not a security control.
 
 # %% [markdown]
+# ## Service addresses (fill in once)
+# This lab calls shared services. All of their addresses end with the same **Applications domain**. Ask your trainer for it and paste it
+# between the quotes below. If your trainer already set the variable `APPS_DOMAIN`, leave the quotes empty. Nothing secret goes in
+# this cell, and a value that is already set elsewhere is never replaced.
+
+# %%
+import os
+
+APPS_DOMAIN = ""  # paste the Applications domain from your trainer between the quotes
+APPS_DOMAIN = APPS_DOMAIN or os.getenv("APPS_DOMAIN", "")
+
+
+def service_url(app, path="", port=""):
+    """The address of a shared Application: its name, the domain you pasted above, an optional port and path."""
+    from urllib.parse import urlunsplit
+
+    return urlunsplit(("https", f"{app}.{APPS_DOMAIN}{port}", path, "", ""))
+if APPS_DOMAIN:
+    os.environ.setdefault("PHOENIX_COLLECTOR_ENDPOINT", service_url("bni-phoenix", "/v1/traces"))
+    os.environ.setdefault("PHOENIX_UI_URL", service_url("bni-phoenix"))
+
+# %% [markdown]
 # ## Configuration validation (setup)
 # This cell finds the repository, reads your group's settings, and prints your group and your anonymous participant label
 # (`participant_01` to `participant_04`). You do not need to change anything. It never prints a credential or an endpoint.
