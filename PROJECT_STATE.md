@@ -94,6 +94,12 @@ Findings applied or recorded (details and commands in the trainer guide and in t
 - The profile check of Lab 00 requires `DATA_MODE`, `VLLM_API_KEY`, `PHOENIX_COLLECTOR_ENDPOINT`, `LITELLM_BASE_URL` and
   `WORKSHOP_PORTAL_URL`.
 
+Measured once at BNI (2026-10-20, direct to the vLLM Application, one round, no other load): 10 small simultaneous requests
+all finished (highest latency 0.86 s); 40 simultaneous requests of about 150 output tokens (thinking off) all succeeded,
+wall time 5.48 s, about 1,118 output tokens per second, latency p50 4.51 s, p95 5.42 s, max 5.47 s, with the Application
+at `MAX_NUM_SEQS` 32. This is one short burst, not sustained load, and it does not include the Portal, Qdrant or LiteLLM.
+The glossary and mission notes of all ten groups are indexed (6 points per group).
+
 PENDING (not validated, no readiness claimed): the other nine groups; ten group Sessions at once; the 40-participant Portal
 capacity and the single replica setting under load; vLLM speed and concurrency on the H200 (`scripts/vllm_concurrency_test.py`);
 Qdrant restart persistence and ten partitions; how participants authenticate to the Applications and to LiteLLM (the master

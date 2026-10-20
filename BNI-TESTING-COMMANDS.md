@@ -405,6 +405,9 @@ same time**:
 env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python scripts/vllm_load_test.py --url "$VLLM_URL/v1" --concurrency 40 --max-tokens 200
 ```
 
+Confirmed at BNI (one burst): 40 of 40 succeeded, `failed` 0, wall 5.48 s, 7.3 requests/s, 1,118 output tokens/s, p50 4.51 s,
+p95 5.42 s, max 5.47 s. Still untested: sustained load, longer prompts, and the Portal, Qdrant and LiteLLM under load.
+
 Send the whole JSON. How to read it: `failed` must be 0; `latency_p95_seconds` is what the slowest participants wait (compare
 it with the Portal timeouts: `PORTAL_REQUEST_TIMEOUT_S=60` and `PORTAL_QUEUE_TIMEOUT_S=120`). The Portal itself lets only 3
 requests run at once, so this test is the worst case of direct vLLM use (notebooks), not of the Portal. Repeat once with
