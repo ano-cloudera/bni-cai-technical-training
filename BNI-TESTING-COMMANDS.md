@@ -151,6 +151,19 @@ Run each from the repository folder. A lab passes only when its last line is `LA
 cd /home/cdsw/bni-cai-technical-training
 ```
 
+### 5.0 All labs in one command (after sections 0b to 4 and the glossary indexing)
+
+Runs Labs 00, 03 to 12 one after another and prints only the `LAB_STATUS` line of each plus any failing check. Nothing is
+skipped silently: a failing lab shows its failing check. Run it from the repository folder, in a terminal with the
+section 0b variables set. It takes a few minutes (the model answers real requests).
+
+```bash
+cd /home/cdsw/bni-cai-technical-training; for s in 00_environment_validation 03_llm_api_testing 04_csv_data_access 05_semantic_layer 06_crewai_tools 07_qdrant_rag 08_multi_agent_workflow 09_phoenix_monitoring 10_litellm_routing 11_guardrails 12_end_to_end_portal; do echo "== $s"; env -u PYTHONPATH EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3 /home/cdsw/.venvs/bni-rag/bin/python scripts/$s.py --mode cai 2>&1 | grep -E -B1 -A1 '"status": "FAIL"|LAB_STATUS'; done
+```
+
+Send the whole output (it holds no keys). Then fix only the labs that show `status=FAIL`, one at a time, with the sections
+below as the detail for each lab.
+
 ### 5.1 Lab 00 and Lab 03 (vLLM only)
 
 Lab 00 needs the BNI runtime profile first:
