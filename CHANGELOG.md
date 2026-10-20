@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased (portal thinking)
+
+- Portal: a first sandbox answer began with `Thinking Process` and was truncated. The Portal client now sends
+  `chat_template_kwargs.enable_thinking=false` (`PORTAL_DISABLE_THINKING`, default `true`), also when the model is a
+  LiteLLM alias. `config/litellm.yaml` injects the same setting for every alias; verified with a real LiteLLM that it
+  forwards a client-sent value and injects `extra_body`.
+
 ## Unreleased (litellm fallback alias)
 
 - `config/litellm.yaml`: the `training-fallback` alias asks its endpoint for `qwen3.5-9b` instead of a model called

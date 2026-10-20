@@ -40,6 +40,9 @@ class PortalConfig:
     llm_base_url: str = field(default="", repr=False)
     llm_model: str = "qwen3.5-9b"
     llm_api_key: str = field(default="", repr=False)
+    disable_thinking: bool = (
+        True  # the workshop model is Qwen3.5; its thinking text would fill the token budget
+    )
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> PortalConfig:
@@ -84,4 +87,5 @@ class PortalConfig:
             llm_base_url=base,
             llm_model=model,
             llm_api_key=key,
+            disable_thinking=env.get("PORTAL_DISABLE_THINKING", "true").strip().lower() != "false",
         )

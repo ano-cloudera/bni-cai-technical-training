@@ -4,6 +4,10 @@ model_list:
       model: openai/qwen3.5-9b
       api_base: os.environ/VLLM_BASE_URL
       api_key: os.environ/VLLM_API_KEY
+      # Qwen3.5 thinking text would fill the token budget; verified that the gateway injects this into every request.
+      extra_body:
+        chat_template_kwargs:
+          enable_thinking: false
   - model_name: training-fallback
     litellm_params:
       # The upstream model name must be one the endpoint serves. With the vLLM URL this is qwen3.5-9b; a stand-in
@@ -11,6 +15,9 @@ model_list:
       model: openai/qwen3.5-9b
       api_base: os.environ/MOCK_FALLBACK_BASE_URL
       api_key: workshop-only
+      extra_body:
+        chat_template_kwargs:
+          enable_thinking: false
 router_settings:
   routing_strategy: simple-shuffle
   num_retries: 2

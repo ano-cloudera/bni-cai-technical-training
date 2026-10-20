@@ -15,7 +15,7 @@ from bni_training.data.engine import CsvEngine
 from bni_training.data.semantic_layer import SemanticModel
 from bni_training.data.tool import DataRequest, WorkshopDataTool
 from bni_training.guardrails import validate_input
-from bni_training.llm_client import OpenAICompatibleClient
+from bni_training.llm_client import OpenAICompatibleClient, model_request_extras
 from bni_training.rag import HashingEmbedder, index_group_documents, search_group
 from bni_training.workshop import group_paths
 from bni_training.workshop.group_context import SessionContext, new_session_id
@@ -129,8 +129,13 @@ class PortalService:
             raise PortalConfigError(
                 "No LLM endpoint: set LITELLM_BASE_URL or VLLM_BASE_URL (cai mode never uses a mock)"
             )
+        # Through LiteLLM the model is an alias (qwen-primary), so this is a setting, not a name match.
+        setting = "true" if self.config.disable_thinking else "false"
         return OpenAICompatibleClient(
-            self.config.llm_base_url, self.config.llm_api_key, self.config.llm_model
+            self.config.llm_base_url,
+            self.config.llm_api_key,
+            self.config.llm_model,
+            extra_body=model_request_extras(self.config.llm_model, {"VLLM_DISABLE_THINKING": setting}),
         )
 
     @classmethod

@@ -29,3 +29,8 @@ def test_the_fallback_endpoint_is_configurable_and_holds_no_secret() -> None:
     fallback = models()["training-fallback"]
     assert fallback["api_base"] == "os.environ/MOCK_FALLBACK_BASE_URL"
     assert fallback["api_key"] == "workshop-only"
+
+
+def test_every_alias_turns_qwen_thinking_off_at_the_gateway() -> None:
+    for alias, params in models().items():
+        assert params["extra_body"] == {"chat_template_kwargs": {"enable_thinking": False}}, alias

@@ -299,8 +299,10 @@ PORTAL_QUEUE_TIMEOUT_S=120
 PORTAL_REQUEST_TIMEOUT_S=60
 PORTAL_MAX_RETRIES=2
 PORTAL_ENFORCE_SINGLE_INSTANCE=true
+PORTAL_MAX_TOKENS=512
 ```
 
+- `PORTAL_DISABLE_THINKING` defaults to `true` (Qwen3.5 thinking off); set it to `false` only for another model.
 - `PORTAL_APP` is set explicitly here; the launcher resolves this relative path from the repository.
 - Add the API key variables (`VLLM_API_KEY`, `QDRANT_API_KEY`) as CAI secrets only if those services need them.
 - Without both `QDRANT_URL` and `EMBEDDING_MODEL_PATH` the Portal has no retrieval.
@@ -439,8 +441,10 @@ If an Application fails, copy the last 30 lines of its Logs (no secrets) before 
 
 - **Access between Applications and from other Sessions.** CAI Application URLs may require authentication. How
   notebooks and the Portal reach vLLM, Qdrant, Phoenix and LiteLLM is not yet validated.
-- **Portal and Qwen thinking.** The notebooks disable Qwen3.5 thinking; the Portal's own LLM calls do not yet.
-  Answers may show thinking text and use the token budget until that is changed.
+- **Portal and Qwen thinking.** Seen in the sandbox: the first Portal answer started with `Thinking Process` and was
+  cut off. The Portal now sends `enable_thinking=false` (`PORTAL_DISABLE_THINKING`, default `true`, also through the
+  LiteLLM alias) and `config/litellm.yaml` injects it for every alias (verified with a real LiteLLM against a recording
+  stand-in server). Confirm in the Portal after `git pull` and a restart of the Portal and LiteLLM.
 - **Embedding model.** The sentence-transformers model for Qdrant retrieval is not yet prepared on NFS.
 - **LiteLLM keys and Admin UI.** How the Portal and participants authenticate to LiteLLM (master key versus virtual
   keys) is not decided; the master key must not be handed to participants. Virtual keys per group and the Admin UI
