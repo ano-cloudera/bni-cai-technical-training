@@ -3,27 +3,38 @@
 Run these in a JupyterLab Session terminal at BNI. One block, one paste. This is a working note, not part of the
 documentation set; delete it when done.
 
-## A. Phoenix: `No module named 'dateutil'`
+## A. Phoenix: `No module named 'dateutil'` (still failing after a reinstall)
 
-The `bni-phoenix` venv install is incomplete. Check first:
+Cause: in a Session, `PYTHONPATH` also points to CAI runtime folders (`/runtime-addons/...`). pip sees packages there
+(for example `six`, `python-dateutil`), reports "already satisfied" and does **not** install them into the venv. The
+Session can import them; the Application cannot. Always install **without** `PYTHONPATH`.
+
+Prove it (expect `No module named 'dateutil'`):
 
 ```bash
-/home/cdsw/.venvs/bni-phoenix/bin/python -c "import dateutil, pandas; print(dateutil.__version__, pandas.__version__)"
+echo "$PYTHONPATH"; env -u PYTHONPATH /home/cdsw/.venvs/bni-phoenix/bin/python -c "import dateutil, pandas; print(dateutil.__file__)"
 ```
 
-If it prints versions, only restart the `bni-phoenix` Application. If it errors, reinstall the lock (safe to repeat):
+Fix: reinstall the lock without `PYTHONPATH` (safe to repeat):
 
 ```bash
-cd /home/cdsw/bni-cai-technical-training && export PIP_USER=false && /home/cdsw/.venvs/bni-phoenix/bin/python -m pip install --no-user --retries 10 --timeout 60 -r requirements/observability.lock && /home/cdsw/.venvs/bni-phoenix/bin/python -m pip install --no-user --no-deps -e .
+cd /home/cdsw/bni-cai-technical-training && env -u PYTHONPATH PIP_USER=false /home/cdsw/.venvs/bni-phoenix/bin/python -m pip install --no-user --retries 10 --timeout 60 -r requirements/observability.lock
 ```
 
-Verify (`pip check` must be clean, then a version prints):
+Verify in a clean environment (must print a path inside `.venvs/bni-phoenix`, then the version):
 
 ```bash
-/home/cdsw/.venvs/bni-phoenix/bin/python -m pip check; /home/cdsw/.venvs/bni-phoenix/bin/python -c "import phoenix; print(phoenix.__version__)"
+env -u PYTHONPATH /home/cdsw/.venvs/bni-phoenix/bin/python -c "import dateutil, pandas, phoenix; print(dateutil.__file__, phoenix.__version__)"
 ```
 
 Then restart the `bni-phoenix` Application and check `/healthz` and the UI.
+
+Check the other venvs the same way (replace the imports to fit; reinstall their lock with `env -u PYTHONPATH` if it fails):
+
+```bash
+env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python -c "import pandas, qdrant_client, streamlit, sentence_transformers; print('ok')"
+env -u PYTHONPATH /home/cdsw/.venvs/bni-litellm/bin/python -c "import litellm; print('ok')"
+```
 
 ## B. Embedding model bge-m3 (optional; needed for Portal retrieval and Lab 07)
 
