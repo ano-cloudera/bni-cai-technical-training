@@ -14,6 +14,21 @@ Rules while testing:
 - One step at a time. Stop at the first failure and read its message before the next step.
 - At most five Applications are active (vLLM, Qdrant, Phoenix, Portal, LiteLLM). Do not start a sixth.
 
+## Confirmed at BNI so far
+
+| Step | Result |
+|---|---|
+| Gate: five Applications answer 200, `qwen3.5-9b` served, LiteLLM aliases listed | Pass |
+| Lab 03 (vLLM, plain and streaming chat) | Pass |
+| Portal: answer without "Thinking Process", SQL shown | Pass |
+| Portal: glossary search returns `group_03` notes | Pass |
+| Lab 10 (LiteLLM) | Pass, after `SSL_CERT_FILE` on the LiteLLM Application |
+| Lab 07 (Qdrant) | Pass, after `:443` and `SSL_CERT_FILE`; glossary indexed (5 documents) |
+| Lab 00 | One check still fails; run 5.0 and send the failing check |
+| Labs 04, 05, 06, 08, 09, 11, 12 | Not run yet |
+
+Fixes for every problem found are in `BNI-FIX-COMMANDS.md`.
+
 ## 0. Variables (once per terminal)
 
 The Application URLs are `https://<application-name>.<apps-domain>`. The BNI apps domain is kept out of this file on
@@ -25,8 +40,12 @@ read -r APPS_DOMAIN; export APPS_DOMAIN
 ```
 
 ```bash
-export VLLM_URL="https://bni-vllm-qwen35-9b.$APPS_DOMAIN"; export QDRANT_URL="https://bni-qdrant.$APPS_DOMAIN"; export PHOENIX_UI_URL="https://bni-phoenix.$APPS_DOMAIN"; export LITELLM_URL="https://bni-litellm-gateway.$APPS_DOMAIN"; export PORTAL_URL="https://bni-workshop-portal.$APPS_DOMAIN"
+export VLLM_URL="https://bni-vllm-qwen35-9b.$APPS_DOMAIN"; export QDRANT_URL="https://bni-qdrant.$APPS_DOMAIN:443"; export PHOENIX_UI_URL="https://bni-phoenix.$APPS_DOMAIN"; export LITELLM_URL="https://bni-litellm-gateway.$APPS_DOMAIN"; export PORTAL_URL="https://bni-workshop-portal.$APPS_DOMAIN"; export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt; export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt; export RUNTIME_PROFILE=bni-h200; export WORKSHOP_RUNTIME_DIR=/home/cdsw/workshop-runtime
 ```
+
+`QDRANT_URL` ends with `:443` because the Python Qdrant client otherwise uses port 6333. `SSL_CERT_FILE` makes Python trust
+the internal BNI certificate (without it Lab 10 and the Qdrant client fail with `CERTIFICATE_VERIFY_FAILED`). Details:
+`BNI-FIX-COMMANDS.md`, A6 and A7.
 
 Check the five variables are set (each line must show a URL):
 
@@ -188,23 +207,31 @@ Expect a normal answer without "Thinking Process", a streamed answer and a saved
 Open the Portal URL in the browser, choose `group_03`, click one sample question. Pass: the answer is short, has no
 "Thinking Process", is not cut off, and shows the SQL. The sidebar says `Shared model: 0 of 3 running`.
 
+Then test retrieval: open the panel "Related glossary and scenario notes (my group only)", type `outstanding balance` in
+the Search box and press Enter. Pass: notes for `group_03` appear (for example Outstanding Balance, Loan Portfolio
+Monitoring, DPD 30). This needs the glossary to be indexed (section 5.4), and `QDRANT_URL` (with `:443`),
+`SSL_CERT_FILE` and `EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3` in the Portal environment. Ask one sample question
+before Lab 12, so a saved answer exists.
+
 ### 5.3 Lab 10 (LiteLLM)
 
 ```bash
 env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python scripts/10_litellm_routing.py --mode cai
 ```
 
-Pass: the gateway answers for `qwen-primary`, and `training-fallback` answers too. The key is never printed.
+Pass: the gateway answers for `qwen-primary`, and `training-fallback` answers too. The key is never printed. Needs
+`SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt` in the `bni-litellm-gateway` Application environment (fix A6).
 
 ### 5.4 Lab 07 (Qdrant and bge-m3)
 
-Index the glossary for the test group once. This is a dry run:
+Run from the repository folder (`cd /home/cdsw/bni-cai-technical-training`). Index the glossary for the test group once. This is a dry run:
 
 ```bash
 env -u PYTHONPATH EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3 /home/cdsw/.venvs/bni-rag/bin/python scripts/index_glossary.py --group-id group_03
 ```
 
-Then write it (the group's own `group_id` is stored on every point):
+Then write it (the group's own `group_id` is stored on every point). A `ReadTimeout` on the first call is safe to repeat
+(fix A8). Pass: `{"group_id": "group_03", "documents": 5, ...}`:
 
 ```bash
 env -u PYTHONPATH EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3 /home/cdsw/.venvs/bni-rag/bin/python scripts/index_glossary.py --group-id group_03 --execute
