@@ -253,6 +253,36 @@ environment and you clicked **Update Application**:
 1. Open the Portal, choose `group_03`, click one sample question.
 2. Open the panel "Related glossary and scenario notes". It must show notes (not be empty). That proves retrieval.
 
+## A9. Common slips seen at BNI (check these before anything else)
+
+1. **Wrong folder.** `can't open file '/home/cdsw/workshop-runtime/scripts/index_glossary.py'`: the script is in the
+   repository. Run lab and indexing commands from there:
+
+   ```bash
+   cd /home/cdsw/bni-cai-technical-training
+   ```
+
+2. **`Connection refused` from `qdrant_client` again.** `QDRANT_URL` in this terminal has no `:443` (an old `export` line was
+   pasted, or the variables were lost after a new Session). Check it, and set it if it does not end with `:443`:
+
+   ```bash
+   echo "$QDRANT_URL"
+   ```
+
+   ```bash
+   export QDRANT_URL="https://bni-qdrant.$APPS_DOMAIN:443"; export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt; export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt; echo "$QDRANT_URL"
+   ```
+
+   The last line must end with `:443`. Then repeat the glossary indexing from A8. If it still says `Connection refused` with
+   `:443`, run the two connection tests of A7 and send their output.
+
+3. **Wrong variable name in the Portal environment.** `PORTAL_MAX_TOKEN` (missing S) is ignored. The name must be
+   `PORTAL_MAX_TOKENS` with value `512`. Also confirm the Portal `QDRANT_URL` value ends with `:443` (the form cuts the
+   value off on screen), then **Update Application**.
+
+4. **A new Session loses every variable.** Use section 0b of `BNI-TESTING-COMMANDS.md`, which already contains
+   `:443`, `SSL_CERT_FILE` and `RUNTIME_PROFILE`.
+
 ## B. Embedding model bge-m3 (optional; needed for Portal retrieval and Lab 07)
 
 Upload `bge-m3.zip` (1.27 GB) to `/home/cdsw/` with the JupyterLab file panel, then:
