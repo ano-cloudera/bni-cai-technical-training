@@ -351,28 +351,51 @@ the vLLM Application; the restart reloads the model and takes several minutes):
 If vLLM refuses to start because it does not know the parser, send the log lines (the parser name may differ in this vLLM
 version, for example `hermes`). Stop all GPU Sessions before the restart: one GPU per node.
 
-## A12. Lab 08: `crewai_tool_call` fails with `0 data tool call(s)`
+## A12. Labs 08 and 09: the agent makes `0 data tool call(s)`
 
-Seen at BNI after A11 worked (the `400` is gone): `plain_workflow` passes (4 checks pass in total) but the CrewAI agent
-answered without calling the data tool. Suspected cause: Qwen3.5 was still thinking inside the CrewAI call, because the CrewAI
-`LLM` did not send `enable_thinking=false` like the other clients. The repository now sends it
-(`bni_training.labs.crewai_llm`, commit "fix: switch Qwen thinking off in the CrewAI LLM"). Pull it and run the lab again;
-no vLLM restart is needed:
+Seen at BNI after A11 worked (the `400` is gone, vLLM accepts tool calling):
+
+- Lab 08: `plain_workflow` passes, `crewai_tool_call` fails with `0 data tool call(s)` (`passed=4 failed=1`).
+- Lab 09: Phoenix collector and traces work, `agent_called_tool` fails with `0 data tool call(s)` (`passed=8 failed=1`).
+
+The CrewAI agent answers without calling the data tool. Step 1 separates the server from CrewAI; step 2 is a repository fix
+for one suspected cause.
+
+### A12.1 Does the vLLM server return a tool call? (no CrewAI involved)
+
+One command, nothing secret in it. Read the `"message"` part of the answer:
+
+```bash
+curl -s "$VLLM_URL/v1/chat/completions" -H "Content-Type: application/json" -d '{"model":"qwen3.5-9b","messages":[{"role":"user","content":"Use the tool to get total outstanding by risk band."}],"tools":[{"type":"function","function":{"name":"query_portfolio","description":"Query approved synthetic portfolio metrics.","parameters":{"type":"object","properties":{"question":{"type":"string"}},"required":["question"]}}}],"tool_choice":"auto","max_tokens":200,"chat_template_kwargs":{"enable_thinking":false}}'
+```
+
+- `"tool_calls": [ ... "name": "query_portfolio" ... ]` is present: the server and the parser are fine. The cause is on the CrewAI
+  side; continue with A12.2.
+- `"tool_calls"` is empty and `"content"` holds text such as `<tool_call>` or `<function=...>`: the parser
+  `qwen3_coder` does not match the model output. Change `VLLM_TOOL_CALL_PARSER` in the vLLM Application (for example to
+  `hermes`), keep **Number of GPUs = 1**, Update Application and run A12.1 again.
+- An error (400 or 500): send the text.
+
+### A12.2 CrewAI did not switch Qwen thinking off
+
+The CrewAI `LLM` did not send `enable_thinking=false` like the other clients, so Qwen3.5 may think instead of calling the tool.
+The repository now sends it (`bni_training.labs.crewai_llm`, commit "fix: switch Qwen thinking off in the CrewAI LLM").
+Pull it and run both labs again; no vLLM restart is needed:
 
 ```bash
 cd /home/cdsw/bni-cai-technical-training && git pull --ff-only origin main && git log --oneline -1
 ```
 
 ```bash
-LABS="08_multi_agent_workflow"
+LABS="08_multi_agent_workflow 09_phoenix_monitoring"
 ```
 
 ```bash
 for s in $LABS; do echo "== $s"; env -u PYTHONPATH EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3 /home/cdsw/.venvs/bni-rag/bin/python scripts/$s.py --mode cai 2>&1 | grep -E -B1 -A1 '"status": "FAIL"|LAB_STATUS'; done
 ```
 
-If it still shows `0 data tool call(s)`, the model is not choosing the tool. Then check the parser name in the vLLM
-startup line (`--tool-call-parser qwen3_coder`) and send the lines of the lab output around `crewai_tool_call`.
+If `0 data tool call(s)` remains and A12.1 showed a tool call, send the lab output around `crewai_tool_call` (the CrewAI
+panels "Agent Started", "Tool Used" and "Final Answer").
 
 ## B. Embedding model bge-m3 (optional; needed for Portal retrieval and Lab 07)
 
