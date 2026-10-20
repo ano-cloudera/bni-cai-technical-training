@@ -6,7 +6,9 @@ model_list:
       api_key: os.environ/VLLM_API_KEY
   - model_name: training-fallback
     litellm_params:
-      model: openai/training-fallback
+      # The upstream model name must be one the endpoint serves. With the vLLM URL this is qwen3.5-9b; a stand-in
+      # server (apps/litellm/mock_fallback.py) answers to any name.
+      model: openai/qwen3.5-9b
       api_base: os.environ/MOCK_FALLBACK_BASE_URL
       api_key: workshop-only
 router_settings:

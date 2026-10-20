@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased (litellm fallback alias)
+
+- `config/litellm.yaml`: the `training-fallback` alias asks its endpoint for `qwen3.5-9b` instead of a model called
+  `training-fallback`. With `MOCK_FALLBACK_BASE_URL` set to the vLLM URL it returned 404 (`The model does not exist`),
+  which failed Lab 10. A stand-in server still answers to any name.
+
 ## Unreleased (notebook repository root)
 
 - Notebooks run from a workspace outside the repository (for example `/home/cdsw/workshop-runtime`) failed with

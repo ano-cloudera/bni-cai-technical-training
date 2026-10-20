@@ -352,10 +352,12 @@ APP_STARTUP_TIMEOUT_MINUTES=5
   which resolves it from the repository; with an older launcher it fails with `Config file not found`.
 - `config/litellm.yaml` reads `VLLM_BASE_URL`, `VLLM_API_KEY` and `MOCK_FALLBACK_BASE_URL`. Define all three; the
   launcher prints a `WARNING` for any that is missing. The fallback model `training-fallback` points to
-  `MOCK_FALLBACK_BASE_URL`; `apps/litellm/mock_fallback.py` is a small stand-in server for it. How to host that
-  fallback in CAI is not decided yet.
-- Interim values for a first test (untested): `VLLM_API_KEY=EMPTY` if vLLM has no key, and any valid https URL for
-  `MOCK_FALLBACK_BASE_URL` (for example the vLLM URL). The fallback only matters when the main route fails.
+  `MOCK_FALLBACK_BASE_URL` and asks it for the model `qwen3.5-9b`, so that URL must serve that name: the vLLM URL
+  does. `apps/litellm/mock_fallback.py` is a stand-in server that answers to any name; hosting it in CAI would be a
+  sixth Application, so it is not planned.
+- Values that work in the sandbox: `VLLM_API_KEY=EMPTY` if vLLM has no key, and the same `https://<vllm-app-url>/v1` for
+  `MOCK_FALLBACK_BASE_URL`. Then `training-fallback` is a second alias of the same model, not a failover to another
+  server. In the sandbox `qwen-primary` returned 200 through LiteLLM to vLLM.
 - Replace `<vllm-app-url>` with the real Application URL. A literal placeholder such as `<actual-vllm-app-url>` makes
   every request fail.
 - Validate: `curl -i https://<litellm-app-url>/health/liveliness`, then `/v1/models`, then a chat request with the
@@ -425,6 +427,7 @@ Test one service at a time. A failure then has one obvious cause.
 | `Config file not found: config/litellm.yaml` (LiteLLM) | The Application starts in `/home/cdsw` | Set `LITELLM_CONFIG` to the absolute path, or use the current launcher (`git pull`) |
 | `UnsafeMasterKeyError: ... no master key is set` (LiteLLM) | `LITELLM_MASTER_KEY` is missing | Create a key and set it (see section 3.5); the launcher now says so before starting |
 | `Authentication Error, Not connected to DB!` on the LiteLLM login page | The Admin UI login needs a database | Not a wrong key. Use the API with the Bearer key; a database is postponed (see 3.5) |
+| `The model 'training-fallback' does not exist` (LiteLLM, 404) | The fallback alias asked its endpoint for a model name it does not serve | Use the current `config/litellm.yaml` (`git pull`, restart LiteLLM); `MOCK_FALLBACK_BASE_URL` must serve `qwen3.5-9b` |
 | `WARNING: litellm.yaml reads variables that are not set` | The config uses `os.environ/NAME` | Define `VLLM_BASE_URL`, `VLLM_API_KEY` and `MOCK_FALLBACK_BASE_URL` |
 | Port 8100 unavailable | A Session may not use it | Applications use `CDSW_APP_PORT`; Sessions can use 8101 |
 | Thinking text in answers, short or empty answers | Qwen3.5 thinking uses the token budget | Send `chat_template_kwargs.enable_thinking=false` |
