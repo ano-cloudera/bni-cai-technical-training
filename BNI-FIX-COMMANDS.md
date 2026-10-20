@@ -64,29 +64,26 @@ cd /home/cdsw/bni-cai-technical-training && env -u PYTHONPATH PIP_USER=false /ho
 
 ## A3. Portal: "The portal is not configured: FileNotFoundError"
 
-Seen at BNI: the Portal page shows this message and the log ends after the `qdrant_client` warning, just before the
-embedding model loads. The page hides the detail on purpose. Reproduce it in a Session to read the real error (the last
-8 lines):
+Seen at BNI: the Portal page shows this message. The page hides the detail on purpose, and the Application log does not
+show it either. The log ends after the `qdrant_client` warning.
+
+Already ruled out at BNI: the bge-m3 model is fine. This test printed `loaded` (391 weights), so no `2_Normalize`
+folder is needed:
 
 ```bash
 env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python -c "from sentence_transformers import SentenceTransformer as S; S('/home/cdsw/models/bge-m3', device='cpu'); print('loaded')" 2>&1 | tail -8
 ```
 
-Most likely cause: `modules.json` names a `2_Normalize` folder, which Hugging Face does not store because it is empty,
-so it is missing from the unzipped model. If the error mentions `2_Normalize`, create it and repeat the test above (it
-must print `loaded`):
+Find the real error by building the Portal service the way the Application does (folder `/home/cdsw`, the Portal
+environment). It does not touch the running Portal. It needs `VLLM_URL`, `QDRANT_URL` and `PHOENIX_UI_URL` to be set in
+this terminal (section 0 of `BNI-TESTING-COMMANDS.md`):
 
 ```bash
-mkdir -p /home/cdsw/models/bge-m3/2_Normalize
+cd /home/cdsw && env PYTHONPATH=/home/cdsw/bni-cai-technical-training/src:/home/cdsw/bni-cai-technical-training WORKSHOP_RUNTIME_DIR=/home/cdsw/workshop-runtime PORTAL_MODE=cai PORTAL_LLM_ROUTE=vllm VLLM_BASE_URL="$VLLM_URL/v1" SERVED_MODEL_NAME=qwen3.5-9b QDRANT_URL="$QDRANT_URL" EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3 PHOENIX_COLLECTOR_ENDPOINT="$PHOENIX_UI_URL/v1/traces" DATA_BACKEND=csv PORTAL_ENFORCE_SINGLE_INSTANCE=false /home/cdsw/.venvs/bni-rag/bin/python -c "from bni_training.workshop.portal.service import PortalService; PortalService.from_env(); print('service ok')" 2>&1 | tail -12
 ```
 
-Then restart the `bni-workshop-portal` Application.
-
-Other causes to rule out if the error is something else:
-
-- `EMBEDDING_MODEL_PATH` in the Portal environment must be exactly `/home/cdsw/models/bge-m3`.
-- `QDRANT_URL` must be the Qdrant Application URL (no path), and `WORKSHOP_RUNTIME_DIR` must be
-  `/home/cdsw/workshop-runtime` (it must contain `groups` and `shared`).
+- `service ok`: code and data are fine. Compare each value in the Portal Application environment with the command above.
+- A traceback: the file name in its last lines is the missing file. Write the cause and fix here.
 
 ## B. Embedding model bge-m3 (optional; needed for Portal retrieval and Lab 07)
 
