@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased (qdrant binary preparation)
+
+- Qdrant binary: `requirements/qdrant-binary-manifest.json` pins v1.19.2 (linux musl) with its SHA-256;
+  `scripts/prepare_qdrant_binary.sh` (now a thin wrapper over `bni_training.qdrant_binary`) downloads over HTTPS,
+  verifies the checksum, extracts the single `qdrant` executable and is safe to run again. The Application launcher
+  checks the binary exists and says how to prepare it; it never downloads.
+
 ## Unreleased (fix/cai-vllm-runtime-validation)
 
 - CAI sandbox L40S findings applied: GPU inputs declare PyYAML, packaging, requests, certifi, urllib3, cachetools

@@ -15,6 +15,11 @@ Status: everything below passes locally. Nothing has run on Cloudera AI; each CA
    `nvcc` the launcher sets `VLLM_USE_FLASHINFER_SAMPLER=0`. Checked in the sandbox: `/health`, `/v1/models`, chat,
    streaming, three concurrent requests. Not yet validated: the Application deployment, access from another
    Session, H200.
+3c. **Qdrant binary (once, from a Session).** The Qdrant Application never downloads anything. Prepare the pinned,
+   checksum-verified binary first: `bash scripts/prepare_qdrant_binary.sh` (default
+   `/home/cdsw/tools/qdrant/qdrant`, asset pinned in `requirements/qdrant-binary-manifest.json`). Safe to run again.
+   Use `QDRANT_BINARY_URL` and `QDRANT_BINARY_SHA256` together for a customer mirror. Verify the pinned checksum
+   against the release page or your mirror before using it at BNI. Then set `QDRANT_BINARY` in the Application.
 4. **Prepare the ten group-driver workspaces** (the default):
    ```bash
    python scripts/prepare_group_workspaces.py            # dry run: lists what would be created

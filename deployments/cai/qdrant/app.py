@@ -14,6 +14,17 @@ def build_command(env: Mapping[str, str]) -> list[str]:
     return [binary]
 
 
+def check_binary(env: Mapping[str, str]) -> Path:
+    """The binary must already exist: the Application never downloads it."""
+    path = Path(env.get("QDRANT_BINARY", ""))
+    if not path.is_file() or not os.access(path, os.X_OK):
+        raise ValueError(
+            f"Qdrant binary not found or not executable at {path}. Prepare it once from a Session: "
+            f"bash scripts/prepare_qdrant_binary.sh {path}"
+        )
+    return path
+
+
 def build_environment(env: Mapping[str, str]) -> dict[str, str]:
     port = resolve_cai_port(env)
     storage = Path(env.get("QDRANT_STORAGE_PATH", "/tmp/bni-qdrant"))
@@ -34,6 +45,8 @@ def build_environment(env: Mapping[str, str]) -> dict[str, str]:
 
 def main() -> int:
     env = dict(os.environ)
+    build_command(env)
+    check_binary(env)
     port = resolve_cai_port(env)
     return run_supervised(
         build_command(env),

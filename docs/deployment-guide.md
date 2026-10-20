@@ -11,6 +11,10 @@ Create `bni-ai-training-shared` and deploy the Applications below. Each Applicat
 | `bni-phoenix` | `deployments/cai/phoenix/app.py` | `observability` (Phoenix server only; no CrewAI) | 4 vCPU, 16 GB |
 | `bni-litellm` | `deployments/cai/litellm/app.py` | `gateway` | 2 vCPU, 4 GB |
 
+The Qdrant launcher needs an existing binary at `QDRANT_BINARY`; it never downloads one. Run
+`bash scripts/prepare_qdrant_binary.sh` once from a Session (pinned release and SHA-256 in
+`requirements/qdrant-binary-manifest.json`), then deploy the Application. A missing binary fails with a clear message.
+
 The vLLM launcher (`deployments/cai/vllm/app.py`) reads `MODEL_PATH` (any existing NFS path; it fails before startup
 if the directory has no `config.json` or `.safetensors` files and it never downloads or modifies the model),
 `CDSW_APP_PORT` (the platform port; 8101 only as a Session fallback, never hard-code a port), `VLLM_HOST` (default

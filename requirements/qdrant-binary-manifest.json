@@ -1,2 +1,12 @@
-{"version":"target-approved","url_env":"QDRANT_BINARY_URL","sha256_env":"QDRANT_BINARY_SHA256","status":"customer_mirror_or_approved_upstream_required"}
-
+{
+  "version": "1.19.2",
+  "asset": "qdrant-x86_64-unknown-linux-musl.tar.gz",
+  "url": "https://github.com/qdrant/qdrant/releases/download/v1.19.2/qdrant-x86_64-unknown-linux-musl.tar.gz",
+  "sha256": "50b253243309ed0ae50a19f678f0d0adcc4f0b567b3bd2c5c0c7e02fa8404bb6",
+  "archive": "tar.gz",
+  "binary_name": "qdrant",
+  "default_destination": "/home/cdsw/tools/qdrant/qdrant",
+  "url_env": "QDRANT_BINARY_URL",
+  "sha256_env": "QDRANT_BINARY_SHA256",
+  "status": "pinned_from_upstream_release_api; verify the checksum against the release page or the customer mirror before use at BNI"
+}
