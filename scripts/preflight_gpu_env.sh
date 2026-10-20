@@ -87,7 +87,11 @@ echo "== 6. Network (no credentials sent)"
 if [ "${PREFLIGHT_SKIP_NETWORK:-0}" = "1" ]; then
   echo "skipped"
 else
-  curl -s -o /dev/null -m 10 -w "github.com -> HTTP %{http_code}\n" https://github.com
+  code="$(curl -s -o /dev/null -m 10 -w '%{http_code}' https://github.com)"
+  echo "github.com -> HTTP $code"
+  if [ "$code" = "000" ]; then
+    check CHECK "curl could not reach github.com. curl ignores the git and pip proxy settings; if updating the repository with git works, ignore this"
+  fi
 fi
 echo "== done: lines marked CHECK need attention before creating the Applications"
 exit 0
