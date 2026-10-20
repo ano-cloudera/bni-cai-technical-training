@@ -17,12 +17,14 @@ items:
     validated_in: [sandbox-l40s]
   - id: live-qdrant-server
     status: cai-validation-pending
+    bni_evidence: "Lab 07 PASS at BNI against the Qdrant Application for group_03 (glossary indexed, 5 documents; the Portal search returned group_03 notes), 2026-10-20. Not yet tested: ten group partitions, restart persistence."
     covers: [lab 07, deployments/cai/qdrant/app.py]
     verified_locally: qdrant-client local mode and the exact REST request body only
     evidence_needed: Lab 07 --mode cai against the shared Qdrant Application, ten group partitions, restart persistence
     validated_in: [sandbox-l40s, bni-h200]
   - id: vllm-qwen-model-loading
     status: cai-validation-pending
+    bni_evidence: "As a CAI Application at BNI (H200) the vLLM server answered /health, /v1/models (qwen3.5-9b, max_model_len 8192), chat, streaming and tool calling (qwen3_coder) from a CPU Session, 2026-10-20. Not yet measured: speed, concurrency, the final settings."
     covers: [deployments/cai/vllm/app.py, labs 01-03]
     sandbox_evidence: PASS in a CAI sandbox Session on one L40S (Qwen3.5-9B, bfloat16, max_model_len 8192, gpu_memory_utilization 0.82; /health, /v1/models, chat, streaming, 3 concurrent requests, Lab 03 cai mode). Required workaround VLLM_USE_FLASHINFER_SAMPLER=0 without nvcc.
     evidence_needed: The same as a deployed CAI Application (not a Session) with the platform port, access from a different Session, and the H200 at BNI
@@ -53,24 +55,28 @@ items:
     validated_in: [sandbox-l40s, bni-h200]
   - id: dataset-in-cai-portal
     status: cai-validation-pending
+    bni_evidence: "The Portal answered a total-outstanding question for group_03 at BNI (SQL shown), 2026-10-20. Not yet tested: all ten missions, the memory limit."
     covers: [data/raw, src/bni_training/data/engine.py]
     verified_locally: 21/21 validator checks, ten missions, guarded read-only SQLite engine on a Mac
     evidence_needed: The Portal loads the 12 MB dataset in memory and answers all ten missions inside the CAI Application within its memory limit; data/raw is readable from the Application and Sessions
     validated_in: [sandbox-l40s, bni-h200]
   - id: group-workspaces-in-cai-sessions
     status: cai-validation-pending
+    bni_evidence: "prepare_group_workspaces.py --lab-mode cai --apply created the ten group workspaces under /home/cdsw/workshop-runtime at BNI; group_03 was used for all labs, 2026-10-20. Not yet tested: ten Sessions, individual_learning."
     covers: [scripts/prepare_group_workspaces.py, scripts/validate_group_workspaces.py, workshop/runtime]
     verified_locally: group_driver and individual_learning generation, 40 distinct anonymous output folders, idempotency, preserved edits, targeted reset and archive; no secrets in group.env
     evidence_needed: The hierarchy is created on the CAI project filesystem; ten group-driver Sessions work correctly; and optional 40-Session individual_learning capacity, startup time, and concurrent writes are validated before enabling that mode
     validated_in: [sandbox-l40s, bni-h200]
   - id: notebook-labs-cai-mode
     status: cai-validation-pending
+    bni_evidence: "Labs 00, 03, 04, 05, 06, 07, 08, 09, 10, 11 and 12 PASS with --mode cai at BNI for group_03 from the terminal of a CPU Session, 2026-10-20. Not yet tested: the notebooks themselves in JupyterLab, the other nine groups."
     covers: [notebooks/templates, scripts/03_llm_api_testing.py, scripts/12_end_to_end_portal.py, config/workshop/labs.yaml]
     verified_locally: all 13 templates execute through nbclient in --mode local; trainer-only labs refuse participants
     evidence_needed: Labs 00 and 03-12 with --mode cai from a participant Session against the live shared vLLM, Qdrant, Phoenix, LiteLLM and Portal; labs 01 and 02 run by a trainer against the NFS model
     validated_in: [sandbox-l40s, bni-h200]
   - id: shared-service-health-checks-live
     status: cai-validation-pending
+    bni_evidence: "The five Application health URLs returned 200 from a CPU Session at BNI by curl, 2026-10-20. scripts/check_shared_services.py itself was not run."
     covers: [scripts/check_shared_services.py, config/workshop/application-lifecycle.yaml]
     verified_locally: PASS, FAIL and SKIPPED handling against local stub servers and unreachable hosts
     evidence_needed: The checks reach the real Application URLs from a participant Session for each lifecycle phase

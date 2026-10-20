@@ -67,6 +67,39 @@ PENDING (not validated): full local regression and clean-clone validation after 
 deployment; access from a different CAI Session; the live shared Application URL; H200 validation in BNI; CrewAI
 against the deployed Application; Qdrant; Phoenix; the Workshop Portal. No CAI readiness is claimed.
 
+## CAI BNI validation (H200), 2026-10-20, one group
+
+Real evidence from CAI Sessions and Applications at BNI for **one group (`group_03`, mission
+`loan_portfolio_monitoring`)**, run one lab at a time from a CPU Session. Partial evidence. It is **not** CAI readiness.
+
+PASS (`--mode cai`, `LAB_STATUS` PASS): Labs 00, 03, 04, 05, 06, 07, 08, 09, 10, 11 and 12. The Workshop Portal answered a
+sample question without thinking text and showed its SQL, and its glossary search returned `group_03` notes. All five
+Applications (vLLM, Qdrant, Phoenix, Workshop Portal, LiteLLM) ran as CAI Applications at the same time and answered their
+health checks. vLLM served `qwen3.5-9b` with `max_model_len` 8192 as reported by `/v1/models`.
+
+Findings applied or recorded (details and commands in the trainer guide and in the working notes
+`BNI-FIX-COMMANDS.md` and `BNI-TESTING-COMMANDS.md`):
+
+- A Session `PYTHONPATH` (`/opt/cmladdons/python/site-customize`) makes pip report packages from the runtime add-ons as
+  installed, so they are not installed into a venv and the Application then fails (`dateutil`). Install venvs, and run
+  checks, with `env -u PYTHONPATH`.
+- Python HTTP clients (`httpx`, `certifi`) do not trust the internal BNI certificate that `curl` trusts. LiteLLM and the
+  Qdrant client needed `SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt`. TLS verification stays on.
+- The Python Qdrant client uses port 6333 for an `https://` URL without a port. `QDRANT_URL` needs `:443`.
+- CrewAI (Labs 08 and 09) needs the vLLM server option `--enable-auto-tool-choice --tool-call-parser`. The launcher now
+  reads `VLLM_TOOL_CALL_PARSER` (`qwen3_coder` worked). The CrewAI `LLM` now sends `enable_thinking=false`.
+- Updating the vLLM Application reset its resource profile to 0 GPUs once; the Application then failed with
+  `Failed to infer device type`. Check Number of GPUs after every update.
+- The bge-m3 embedding model had to be added to NFS (`/home/cdsw/models/bge-m3`).
+- The profile check of Lab 00 requires `DATA_MODE`, `VLLM_API_KEY`, `PHOENIX_COLLECTOR_ENDPOINT`, `LITELLM_BASE_URL` and
+  `WORKSHOP_PORTAL_URL`.
+
+PENDING (not validated, no readiness claimed): the other nine groups; ten group Sessions at once; the 40-participant Portal
+capacity and the single replica setting under load; vLLM speed and concurrency on the H200 (`scripts/vllm_concurrency_test.py`);
+Qdrant restart persistence and ten partitions; how participants authenticate to the Applications and to LiteLLM (the master
+key must not be handed out; it was rotated after a screenshot showed part of it); the LiteLLM Admin UI (needs Postgres);
+GPU lock regeneration; the `/v1/traces` Phoenix endpoint beyond Lab 09.
+
 ## Single-project CSV workshop branch (local only, not pushed)
 
 Branch `feature/single-project-csv-workshop`, cut from the unmodified tag `v0.2.0-rc1`. `main`, the tag and the legacy

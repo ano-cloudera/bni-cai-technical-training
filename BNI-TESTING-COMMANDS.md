@@ -28,7 +28,7 @@ Rules while testing:
 | Lab 08 (multi-agent) and Lab 09 (Phoenix) | Pass, after `VLLM_TOOL_CALL_PARSER=qwen3_coder` on vLLM (with 1 GPU) and the CrewAI thinking fix |
 | Lab 11 (guardrails) | Pass |
 | Lab 00 | Pass (`passed=11 skipped=3`), after the five profile variables of sections 0 and 0b |
-| Labs 04, 05, 12 | Not run yet |
+| Labs 04, 05 and 12 | Pass (`passed=7 skipped=1`, `passed=11`, `passed=2`) |
 
 Fixes for every problem found are in `BNI-FIX-COMMANDS.md`.
 
@@ -305,6 +305,33 @@ env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python scripts/12_end_to_end_por
 ```
 
 Pass: the Portal is healthy and a saved answer exists for `group_03`.
+
+## 5b. Prepare the retrieval index for all ten groups (trainer, once before the workshop)
+
+Lab 07 in `cai` mode indexes only the group that runs it, and `index_glossary.py` indexes only the five glossary terms. The
+Portal glossary panel needs the glossary **and** the mission note of every group. This script does both for all ten groups
+(or for the groups you name). Every point carries its own `group_id` (the point id includes it), so groups never overwrite
+each other, and repeating it is safe. Run it from the repository folder, with the section 0b variables set.
+
+Dry run first (writes nothing, lists 6 documents per group):
+
+```bash
+cd /home/cdsw/bni-cai-technical-training; env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python scripts/index_all_groups.py
+```
+
+Then write (about a minute; one JSON line per group):
+
+```bash
+env -u PYTHONPATH EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3 /home/cdsw/.venvs/bni-rag/bin/python scripts/index_all_groups.py --execute
+```
+
+Check the number of points per group (each must be 6; the group's own mission note is included):
+
+```bash
+env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python -c "import os; from qdrant_client import QdrantClient as C, models as m; c=C(url=os.environ['QDRANT_URL'], timeout=60); print({g: c.count(collection_name='bni_training_knowledge', count_filter=m.Filter(must=[m.FieldCondition(key='group_id', match=m.MatchValue(value=g))])).count for g in ['group_%02d' % i for i in range(1, 11)]})"
+```
+
+A single group only: add `--group-id group_04` to the command.
 
 ## 6. Whole-service check (read only)
 
