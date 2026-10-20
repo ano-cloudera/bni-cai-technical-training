@@ -113,7 +113,11 @@ print(json.dumps(sample_results, indent=2))
 
 # %%
 # Apply defence in depth around the OpenAI-compatible request.
-validated_question = validate_input("Explain why this workshop uses read-only queries.")
+# The output rule below rejects every number that is not in a tool result, and a real model often writes "1." or "2." in a
+# list. So the question asks for plain sentences without digits.
+validated_question = validate_input(
+    "In two plain sentences without any digits or lists, explain why this workshop uses read-only queries."
+)
 model_response = model_client.chat(
     [{"role": "user", "content": validated_question}],
     temperature=0.0,

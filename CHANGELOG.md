@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased (notebook 11 model call)
+
+- Lab 11 notebook: the model-call cell now asks for two plain sentences without digits or lists. In `cai` mode a real model
+  often answered with a numbered list, and the output rule (no number outside a tool result) raised `GuardrailError`
+  (seen in the sandbox). The local mock never writes a number, so local tests could not show it.
+
 ## Unreleased (notebook 07 embedder)
 
 - Lab 07 notebook: in `cai` mode it now embeds the question with bge-m3 (`SentenceTransformerEmbedder`, model folder from
