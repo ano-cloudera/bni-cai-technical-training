@@ -186,6 +186,13 @@ cd /home/cdsw/bni-cai-technical-training; for s in 00_environment_validation 03_
 Send the whole output (it holds no keys). Then fix only the labs that show `status=FAIL`, one at a time, with the sections
 below as the detail for each lab.
 
+### Notebook 07 in JupyterLab
+
+The notebook (kernel `BNI rag (py3.10)`) needs two variables in the Session environment, not only in a terminal:
+`QDRANT_URL` (with `:443`) and `EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3`. For a quick test put them in a first cell
+with `os.environ[...] = ...` and delete the cell afterwards. Seen in the sandbox before the fix: `Vector dimension error:
+expected dim: 1024, got 256`, because the notebook queried with the local hashing embedder (fixed in the repository).
+
 ### 5.0b Run only some labs (to repeat the ones that failed)
 
 Set the list once, then run the loop. Change the names in the first line to the labs you want. Run it from the repository

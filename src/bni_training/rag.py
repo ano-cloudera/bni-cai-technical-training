@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import re
 import uuid
 from collections.abc import Callable, Sequence
@@ -87,6 +88,26 @@ class HashingEmbedder:
 
     def embed_many(self, texts: Sequence[str]) -> list[list[float]]:
         return [self.embed(text) for text in texts]
+
+
+class SentenceTransformerEmbedder:
+    """The embedder the trainer indexes with (bge-m3 on CPU). The model folder comes from EMBEDDING_MODEL_PATH on NFS."""
+
+    def __init__(self, model_path: str):
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError as exc:
+            raise RuntimeError("sentence-transformers is missing: choose the 'BNI rag' kernel") from exc
+        self._model = SentenceTransformer(model_path, device="cpu")
+        self.name = os.path.basename(os.path.normpath(model_path))
+        self.dim = int(self._model.get_sentence_embedding_dimension())
+
+    def embed(self, text: str) -> list[float]:
+        return self.embed_many([text])[0]
+
+    def embed_many(self, texts: Sequence[str]) -> list[list[float]]:
+        vectors = self._model.encode(list(texts), normalize_embeddings=True)
+        return [[float(value) for value in vector] for vector in vectors]
 
 
 def build_points(group_id: str, documents: list[dict], vectors: list[list[float]]) -> list[dict]:

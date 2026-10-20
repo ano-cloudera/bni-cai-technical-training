@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased (notebook 07 embedder)
+
+- Lab 07 notebook: in `cai` mode it now embeds the question with bge-m3 (`SentenceTransformerEmbedder`, model folder from
+  `EMBEDDING_MODEL_PATH`), the model the trainer indexes with. It used the 256-dimension hashing stand-in, which Qdrant
+  rejected against the 1024-dimension shared collection (`Vector dimension error: expected dim: 1024, got 256`, seen in
+  the sandbox). Local mode keeps the stand-in. The notebook needs the `BNI rag` kernel (sentence-transformers).
+
 ## Unreleased (notebooks load group.env)
 
 - Notebooks 00 to 12: every notebook now loads the generated `config/group.env` (non-secret, never overrides the Session

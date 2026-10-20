@@ -8,7 +8,7 @@
 # Connect to Qdrant, build a deterministic CPU embedding, inspect the mandatory `group_id` filter, retrieve context, and verify every hit's group.
 #
 # ## Architecture context
-# All groups share one Qdrant collection. The trainer pre-indexes it before CAI hands-on; participants only query it. Index and query use the same lightweight hashing embedder for this learning flow.
+# All groups share one Qdrant collection. The trainer pre-indexes it before CAI hands-on; participants only query it. Index and query must use the same embedder: the lightweight hashing stand-in in local mode, bge-m3 in CAI.
 #
 # ## Prerequisites
 # Complete Lab 00. The participant profile includes `qdrant-client` but no sentence-transformers or GPU PyTorch requirement. CAI mode needs `QDRANT_URL`.
@@ -48,7 +48,7 @@ group_env = Path.cwd().parent / "config" / "group.env"
 if group_env.is_file() and not os.getenv("GROUP_ENV_FILE"):
     os.environ["GROUP_ENV_FILE"] = str(group_env)
 from qdrant_client import QdrantClient
-from bni_training.rag import COLLECTION, HashingEmbedder
+from bni_training.rag import COLLECTION, HashingEmbedder, SentenceTransformerEmbedder
 from bni_training.workshop.lab_context import resolve_lab_context
 
 context = resolve_lab_context(LAB_MODE)
@@ -57,7 +57,13 @@ if LAB_MODE == "local":
 else:
     assert os.getenv("QDRANT_URL"), "QDRANT_URL is required in CAI mode; no local fallback is allowed."
     client = QdrantClient(url=os.environ["QDRANT_URL"], api_key=os.getenv("QDRANT_API_KEY") or None)
-embedder = HashingEmbedder()
+# Local mode uses the hashing stand-in. In CAI the trainer indexed with bge-m3, so the question must be embedded with the same model.
+if LAB_MODE == "local":
+    embedder = HashingEmbedder()
+else:
+    model_path = os.getenv("EMBEDDING_MODEL_PATH", "")
+    assert os.path.isdir(model_path), "EMBEDDING_MODEL_PATH must point to the bge-m3 folder on NFS; ask the trainer."
+    embedder = SentenceTransformerEmbedder(model_path)
 print({"mode": LAB_MODE, "collection": COLLECTION, "embedding": embedder.name, "dimensions": embedder.dim})
 
 # %% [markdown]
