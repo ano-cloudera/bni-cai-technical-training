@@ -186,7 +186,7 @@ APP_STARTUP_TIMEOUT_MINUTES=15
 | Resources | 4 vCPU, 16 GB, no GPU |
 
 ```text
-PYTHONPATH=<repo>
+PYTHONPATH=<repo>/src:<repo>
 QDRANT_BINARY=/home/cdsw/tools/qdrant/qdrant
 QDRANT_STORAGE_PATH=/home/cdsw/bni-qdrant-storage
 APP_STARTUP_TIMEOUT_MINUTES=5
@@ -205,7 +205,7 @@ APP_STARTUP_TIMEOUT_MINUTES=5
 | Resources | 4 vCPU, 16 GB, no GPU |
 
 ```text
-PYTHONPATH=<repo>
+PYTHONPATH=<repo>/src:<repo>
 PYTHON_EXECUTABLE=/home/cdsw/.venvs/bni-phoenix/bin/python
 PHOENIX_WORKING_DIR=/home/cdsw/bni-phoenix-data
 APP_STARTUP_TIMEOUT_MINUTES=5
