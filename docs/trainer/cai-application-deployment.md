@@ -128,21 +128,51 @@ Replace `<...>` with your own values. `<repo>` means `/home/cdsw/bni-cai-technic
 | Runtime | PBJ JupyterLab Python 3.10 **NVIDIA GPU** |
 | Resources | 16 vCPU, 64 GB, 1 GPU |
 
+Set every value explicitly, so the effective configuration is visible and does not depend on a profile default.
+The values below are for **BNI (H200)**. The table after the block lists what changes in the **sandbox (L40S)**.
+
 ```text
 PYTHONPATH=<repo>/src:<repo>
 PYTHON_EXECUTABLE=/home/cdsw/.venvs/bni-vllm-h200/bin/python
 MODEL_PATH=/home/cdsw/models/Qwen3.5-9B
 GPU_PROFILE=h200
+VLLM_MODEL=qwen3.5-9b
 SERVED_MODEL_NAME=qwen3.5-9b
+CUDA_VISIBLE_DEVICES=0
+HF_HUB_OFFLINE=1
+VLLM_DTYPE=bfloat16
+MAX_MODEL_LEN=8192
+GPU_MEMORY_UTILIZATION=0.75
+MAX_NUM_SEQS=32
+TENSOR_PARALLEL_SIZE=1
 VLLM_USE_FLASHINFER_SAMPLER=0
+VLLM_DISABLE_THINKING=true
 APP_STARTUP_TIMEOUT_MINUTES=15
 ```
 
-- Settings are read from `MAX_MODEL_LEN`, `GPU_MEMORY_UTILIZATION`, `VLLM_DTYPE`, `MAX_NUM_SEQS`. The names
-  `VLLM_MAX_MODEL_LEN` and `VLLM_GPU_MEMORY_UTILIZATION` are **ignored**. The profile gives the defaults
-  (`h200`: 8192 / 0.75 / 32; `l40s`: 8192 / 0.82 / 16).
-- `VLLM_USE_FLASHINFER_SAMPLER=0` is set automatically when `nvcc` is missing (the PBJ runtime has none); setting it
-  explicitly is harmless and documents the choice.
+| Variable | BNI H200 | Sandbox L40S |
+|---|---|---|
+| `GPU_PROFILE` | `h200` | `l40s` |
+| `PYTHON_EXECUTABLE` venv | `bni-vllm-h200` | `bni-vllm-l40s` (built from `requirements/gpu-l40s.in`) |
+| `GPU_MEMORY_UTILIZATION` | `0.75` | `0.82` (validated in a Session) |
+| `MAX_NUM_SEQS` | `32` | `16` |
+| Application name | `bni-vllm-qwen35-9b` | `bni-vllm-qwen35-l40s` |
+
+- Do not set `CDSW_APP_PORT`; CAI provides it.
+- `app.py` is started first by the Application's own Python runtime, and only then calls the venv Python. So
+  `PYTHONPATH` must let that first process import `bni_training` and `deployments`.
+- `VLLM_DISABLE_THINKING` is read by the notebooks and clients (`model_request_extras`), **not** by the server. It is
+  harmless here; the real switch is `chat_template_kwargs.enable_thinking=false` in each request.
+- `PIP_USER=false` only matters when you run `pip`; it is not needed in the Application.
+- The names `VLLM_MAX_MODEL_LEN` and `VLLM_GPU_MEMORY_UTILIZATION` are **ignored**; use `MAX_MODEL_LEN` and
+  `GPU_MEMORY_UTILIZATION`. Without them the profile supplies the defaults (`h200`: 8192, 0.75, 32; `l40s`: 8192,
+  0.82, 16).
+- `VLLM_USE_FLASHINFER_SAMPLER=0` is also set automatically when `nvcc` is missing (the PBJ runtime has none).
+- The start-up log must show `vLLM Application startup configuration:` with `--served-model-name qwen3.5-9b`,
+  `--max-model-len 8192`, your `--gpu-memory-utilization` and `--max-num-seqs`, and `"port_source": "CDSW_APP_PORT"`.
+  Wait for `Application startup complete.` If the Application is marked failed, read the log before reinstalling.
+- If the Application has CAI authentication enabled, a plain `curl` returns 401 or 403. Do not switch security off;
+  pass the right credential (not yet validated, see section 6).
 - Validate: `curl -i https://<vllm-app-url>/health`, then `/v1/models`, then one chat request that includes
   `"chat_template_kwargs": {"enable_thinking": false}`.
 - Status: validated in a Session, not yet as an Application.
