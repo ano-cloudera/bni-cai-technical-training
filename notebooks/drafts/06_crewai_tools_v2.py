@@ -258,7 +258,7 @@ proved.append("I saved a credential-free checkpoint")
 # The next cell prints one line for every step you completed. If a line is missing, a step did not run: scroll up and run it.
 #
 # ## Expected result
-# Nine lines. You asked the data yourself, the agent called the group-bound tool, its SQL is recorded, a forged group identity is refused, and
+# Eight lines. You asked the data yourself, the agent called the group-bound tool, its SQL is recorded, a forged group identity is refused, and
 # two goals gave two answers.
 #
 # ## Common errors

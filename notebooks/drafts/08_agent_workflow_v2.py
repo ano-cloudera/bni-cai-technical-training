@@ -300,7 +300,7 @@ proved.append("I saved the workflow checkpoint")
 # The next cell prints one line for every step you completed. If a line is missing, a step did not run: scroll up and run it.
 #
 # ## Expected result
-# Ten lines. The evidence was fetched first, both agents received it, the final answer passed the grounding rule, a made-up number was
+# Nine lines. The evidence was fetched first, both agents received it, the final answer passed the grounding rule, a made-up number was
 # rejected, and one checkpoint file is saved.
 #
 # ## Common errors
