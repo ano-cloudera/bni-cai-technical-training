@@ -20,7 +20,7 @@ def test_release_zip_is_clean_and_complete(tmp_path: Path) -> None:
         names = zf.namelist()
     assert "bni-cai-technical-training/deployments/cai/vllm/app.py" in names
     assert "bni-cai-technical-training/requirements/gpu-h200.lock" in names
-    assert "bni-cai-technical-training/notebooks/12_agent_studio_client.ipynb" in names
+    assert "bni-cai-technical-training/notebooks/legacy/12_agent_studio_client.ipynb" in names
     assert not any("/.venv/" in name or "__pycache__" in name or name.endswith(".pyc") for name in names)
     assert not any(name.endswith(".safetensors") for name in names)
 

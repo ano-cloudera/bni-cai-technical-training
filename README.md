@@ -68,11 +68,11 @@ Details: `docs/trainer/workshop-runbook.md` and `docs/architecture/workspace-lif
 | 11 | Input and Output Guardrails | participant |
 | 12 | End-to-End Workshop Portal | participant |
 
-The rc1 script paths (for example `scripts/00_environment_check.py`) and the rc1 notebooks in `notebooks/` still work.
+The rc1 script paths (for example `scripts/00_environment_check.py`) and the rc1 notebooks in `notebooks/legacy/` still work (legacy `multi_project` topology only).
 
 ## Repository paths
 
-- `notebooks/templates/`: the 13 notebook templates; `notebooks/`: the rc1 notebooks.
+- `notebooks/templates/`: the 13 notebook templates (built from `notebooks/authoring/`); `notebooks/legacy/`: the rc1 notebooks.
 - `scripts/`: canonical labs `00_*` to `12_*`, the seven workspace scripts and operations.
 - `src/bni_training/`: reusable application logic.
 - `workshop/`: workspace templates (tracked) and the generated `runtime/` hierarchy (git-ignored).

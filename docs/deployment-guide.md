@@ -27,3 +27,5 @@ The global limit is five active Applications. For the Day 1 final UI exercise, k
 
 API v2 automation defaults to plan-only mode. Compare the generated request fields with the target `/api/v2/swagger.html` before adding `--execute`. The exact runtime identifier must come from the target CAI runtime catalog.
 
+Step-by-step creation of the five shared Applications, with the exact environment variables, is in
+`docs/trainer/cai-application-deployment.md`. The older per-environment dry-run pages were folded into it.

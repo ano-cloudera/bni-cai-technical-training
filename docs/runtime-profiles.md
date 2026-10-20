@@ -52,3 +52,11 @@ SKIPPED. OPTIONAL means run it when available. The last column is the result of 
 | Ten-group concurrency against vLLM | SKIPPED | MANDATORY | MANDATORY | SKIPPED |
 
 A green `local-macos` column is evidence that the code and locks are sound. It is **not** evidence of CAI readiness.
+
+## Checking the GPU runtime
+
+Run lab 00 (`python scripts/00_environment_validation.py --mode cai --expect-gpu`) in the target Python 3.10 PBJ GPU
+Session before installing vLLM. The report must show Python 3.10, the expected GPU (NVIDIA L40S in the sandbox, NVIDIA
+H200 NVL at BNI), a visible CUDA runtime and a compatible PyTorch build. Pin the tested `torch`, `transformers` and
+`vllm` versions only after this check. A driver capability shown by `nvidia-smi` is not the same as the CUDA runtime
+bundled with PyTorch.

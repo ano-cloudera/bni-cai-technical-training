@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased (repository tidy-up)
+
+- The 13 rc1 notebooks moved to `notebooks/legacy/` (they find the repository root from `pyproject.toml` now);
+  `notebooks/` holds only `authoring/`, `templates/` and `legacy/`. The executor's `--legacy` flag, the hygiene
+  tests, the notebook stripper's default paths and the release-package test follow.
+- rc1 documents moved to `docs/legacy/` (group rotation runbook, participant and trainer guides, application
+  inventory, resource sizing) with a README. Removed pages that were superseded or described the placeholder dataset:
+  `data-dictionary`, `environment-validation`, `shared-services-runbook`, `dry-run-h200`, `dry-run-l40s`.
+  `acceptance-checklist.md` is rewritten for `single_project`; the GPU runtime check moved into `runtime-profiles.md`.
+
 ## Unreleased (phoenix ui)
 
 - Phoenix UI returned `Internal Server Error` while `/healthz` was OK: arize-phoenix 12.x calls the old

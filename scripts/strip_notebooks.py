@@ -58,7 +58,8 @@ def main(argv=None) -> int:
     parser.add_argument("--check", action="store_true", help="report only; exit 1 if anything would change")
     args = parser.parse_args(argv)
     status = 0
-    for path in args.paths or sorted(Path("notebooks").glob("*.ipynb")):
+    defaults = [*Path("notebooks/legacy").glob("*.ipynb"), *Path("notebooks/templates").glob("*.ipynb")]
+    for path in args.paths or sorted(defaults):
         original = path.read_text()
         doc = json.loads(original)
         cleaned = json.dumps(clean(json.loads(original)), indent=1) + "\n"

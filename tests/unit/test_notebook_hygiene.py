@@ -7,11 +7,14 @@ import pytest
 
 from scripts.strip_notebooks import clean, findings
 
-NOTEBOOKS = sorted([*Path("notebooks").glob("*.ipynb"), *Path("notebooks/templates").glob("*.ipynb")])
+NOTEBOOKS = sorted([*Path("notebooks/legacy").glob("*.ipynb"), *Path("notebooks/templates").glob("*.ipynb")])
 
 
 def test_there_are_thirteen_rc1_notebooks_and_thirteen_canonical_templates() -> None:
-    assert len(list(Path("notebooks").glob("*.ipynb"))) == 13
+    assert len(list(Path("notebooks/legacy").glob("*.ipynb"))) == 13
+    assert not list(Path("notebooks").glob("*.ipynb")), (
+        "notebooks/ holds only authoring, templates and legacy"
+    )
     assert len(list(Path("notebooks/templates").glob("*.ipynb"))) == 13
 
 

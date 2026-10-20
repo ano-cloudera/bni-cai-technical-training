@@ -1,7 +1,7 @@
 """Generate the 13 canonical notebook templates from config/workshop/labs.yaml (the source of truth).
 
 Templates are written stripped (no outputs, counts, timestamps or local values). Group copies are made later by
-scripts/prepare_group_workspaces.py. The rc1 notebooks in notebooks/*.ipynb are kept as they are and are not
+scripts/prepare_group_workspaces.py. The rc1 notebooks in notebooks/legacy/ are kept as they are and are not
 regenerated here.
 """
 
@@ -70,6 +70,7 @@ def parse_percent_source(path: Path) -> dict:
         "nbformat": 4,
         "nbformat_minor": 5,
     }
+
 
 SETUP = """import json, os, sys
 from pathlib import Path

@@ -72,7 +72,7 @@ def test_qdrant_retrieval_always_filters_by_group() -> None:
 
 
 def test_notebooks_are_step_by_step_not_script_wrappers() -> None:
-    for path in sorted(Path("notebooks").glob("*.ipynb")):
+    for path in sorted(Path("notebooks/legacy").glob("*.ipynb")):
         notebook = json.loads(path.read_text())
         code_cells = [cell for cell in notebook["cells"] if cell["cell_type"] == "code"]
         source = "".join("".join(cell["source"]) for cell in code_cells)

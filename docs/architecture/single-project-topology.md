@@ -2,7 +2,7 @@
 
 `WORKSHOP_TOPOLOGY=single_project` is the default workshop topology (`plan` uses it when neither `--topology` nor `WORKSHOP_TOPOLOGY` is set; any other value is rejected). The rc1 `multi_project`
 topology (one shared project plus ten group projects) is preserved and documented in
-`docs/group-rotation-runbook.md`.
+`docs/legacy/group-rotation-runbook.md`.
 
 | Item | Single project |
 |---|---|

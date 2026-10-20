@@ -9,7 +9,7 @@ five Applications active, three group Applications at a time). It is still fully
 - The rc1 commands (`apply-projects`, `upload-files`, `apply-applications`, `start-wave`, `stop-wave`) refuse to run
   unless this topology is selected explicitly. An unknown topology value fails with a clear message.
 - The rc1 labs, the group Streamlit Application and the placeholder dataset in `data/csv` are unchanged.
-- Runbook: `docs/group-rotation-runbook.md`.
+- Runbook: `docs/legacy/group-rotation-runbook.md`.
 
 The single-project topology (`docs/architecture/single-project-topology.md`) is the default workshop design on the
 `feature/single-project-csv-workshop` branch.
