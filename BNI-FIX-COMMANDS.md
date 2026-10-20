@@ -87,16 +87,20 @@ cd /home/cdsw && env PYTHONPATH=/home/cdsw/bni-cai-technical-training/src:/home/
 
 ## A4. Lab 00 fails only on `runtime_profile`
 
-Seen at BNI: every check passes except `runtime_profile` ("Set RUNTIME_PROFILE to sandbox-l40s or bni-h200"). Set it,
-then run the lab again:
+Seen at BNI (twice). First: "Set RUNTIME_PROFILE to sandbox-l40s or bni-h200". After setting it, the check still failed with
+`bni-h200: missing ['DATA_MODE', 'VLLM_API_KEY', 'PHOENIX_COLLECTOR_ENDPOINT', 'LITELLM_BASE_URL', 'WORKSHOP_PORTAL_URL']`.
+The profile requires those variables. Set them all (one line), then run the lab again:
 
 ```bash
-export RUNTIME_PROFILE=bni-h200
+export RUNTIME_PROFILE=bni-h200; export DATA_MODE=csv; export VLLM_API_KEY=EMPTY; export PHOENIX_COLLECTOR_ENDPOINT="$PHOENIX_UI_URL/v1/traces"; export LITELLM_BASE_URL="$LITELLM_URL/v1"; export WORKSHOP_PORTAL_URL="$PORTAL_URL"
 ```
 
 ```bash
-env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python scripts/00_environment_validation.py --mode cai 2>&1 | tail -3
+env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python scripts/00_environment_validation.py --mode cai 2>&1 | grep -E -B1 -A1 '"status": "FAIL"|LAB_STATUS'
 ```
+
+`DATA_MODE=csv` is the default participant backend. `VLLM_API_KEY=EMPTY` because the shared vLLM Application has no key.
+Without the Phoenix, LiteLLM and Portal variables, three more checks show `SKIPPED`.
 
 ## A5. Portal: wrong `EMBEDDING_MODEL_PATH` (found at BNI)
 

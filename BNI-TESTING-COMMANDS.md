@@ -24,7 +24,7 @@ Rules while testing:
 | Portal: glossary search returns `group_03` notes | Pass |
 | Lab 10 (LiteLLM) | Pass, after `SSL_CERT_FILE` on the LiteLLM Application |
 | Lab 07 (Qdrant) | Pass, after `:443` and `SSL_CERT_FILE`; glossary indexed (5 documents) |
-| Lab 00 | One check still fails; run 5.0 and send the failing check |
+| Lab 00 | The `bni-h200` profile check needs `DATA_MODE`, `VLLM_API_KEY`, `PHOENIX_COLLECTOR_ENDPOINT`, `LITELLM_BASE_URL`, `WORKSHOP_PORTAL_URL` (now in sections 0 and 0b) |
 | Labs 04, 05, 06, 08, 09, 11, 12 | Not run yet |
 
 Fixes for every problem found are in `BNI-FIX-COMMANDS.md`.
@@ -40,7 +40,7 @@ read -r APPS_DOMAIN; export APPS_DOMAIN
 ```
 
 ```bash
-export VLLM_URL="https://bni-vllm-qwen35-9b.$APPS_DOMAIN"; export QDRANT_URL="https://bni-qdrant.$APPS_DOMAIN:443"; export PHOENIX_UI_URL="https://bni-phoenix.$APPS_DOMAIN"; export LITELLM_URL="https://bni-litellm-gateway.$APPS_DOMAIN"; export PORTAL_URL="https://bni-workshop-portal.$APPS_DOMAIN"; export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt; export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt; export RUNTIME_PROFILE=bni-h200; export WORKSHOP_RUNTIME_DIR=/home/cdsw/workshop-runtime
+export VLLM_URL="https://bni-vllm-qwen35-9b.$APPS_DOMAIN"; export QDRANT_URL="https://bni-qdrant.$APPS_DOMAIN:443"; export PHOENIX_UI_URL="https://bni-phoenix.$APPS_DOMAIN"; export LITELLM_URL="https://bni-litellm-gateway.$APPS_DOMAIN"; export PORTAL_URL="https://bni-workshop-portal.$APPS_DOMAIN"; export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt; export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt; export RUNTIME_PROFILE=bni-h200; export WORKSHOP_RUNTIME_DIR=/home/cdsw/workshop-runtime; export DATA_MODE=csv; export VLLM_API_KEY=EMPTY; export PHOENIX_COLLECTOR_ENDPOINT="$PHOENIX_UI_URL/v1/traces"; export LITELLM_BASE_URL="$LITELLM_URL/v1"; export WORKSHOP_PORTAL_URL="$PORTAL_URL"
 ```
 
 `QDRANT_URL` ends with `:443` because the Python Qdrant client otherwise uses port 6333. `SSL_CERT_FILE` makes Python trust
@@ -75,7 +75,7 @@ read -r APPS_DOMAIN; export APPS_DOMAIN
 ```
 
 ```bash
-export VLLM_URL="https://bni-vllm-qwen35-9b.$APPS_DOMAIN"; export QDRANT_URL="https://bni-qdrant.$APPS_DOMAIN:443"; export PHOENIX_UI_URL="https://bni-phoenix.$APPS_DOMAIN"; export LITELLM_URL="https://bni-litellm-gateway.$APPS_DOMAIN"; export PORTAL_URL="https://bni-workshop-portal.$APPS_DOMAIN"; export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt; export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt; export RUNTIME_PROFILE=bni-h200; export WORKSHOP_RUNTIME_DIR=/home/cdsw/workshop-runtime
+export VLLM_URL="https://bni-vllm-qwen35-9b.$APPS_DOMAIN"; export QDRANT_URL="https://bni-qdrant.$APPS_DOMAIN:443"; export PHOENIX_UI_URL="https://bni-phoenix.$APPS_DOMAIN"; export LITELLM_URL="https://bni-litellm-gateway.$APPS_DOMAIN"; export PORTAL_URL="https://bni-workshop-portal.$APPS_DOMAIN"; export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt; export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt; export RUNTIME_PROFILE=bni-h200; export WORKSHOP_RUNTIME_DIR=/home/cdsw/workshop-runtime; export DATA_MODE=csv; export VLLM_API_KEY=EMPTY; export PHOENIX_COLLECTOR_ENDPOINT="$PHOENIX_UI_URL/v1/traces"; export LITELLM_BASE_URL="$LITELLM_URL/v1"; export WORKSHOP_PORTAL_URL="$PORTAL_URL"
 ```
 
 ```bash
