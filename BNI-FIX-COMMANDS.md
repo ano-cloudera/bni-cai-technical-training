@@ -273,7 +273,15 @@ environment and you clicked **Update Application**:
    export QDRANT_URL="https://bni-qdrant.$APPS_DOMAIN:443"; export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt; export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt; echo "$QDRANT_URL"
    ```
 
-   The last line must end with `:443`. Then repeat the glossary indexing from A8. If it still says `Connection refused` with
+   The last line must end with `:443` (confirmed at BNI: it printed `https://bni-qdrant.<apps-domain>:443`). Then repeat the
+   glossary indexing and the count check from A8, from the repository folder:
+
+   ```bash
+   env -u PYTHONPATH EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3 /home/cdsw/.venvs/bni-rag/bin/python scripts/index_glossary.py --group-id group_03 --execute 2>&1 | tail -4
+   ```
+
+   Pass: a JSON result with `"group_id": "group_03"` and a `documents` count, no traceback. A `ReadTimeout` here means the
+   client timeout is too short for the first call; send the last lines. If it still says `Connection refused` with
    `:443`, run the two connection tests of A7 and send their output.
 
 3. **Wrong variable name in the Portal environment.** `PORTAL_MAX_TOKEN` (missing S) is ignored. The name must be
