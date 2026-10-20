@@ -17,7 +17,7 @@ Terminal variables come from section 0b of `BNI-TESTING-COMMANDS.md` (`APPS_DOMA
 | 2 | BNI Session: `git pull --ff-only origin main` (stash first if refused, section 1) | `git log --oneline -1` is the pushed commit |
 | 3 | Register the kernel `bni-rag` (section 3) | "BNI rag (py3.10)" is in the kernel list after a browser reload |
 | 4 | Check the Applications (section 4): vLLM has **1 GPU** and `VLLM_TOOL_CALL_PARSER`; Portal has `WORKSHOP_RUNTIME_DIR`; LiteLLM has `SSL_CERT_FILE` | the five health checks of `BNI-TESTING-COMMANDS.md` section 2 print 200 |
-| 5 | Set the **project** environment variables of section 5, then restart the Session | a notebook cell `import os; print(os.getenv("QDRANT_URL"))` prints the URL ending `:443` |
+| 5 | Set the **project** variables of section 5 (`APPS_DOMAIN`, `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`, `RUNTIME_PROFILE`), then restart the Session | a notebook cell `import os; print(os.getenv("APPS_DOMAIN"))` prints the domain (if `None`, participants type the domain in the Service addresses cell) |
 | 6 | Refresh the group workspaces (section 2) | `grep -c "proved" .../group_03/notebooks/05_semantic_layer.ipynb` prints 1 or more (the guided notebooks 04 to 08 arrived) and `grep -c load_group_env` on the same file prints 1 or more |
 | 7 | Ask one sample question in the Portal for `group_03` (wait for Completed) | "My outputs (1)" appears |
 | 8 | **Day 1 notebooks.** Run, from `group_03/notebooks`, with the kernel BNI rag, in this order: 00, 03, 04, 05, 06, 07, 08, 09. Lab 07 needs `QDRANT_URL` and `EMBEDDING_MODEL_PATH`; Lab 09 needs `PHOENIX_COLLECTOR_ENDPOINT` and `PHOENIX_UI_URL` (project variables, step 5) | each prints `LAB_STATUS: ... mode=cai status=PASS`. The line must say `mode=cai`, never `mode=local`. Lab 04 shows `group_03` in its first step, not `group_01`. After Lab 09 a trace for `group_03` is visible in the Phoenix UI |
@@ -26,7 +26,7 @@ Terminal variables come from section 0b of `BNI-TESTING-COMMANDS.md` (`APPS_DOMA
 | 11 | Rotate `LITELLM_MASTER_KEY` and decide Lab 10 (section 5, last paragraph) | `models=200` with the new key |
 
 Step 5 test cell is the check that a project variable reaches the notebook kernel; this was **not** tested in the sandbox. If it
-prints `None`, restart the Session once more; if it still prints `None`, fall back to the temporary first cell of section 5.
+prints `None`, restart the Session once more; if it still prints `None`, participants type the domain in the Service addresses cell.
 
 Day split: **Day 1 is Lab 00 and Labs 03 to 09; Day 2 is Labs 10 to 12.** Applications follow the same split: Day 1 runs vLLM,
 Qdrant, Phoenix and the Portal; LiteLLM joins on Day 2 (never more than five at once). Both days use the same workspaces and
@@ -104,40 +104,34 @@ Open item: the participant guide does not say this yet, and 40 participants each
 Order for the Portal check: ask one sample question for `group_03` in the Portal and wait for Completed. Lab 12 reads that
 saved answer from `groups/group_03/output/<session>/answer-NNN.json`.
 
-## 5. Variables the notebooks need (decision to do)
+## 5. Variables the notebooks need (decided and proved in the sandbox)
 
-A `export` in a terminal does not reach a notebook kernel. Today each notebook needs a temporary first cell
-(`os.environ[...] = ...`, delete it afterwards):
+A `export` in a terminal does not reach a notebook kernel. Labs 00, 07, 09, 10 and 12 therefore start with a **"Service addresses"
+cell**: the participant pastes the Applications domain once, and the cell builds the Qdrant, Phoenix, LiteLLM and Portal addresses from it
+(it never replaces a value that is already set, and does nothing in local mode). Proved in the sandbox without any manual cell: Lab 07
+`passed=10` and Lab 09 `passed=9`, both `mode=cai`.
 
-| Lab | Variables |
-|---|---|
-| 00 | `RUNTIME_PROFILE`, `DATA_MODE=csv`, `VLLM_API_KEY=EMPTY`, `PHOENIX_COLLECTOR_ENDPOINT`, `LITELLM_BASE_URL`, `WORKSHOP_PORTAL_URL` |
-| 07 | `QDRANT_URL` (with `:443`), `EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3` |
-| 09 | `PHOENIX_COLLECTOR_ENDPOINT` (ending `/v1/traces`), `PHOENIX_UI_URL` |
-| 10 | `LITELLM_BASE_URL` (ending `/v1`), `LITELLM_API_KEY` (type it with `getpass`; never save it in a notebook) |
-| 12 | `WORKSHOP_PORTAL_URL` |
-| 03, 04, 05, 06, 08, 11 | none (08 needs vLLM tool calling) |
+Two ways to feed the domain, pick one (the second is easier for 40 people):
 
-For 40 participants a temporary cell is too much to ask. Decision: the trainer sets these as **project environment variables** once
-(CAI project settings, Advanced, Environment Variables), and every new Session, and so every notebook kernel, inherits
-them. No code change. Replace `<apps-domain>` with the BNI Applications domain (kept out of the repository on purpose):
+1. Each participant types it in the cell: `APPS_DOMAIN = "<apps-domain>"` (`<apps-domain>` is the BNI Applications domain, kept out of the repository
+   on purpose; the cell says where to paste it).
+2. The trainer sets the **project environment variable** `APPS_DOMAIN` once (CAI project settings, Advanced, Environment Variables), and the
+   participant leaves the quotes empty. Together with the three variables below, this is the whole project configuration:
 
 ```text
-QDRANT_URL=https://bni-qdrant.<apps-domain>:443
-EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3
-PHOENIX_COLLECTOR_ENDPOINT=https://bni-phoenix.<apps-domain>/v1/traces
-PHOENIX_UI_URL=https://bni-phoenix.<apps-domain>
-LITELLM_BASE_URL=https://bni-litellm-gateway.<apps-domain>/v1
-WORKSHOP_PORTAL_URL=https://bni-workshop-portal.<apps-domain>
+APPS_DOMAIN=<apps-domain>
 SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 RUNTIME_PROFILE=bni-h200
-DATA_MODE=csv
-VLLM_API_KEY=EMPTY
 ```
 
-These hold no secret: `VLLM_API_KEY=EMPTY` is a placeholder (the vLLM Application has no key). Restart the Session after changing
-them. **Never put `LITELLM_API_KEY` or `LITELLM_MASTER_KEY` here**: every participant can read project variables.
+Why these three: the two certificate variables make the Python clients trust the internal BNI certificate (Lab 07 and 09 fail with
+`CERTIFICATE_VERIFY_FAILED` without them), and `RUNTIME_PROFILE` is checked by Lab 00 (it can also be typed in the Lab 00 cell). Lab 00 sets
+`DATA_MODE=csv` and `VLLM_API_KEY=EMPTY` itself (workshop constants, no secret). Restart the Session after changing project variables.
+**The project-variable route (2) was not run in the sandbox**, only route (1) was. If a notebook cell prints "... is required in CAI mode",
+the variable did not arrive: type the domain in the cell (route 1).
+
+**Never put `LITELLM_API_KEY` or `LITELLM_MASTER_KEY` in a project variable**: every participant can read project variables.
 
 Lab 10 needs a LiteLLM key, and only the master key exists (per-group virtual keys need Postgres, postponed). Decide before class:
 (a) the trainer runs Lab 10 as a demonstration; or (b) participants type a workshop-only key with `getpass` in the Lab 10
