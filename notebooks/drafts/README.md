@@ -19,3 +19,10 @@ cp /home/cdsw/bni-cai-technical-training/notebooks/drafts/04_csv_data_access_v2.
 
 Open the copy from the group workspace, choose the kernel "BNI rag (py3.10)", and run all cells. Status: **not yet run**;
 it was only syntax-checked.
+
+## 05_semantic_layer_v2 and 06_crewai_tools_v2
+
+Same pattern as Lab 04 v2 (setup cell, explained steps with a prediction, pandas tables, an exercise, a closing list of what was
+proved). Lab 06's exercise now runs a second agent with the participant's goal and shows both answers side by side. Both were
+executed locally (mock model) for group_03, group_05 and group_09 and passed; neither has run against the real services yet.
+Try one in a group workspace the same way as Lab 04 v2 (copy the `.ipynb` there and open the copy).
