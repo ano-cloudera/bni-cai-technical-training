@@ -255,41 +255,54 @@ environment and you clicked **Update Application**:
 
 ## A9. Common slips seen at BNI (check these before anything else)
 
-1. **Wrong folder.** `can't open file '/home/cdsw/workshop-runtime/scripts/index_glossary.py'`: the script is in the
-   repository. Run lab and indexing commands from there:
+### A9.1 Wrong folder
 
-   ```bash
-   cd /home/cdsw/bni-cai-technical-training
-   ```
+Symptom: `can't open file '/home/cdsw/workshop-runtime/scripts/index_glossary.py'`. The script is in the repository.
+Run lab and indexing commands from there:
 
-2. **`Connection refused` from `qdrant_client` again.** `QDRANT_URL` in this terminal has no `:443` (an old `export` line was
-   pasted, or the variables were lost after a new Session). Check it, and set it if it does not end with `:443`:
+```bash
+cd /home/cdsw/bni-cai-technical-training
+```
 
-   ```bash
-   echo "$QDRANT_URL"
-   ```
+### A9.2 `Connection refused` from `qdrant_client` again
 
-   ```bash
-   export QDRANT_URL="https://bni-qdrant.$APPS_DOMAIN:443"; export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt; export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt; echo "$QDRANT_URL"
-   ```
+Cause: `QDRANT_URL` in this terminal has no `:443` (an old `export` line was pasted, or the variables were lost after a
+new Session). Check it:
 
-   The last line must end with `:443` (confirmed at BNI: it printed `https://bni-qdrant.<apps-domain>:443`). Then repeat the
-   glossary indexing and the count check from A8, from the repository folder:
+```bash
+echo "$QDRANT_URL"
+```
 
-   ```bash
-   env -u PYTHONPATH EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3 /home/cdsw/.venvs/bni-rag/bin/python scripts/index_glossary.py --group-id group_03 --execute 2>&1 | tail -4
-   ```
+If it does not end with `:443`, set it (the last line printed must end with `:443`; confirmed at BNI):
 
-   Pass: a JSON result with `"group_id": "group_03"` and a `documents` count, no traceback. A `ReadTimeout` here means the
-   client timeout is too short for the first call; send the last lines. If it still says `Connection refused` with
-   `:443`, run the two connection tests of A7 and send their output.
+```bash
+export QDRANT_URL="https://bni-qdrant.$APPS_DOMAIN:443"; export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt; export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt; echo "$QDRANT_URL"
+```
 
-3. **Wrong variable name in the Portal environment.** `PORTAL_MAX_TOKEN` (missing S) is ignored. The name must be
-   `PORTAL_MAX_TOKENS` with value `512`. Also confirm the Portal `QDRANT_URL` value ends with `:443` (the form cuts the
-   value off on screen), then **Update Application**.
+Then repeat the glossary indexing, from the repository folder (pass: a JSON result with `"group_id": "group_03"` and a
+`documents` count, no traceback; a `ReadTimeout` means the client timeout is too short for the first call, send the last
+lines):
 
-4. **A new Session loses every variable.** Use section 0b of `BNI-TESTING-COMMANDS.md`, which already contains
-   `:443`, `SSL_CERT_FILE` and `RUNTIME_PROFILE`.
+```bash
+env -u PYTHONPATH EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3 /home/cdsw/.venvs/bni-rag/bin/python scripts/index_glossary.py --group-id group_03 --execute 2>&1 | tail -4
+```
+
+Count the stored points for the group (the number must be above 0):
+
+```bash
+env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python -c "import os; from qdrant_client import QdrantClient as C, models as m; c=C(url=os.environ['QDRANT_URL'], timeout=60); print(c.count(collection_name='bni_training_knowledge', count_filter=m.Filter(must=[m.FieldCondition(key='group_id', match=m.MatchValue(value='group_03'))])))" 2>&1 | tail -2
+```
+
+If it still says `Connection refused` with `:443`, run the two connection tests of A7 and send their output.
+
+### A9.3 Wrong variable name in the Portal environment
+
+`PORTAL_MAX_TOKEN` (missing S) is ignored. The name must be `PORTAL_MAX_TOKENS` with value `512`. Also confirm the Portal
+`QDRANT_URL` value ends with `:443` (the form cuts the value off on screen), then **Update Application**.
+
+### A9.4 A new Session loses every variable
+
+Use section 0b of `BNI-TESTING-COMMANDS.md`; it already contains `:443`, `SSL_CERT_FILE` and `RUNTIME_PROFILE`.
 
 ## B. Embedding model bge-m3 (optional; needed for Portal retrieval and Lab 07)
 
