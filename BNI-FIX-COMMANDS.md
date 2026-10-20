@@ -184,19 +184,43 @@ env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python -c "import os; from qdran
 The first fails with `Connection refused` and the second prints `collections=[...]` (it may be empty): confirmed. If the
 second fails with `CERTIFICATE_VERIFY_FAILED`, set the CA variables from A6 and repeat.
 
-Fix: add `:443` to the Qdrant URL.
+Confirmed at BNI: without a port the first command fails with `[Errno 111] Connection refused` (the client tries
+6333). With `:443` the connection is made and it stops at the next problem, `CERTIFICATE_VERIFY_FAILED: unable to get
+local issuer certificate`, which is the same TLS trust problem as in A6. So two fixes are needed together: the port and
+the CA list.
 
-In the Session terminal (then run the glossary indexing and Lab 07 again):
+In the Session terminal (one line):
 
 ```bash
-export QDRANT_URL="https://bni-qdrant.$APPS_DOMAIN:443"
+export QDRANT_URL="https://bni-qdrant.$APPS_DOMAIN:443"; export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt; export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 ```
 
-In the **Portal** Application environment, set `QDRANT_URL` to `https://bni-qdrant.<apps-domain>:443`, then
-**Update Application**. Without it the Portal glossary search fails the same way.
+Check (must print `collections=[...]`, it may be empty):
 
-Record the confirmed result here. If it is confirmed, the code can default to port 443 for an `https://` URL without a
-port, so a trainer never has to add it.
+```bash
+env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python -c "import os; from qdrant_client import QdrantClient as C; print(C(url=os.environ['QDRANT_URL']).get_collections())" 2>&1 | tail -2
+```
+
+Then index the test group's glossary and run Lab 07:
+
+```bash
+env -u PYTHONPATH EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3 /home/cdsw/.venvs/bni-rag/bin/python scripts/index_glossary.py --group-id group_03 --execute
+```
+
+```bash
+env -u PYTHONPATH EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3 /home/cdsw/.venvs/bni-rag/bin/python scripts/07_qdrant_rag.py --mode cai 2>&1 | tail -3
+```
+
+In the **Portal** Application environment set these two, then **Update Application**. Without them the Portal glossary
+search fails the same way:
+
+```text
+QDRANT_URL=https://bni-qdrant.<apps-domain>:443
+SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+```
+
+Open: the repository could default to port 443 for an `https://` Qdrant URL without a port, so a trainer never has to
+add it. Record the Lab 07 result here once it runs.
 
 ## B. Embedding model bge-m3 (optional; needed for Portal retrieval and Lab 07)
 
