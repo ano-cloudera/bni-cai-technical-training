@@ -271,8 +271,8 @@ MOCK_FALLBACK_BASE_URL=<fallback endpoint; see the note>
 APP_STARTUP_TIMEOUT_MINUTES=5
 ```
 
-- Use an **absolute** `LITELLM_CONFIG`. The launcher passes the value as given, and a relative `config/litellm.yaml`
-  is not found from `/home/cdsw`.
+- `LITELLM_CONFIG` should be an absolute path. A relative `config/litellm.yaml` also works with the current launcher,
+  which resolves it from the repository; with an older launcher it fails with `Config file not found`.
 - `config/litellm.yaml` reads `VLLM_BASE_URL`, `VLLM_API_KEY` and `MOCK_FALLBACK_BASE_URL`. Define all three.
   The fallback model `training-fallback` points to `MOCK_FALLBACK_BASE_URL`; `apps/litellm/mock_fallback.py` is a
   small stand-in server for it. How to host that fallback in CAI is not decided yet.
@@ -305,6 +305,8 @@ Test one service at a time. A failure then has one obvious cause.
 | `unrecognized arguments: --host ... --port ...` (Phoenix) | `phoenix serve` has no such options | Use the current launcher (`git pull`), restart |
 | `File does not exist: apps/workshop-portal/app.py` | The Application starts in `/home/cdsw` | Use the current launcher (`git pull`), restart |
 | FlashInfer or `nvcc` error at vLLM start | No CUDA Toolkit in the runtime | `VLLM_USE_FLASHINFER_SAMPLER=0` |
+| `Config file not found: config/litellm.yaml` (LiteLLM) | The Application starts in `/home/cdsw` | Set `LITELLM_CONFIG` to the absolute path, or use the current launcher (`git pull`) |
+| `WARNING: litellm.yaml reads variables that are not set` | The config uses `os.environ/NAME` | Define `VLLM_BASE_URL`, `VLLM_API_KEY` and `MOCK_FALLBACK_BASE_URL` |
 | Port 8100 unavailable | A Session may not use it | Applications use `CDSW_APP_PORT`; Sessions can use 8101 |
 | Thinking text in answers, short or empty answers | Qwen3.5 thinking uses the token budget | Send `chat_template_kwargs.enable_thinking=false` |
 | `pip` retries and `Connection broken` | Unstable proxy | Keep the retry flags; pip resumes the download |

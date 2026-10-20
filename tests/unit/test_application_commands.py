@@ -55,3 +55,47 @@ def test_manifests_use_python_entrypoints() -> None:
         assert app["script"].endswith("/app.py")
         assert app["kernel"] == "python3"
         assert not app["script"].endswith(".sh")
+
+
+def test_litellm_config_is_resolved_from_the_repository_not_the_working_directory(
+    tmp_path, monkeypatch
+) -> None:
+    """A CAI Application starts in /home/cdsw; a relative config used to fail with 'Config file not found'."""
+    from deployments.cai.common import REPO_ROOT
+    from deployments.cai.litellm import app as litellm_app
+
+    monkeypatch.chdir(tmp_path)
+    command = litellm_command({"CDSW_APP_PORT": "8123"})
+    assert command[command.index("--config") + 1] == str(REPO_ROOT / "config/litellm.yaml")
+    assert Path(command[command.index("--config") + 1]).is_file()
+    absolute = litellm_command({"CDSW_APP_PORT": "8123", "LITELLM_CONFIG": "/etc/other.yaml"})
+    assert absolute[absolute.index("--config") + 1] == "/etc/other.yaml"
+    assert litellm_app.resolve_config_path({}) == REPO_ROOT / "config/litellm.yaml"
+
+
+def test_litellm_reports_config_variables_that_are_not_set(tmp_path) -> None:
+    from deployments.cai.litellm import app as litellm_app
+
+    config = tmp_path / "c.yaml"
+    config.write_text(
+        "a: os.environ/VLLM_BASE_URL\nb: os.environ/VLLM_API_KEY\nc: os.environ/MOCK_FALLBACK_BASE_URL\n"
+    )
+    missing = litellm_app.missing_config_variables(config, {"VLLM_BASE_URL": "https://x/v1"})
+    assert missing == ["MOCK_FALLBACK_BASE_URL", "VLLM_API_KEY"]
+    assert (
+        litellm_app.missing_config_variables(
+            config, {"VLLM_BASE_URL": "a", "VLLM_API_KEY": "b", "MOCK_FALLBACK_BASE_URL": "c"}
+        )
+        == []
+    )
+    real = litellm_app.missing_config_variables(litellm_app.resolve_config_path({}), {})
+    assert {"VLLM_BASE_URL", "VLLM_API_KEY", "MOCK_FALLBACK_BASE_URL"} <= set(real)
+
+
+def test_litellm_main_fails_clearly_when_the_config_is_missing(monkeypatch) -> None:
+    from deployments.cai.litellm import app as litellm_app
+
+    monkeypatch.setenv("CDSW_APP_PORT", "8123")
+    monkeypatch.setenv("LITELLM_CONFIG", "/nonexistent/litellm.yaml")
+    with pytest.raises(FileNotFoundError, match="LiteLLM config not found"):
+        litellm_app.main()

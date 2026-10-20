@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased (litellm launcher)
+
+- LiteLLM launcher: a relative `LITELLM_CONFIG` is resolved from the repository (the Application starts in
+  `/home/cdsw`), the process runs from the repository root, a missing config gives a clear error, and variables the
+  config reads as `os.environ/NAME` that are not set are reported.
+
 ## Unreleased (portal launcher in a kernel)
 
 - CAI runs an Application script cell by cell in a kernel where `__file__` is undefined, so the Portal launcher
