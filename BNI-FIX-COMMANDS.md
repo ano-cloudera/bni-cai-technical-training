@@ -39,6 +39,29 @@ env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python -c "import pandas, qdrant
 env -u PYTHONPATH /home/cdsw/.venvs/bni-litellm/bin/python -c "import litellm; print('ok')"
 ```
 
+## A2. LiteLLM: `No module named 'dateutil'` (same cause, venv `bni-litellm`)
+
+Seen at BNI: the LiteLLM log ends with `ModuleNotFoundError: Missing dependency No module named 'dateutil'` (raised
+while importing `boto3`). Same fix as Phoenix: reinstall the lock without `PYTHONPATH`.
+
+```bash
+cd /home/cdsw/bni-cai-technical-training && env -u PYTHONPATH PIP_USER=false /home/cdsw/.venvs/bni-litellm/bin/python -m pip install --no-user --retries 10 --timeout 60 -r requirements/gateway.lock
+```
+
+Verify in a clean environment (the path must be inside `.venvs/bni-litellm`):
+
+```bash
+env -u PYTHONPATH /home/cdsw/.venvs/bni-litellm/bin/python -c "import dateutil, boto3, litellm; print(dateutil.__file__)"
+```
+
+Then restart the `bni-litellm` Application.
+
+If `bni-rag` fails the same way (Portal, Lab 07), reinstall its lock the same way:
+
+```bash
+cd /home/cdsw/bni-cai-technical-training && env -u PYTHONPATH PIP_USER=false /home/cdsw/.venvs/bni-rag/bin/python -m pip install --no-user --retries 10 --timeout 60 -r requirements/rag.lock
+```
+
 ## B. Embedding model bge-m3 (optional; needed for Portal retrieval and Lab 07)
 
 Upload `bge-m3.zip` (1.27 GB) to `/home/cdsw/` with the JupyterLab file panel, then:
