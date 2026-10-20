@@ -376,6 +376,9 @@ curl -s "$VLLM_URL/v1/chat/completions" -H "Content-Type: application/json" -d '
   `hermes`), keep **Number of GPUs = 1**, Update Application and run A12.1 again.
 - An error (400 or 500): send the text.
 
+Confirmed at BNI: A12.1 returned `tool_calls` with `query_portfolio` (finish reason `tool_calls`), so the vLLM server and the
+`qwen3_coder` parser are fine. After A12.2 both labs passed.
+
 ### A12.2 CrewAI did not switch Qwen thinking off
 
 The CrewAI `LLM` did not send `enable_thinking=false` like the other clients, so Qwen3.5 may think instead of calling the tool.
@@ -393,6 +396,9 @@ LABS="08_multi_agent_workflow 09_phoenix_monitoring"
 ```bash
 for s in $LABS; do echo "== $s"; env -u PYTHONPATH EMBEDDING_MODEL_PATH=/home/cdsw/models/bge-m3 /home/cdsw/.venvs/bni-rag/bin/python scripts/$s.py --mode cai 2>&1 | grep -E -B1 -A1 '"status": "FAIL"|LAB_STATUS'; done
 ```
+
+Result at BNI after the pull: `LAB_STATUS: lab=08 mode=cai status=PASS passed=5 skipped=0 failed=0` and
+`LAB_STATUS: lab=09 mode=cai status=PASS passed=9 skipped=0 failed=0`.
 
 If `0 data tool call(s)` remains and A12.1 showed a tool call, send the lab output around `crewai_tool_call` (the CrewAI
 panels "Agent Started", "Tool Used" and "Final Answer").

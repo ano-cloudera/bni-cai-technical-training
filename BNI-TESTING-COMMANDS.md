@@ -24,8 +24,11 @@ Rules while testing:
 | Portal: glossary search returns `group_03` notes | Pass |
 | Lab 10 (LiteLLM) | Pass, after `SSL_CERT_FILE` on the LiteLLM Application |
 | Lab 07 (Qdrant) | Pass, after `:443` and `SSL_CERT_FILE`; glossary indexed (5 documents) |
+| Lab 06 (CrewAI tools) | Pass |
+| Lab 08 (multi-agent) and Lab 09 (Phoenix) | Pass, after `VLLM_TOOL_CALL_PARSER=qwen3_coder` on vLLM (with 1 GPU) and the CrewAI thinking fix |
+| Lab 11 (guardrails) | Pass |
 | Lab 00 | The `bni-h200` profile check needs `DATA_MODE`, `VLLM_API_KEY`, `PHOENIX_COLLECTOR_ENDPOINT`, `LITELLM_BASE_URL`, `WORKSHOP_PORTAL_URL` (now in sections 0 and 0b) |
-| Labs 04, 05, 06, 08, 09, 11, 12 | Not run yet |
+| Labs 04, 05, 12 | Not run yet |
 
 Fixes for every problem found are in `BNI-FIX-COMMANDS.md`.
 
