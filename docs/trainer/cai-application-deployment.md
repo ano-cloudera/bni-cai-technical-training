@@ -1,0 +1,294 @@
+# Trainer: deploying the shared Applications in CAI (BNI)
+
+Status: **cai-validation-pending.** The vLLM model was validated in a CAI Session. Deploying each service as a CAI
+Application is being validated now. Nothing here claims CAI readiness. All URLs and paths below are placeholders or
+examples; use your own values and never paste secrets into notes, screenshots or chat.
+
+## 1. What you deploy
+
+At most **five** Applications are active at any time (`config/workshop/application-lifecycle.yaml`).
+
+| # | Application | Script | Runtime | CPU / memory / GPU |
+|---|---|---|---|---|
+| 1 | `bni-vllm-qwen35-9b` | `deployments/cai/vllm/app.py` | PBJ JupyterLab, Python 3.10, **NVIDIA GPU** | 16 vCPU / 64 GB / 1 GPU (H200) |
+| 2 | `bni-qdrant` | `deployments/cai/qdrant/app.py` | PBJ JupyterLab, Python 3.10, Standard | 4 vCPU / 16 GB / 0 |
+| 3 | `bni-phoenix` | `deployments/cai/phoenix/app.py` | PBJ JupyterLab, Python 3.10, Standard | 4 vCPU / 16 GB / 0 |
+| 4 | `bni-workshop-portal` | `deployments/cai/workshop-portal/app.py` | PBJ JupyterLab, Python 3.10, Standard | 4 vCPU / 8 to 16 GB / 0, **one replica** |
+| 5 | `bni-litellm` | `deployments/cai/litellm/app.py` | PBJ JupyterLab, Python 3.10, Standard | 2 vCPU / 4 GB / 0 |
+
+Phases: day 1 runs vLLM, Qdrant, Phoenix and the Portal (four). LiteLLM joins on day 2 (Phoenix optional). Stop before
+you start, so the count never passes five, even briefly. Participant notebooks run in **CPU Sessions**; CrewAI runs
+there, not in an Application.
+
+Rules that apply to every Application:
+
+- Use a Python entrypoint (`app.py`), never a shell script.
+- Do not set `CDSW_APP_PORT` yourself. CAI provides it. Do not hard-code a port.
+- The Application starts in `/home/cdsw`, not in the repository. Use absolute paths for anything you set.
+- An Application has no terminal. Prepare files and environments from a **Session**; they live in `/home/cdsw`,
+  which the Session and the Application share.
+- Keep keys out of the environment screen where possible; use CAI secrets for them.
+
+## 2. Prepare once, from a CPU Session
+
+Open a PBJ JupyterLab Python 3.10 Session and a terminal.
+
+### 2.1 Code
+
+```bash
+cd /home/cdsw/bni-cai-technical-training
+git pull --ff-only origin main          # or replace the folder from the zip (see the update notes)
+git log --oneline -1
+```
+
+### 2.2 One virtual environment per Application type
+
+Install each profile into its own environment, never into the base runtime and never several profiles together.
+Use the retry flags because the proxy can be unstable.
+
+```bash
+cd /home/cdsw/bni-cai-technical-training
+export PIP_USER=false
+PIPFLAGS="--no-user --retries 10 --timeout 60"
+
+# Portal (also used for CPU notebooks that need Qdrant)
+python -m venv /home/cdsw/.venvs/bni-rag && source /home/cdsw/.venvs/bni-rag/bin/activate
+python -m pip install $PIPFLAGS --upgrade pip
+python -m pip install $PIPFLAGS -r requirements/rag.lock
+python -m pip install --no-user --no-deps -e . && python -m pip check
+deactivate
+
+# Phoenix (server only)
+python -m venv /home/cdsw/.venvs/bni-phoenix && source /home/cdsw/.venvs/bni-phoenix/bin/activate
+python -m pip install $PIPFLAGS --upgrade pip
+python -m pip install $PIPFLAGS -r requirements/observability.lock
+python -m pip install --no-user --no-deps -e . && python -m pip check
+deactivate
+
+# LiteLLM gateway
+python -m venv /home/cdsw/.venvs/bni-litellm && source /home/cdsw/.venvs/bni-litellm/bin/activate
+python -m pip install $PIPFLAGS --upgrade pip
+python -m pip install $PIPFLAGS -r requirements/gateway.lock
+python -m pip install --no-user --no-deps -e . && python -m pip check
+deactivate
+```
+
+The `rag` lock is large and pulls CUDA wheels even though the Portal uses no GPU. Check disk quota first.
+
+For vLLM use the **`.in`** file, not the `.lock`. The GPU lock is an intent-only stub (it holds only `vllm==0.29.0`):
+
+```bash
+python -m venv /home/cdsw/.venvs/bni-vllm-h200 && source /home/cdsw/.venvs/bni-vllm-h200/bin/activate
+python -m pip install --no-user --retries 10 --timeout 60 --upgrade pip
+python -m pip install --no-user --retries 10 --timeout 60 -r requirements/gpu-h200.in
+python -m pip install --no-user --no-deps -e . && python -m pip check
+python -c "import torch, vllm; print(torch.__version__, torch.version.cuda, vllm.__version__, torch.cuda.is_available())"
+deactivate
+```
+
+Stop on any `pip check` problem. Save `pip freeze` for the record.
+
+### 2.3 Folders
+
+```bash
+mkdir -p /home/cdsw/bni-qdrant-storage /home/cdsw/bni-phoenix-data /home/cdsw/tools/qdrant
+```
+
+Both storage folders must be writable and must survive a restart (`/home/cdsw` does).
+
+### 2.4 Qdrant binary (once)
+
+The Application never downloads the binary. Prepare the pinned, checksum-verified release from the Session:
+
+```bash
+bash scripts/prepare_qdrant_binary.sh            # default: /home/cdsw/tools/qdrant/qdrant
+/home/cdsw/tools/qdrant/qdrant --version
+```
+
+The pinned asset (v1.19.2, Linux musl) is in `requirements/qdrant-binary-manifest.json`. For a BNI mirror set
+`QDRANT_BINARY_URL` and `QDRANT_BINARY_SHA256` together. Check the pinned checksum against the release page or your
+mirror before relying on it. Safe to run again; `QDRANT_FORCE=1` replaces an existing binary.
+
+### 2.5 Model
+
+The Qwen3.5-9B model is already on NFS (example `/home/cdsw/models/Qwen3.5-9B`). The Application never downloads it.
+Validate it from a Session with lab 01 if you have not yet.
+
+## 3. Create the Applications
+
+Create in this order and confirm each one before the next. In every Application, **Enable GPU is off except vLLM**.
+Replace `<...>` with your own values. `<repo>` means `/home/cdsw/bni-cai-technical-training`.
+
+### 3.1 vLLM
+
+| Field | Value |
+|---|---|
+| Name | `bni-vllm-qwen35-9b` |
+| Script | `bni-cai-technical-training/deployments/cai/vllm/app.py` |
+| Runtime | PBJ JupyterLab Python 3.10 **NVIDIA GPU** |
+| Resources | 16 vCPU, 64 GB, 1 GPU |
+
+```text
+PYTHONPATH=<repo>/src:<repo>
+PYTHON_EXECUTABLE=/home/cdsw/.venvs/bni-vllm-h200/bin/python
+MODEL_PATH=/home/cdsw/models/Qwen3.5-9B
+GPU_PROFILE=h200
+SERVED_MODEL_NAME=qwen3.5-9b
+VLLM_USE_FLASHINFER_SAMPLER=0
+APP_STARTUP_TIMEOUT_MINUTES=15
+```
+
+- Settings are read from `MAX_MODEL_LEN`, `GPU_MEMORY_UTILIZATION`, `VLLM_DTYPE`, `MAX_NUM_SEQS`. The names
+  `VLLM_MAX_MODEL_LEN` and `VLLM_GPU_MEMORY_UTILIZATION` are **ignored**. The profile gives the defaults
+  (`h200`: 8192 / 0.75 / 32; `l40s`: 8192 / 0.82 / 16).
+- `VLLM_USE_FLASHINFER_SAMPLER=0` is set automatically when `nvcc` is missing (the PBJ runtime has none); setting it
+  explicitly is harmless and documents the choice.
+- Validate: `curl -i https://<vllm-app-url>/health`, then `/v1/models`, then one chat request that includes
+  `"chat_template_kwargs": {"enable_thinking": false}`.
+- Status: validated in a Session, not yet as an Application.
+
+### 3.2 Qdrant
+
+| Field | Value |
+|---|---|
+| Name | `bni-qdrant` |
+| Script | `bni-cai-technical-training/deployments/cai/qdrant/app.py` |
+| Resources | 4 vCPU, 16 GB, no GPU |
+
+```text
+PYTHONPATH=<repo>
+QDRANT_BINARY=/home/cdsw/tools/qdrant/qdrant
+QDRANT_STORAGE_PATH=/home/cdsw/bni-qdrant-storage
+APP_STARTUP_TIMEOUT_MINUTES=5
+```
+
+- Validate: `curl -i https://<qdrant-app-url>/readyz`.
+- Then create a collection, restart the Application, and confirm the collection is still there (persistence).
+- If it fails with "Qdrant binary not found", run step 2.4 from a Session.
+
+### 3.3 Phoenix
+
+| Field | Value |
+|---|---|
+| Name | `bni-phoenix` |
+| Script | `bni-cai-technical-training/deployments/cai/phoenix/app.py` |
+| Resources | 4 vCPU, 16 GB, no GPU |
+
+```text
+PYTHONPATH=<repo>
+PYTHON_EXECUTABLE=/home/cdsw/.venvs/bni-phoenix/bin/python
+PHOENIX_WORKING_DIR=/home/cdsw/bni-phoenix-data
+APP_STARTUP_TIMEOUT_MINUTES=5
+```
+
+- The launcher sets `PHOENIX_HOST` and `PHOENIX_PORT` itself (the `phoenix serve` command has no `--host` or
+  `--port`). Phoenix also opens a gRPC port (default 4317); set `PHOENIX_GRPC_PORT` only if a log reports a clash.
+- Validate: `curl -i https://<phoenix-app-url>/healthz`, then open the UI.
+- Observability is only PASS once a trace from a notebook appears here (lab 09).
+
+### 3.4 Workshop Portal
+
+| Field | Value |
+|---|---|
+| Name | `bni-workshop-portal` |
+| Script | `bni-cai-technical-training/deployments/cai/workshop-portal/app.py` |
+| Resources | 4 vCPU, 8 to 16 GB, no GPU |
+| Replicas | **1** (never scale out) |
+
+```text
+PYTHONPATH=<repo>/src:<repo>
+PYTHON_EXECUTABLE=/home/cdsw/.venvs/bni-rag/bin/python
+WORKSHOP_RUNTIME_DIR=/home/cdsw/workshop-runtime
+PORTAL_MODE=cai
+PORTAL_LLM_ROUTE=vllm
+VLLM_BASE_URL=https://<vllm-app-url>/v1
+SERVED_MODEL_NAME=qwen3.5-9b
+QDRANT_URL=https://<qdrant-app-url>
+EMBEDDING_MODEL_PATH=<path to the sentence-transformers model on NFS>
+PHOENIX_COLLECTOR_ENDPOINT=<phoenix collector endpoint>
+DATA_BACKEND=csv
+PORTAL_MAX_CONCURRENT_INFERENCE=3
+PORTAL_MAX_QUEUE_DEPTH=60
+PORTAL_QUEUE_TIMEOUT_S=120
+PORTAL_REQUEST_TIMEOUT_S=60
+PORTAL_MAX_RETRIES=2
+PORTAL_ENFORCE_SINGLE_INSTANCE=true
+```
+
+- `PORTAL_APP` is optional; the launcher resolves `apps/workshop-portal/app.py` from the repository.
+- Add the API key variables (`VLLM_API_KEY`, `QDRANT_API_KEY`) as CAI secrets only if those services need them.
+- Without both `QDRANT_URL` and `EMBEDDING_MODEL_PATH` the Portal has no retrieval.
+- Validate: `curl -i https://<portal-app-url>/_stcore/health`, then open the UI and ask a sample question.
+- One process and one replica, because the inference limit (default 3) is a process-local semaphore.
+
+### 3.5 LiteLLM (day 2)
+
+| Field | Value |
+|---|---|
+| Name | `bni-litellm` |
+| Script | `bni-cai-technical-training/deployments/cai/litellm/app.py` |
+| Resources | 2 vCPU, 4 GB, no GPU |
+
+```text
+PYTHONPATH=<repo>/src:<repo>
+LITELLM_EXECUTABLE=/home/cdsw/.venvs/bni-litellm/bin/litellm
+LITELLM_CONFIG=<repo>/config/litellm.yaml
+VLLM_BASE_URL=https://<vllm-app-url>/v1
+VLLM_API_KEY=<value from a CAI secret, or a placeholder if vLLM has no key>
+MOCK_FALLBACK_BASE_URL=<fallback endpoint; see the note>
+APP_STARTUP_TIMEOUT_MINUTES=5
+```
+
+- Use an **absolute** `LITELLM_CONFIG`. The launcher passes the value as given, and a relative `config/litellm.yaml`
+  is not found from `/home/cdsw`.
+- `config/litellm.yaml` reads `VLLM_BASE_URL`, `VLLM_API_KEY` and `MOCK_FALLBACK_BASE_URL`. Define all three.
+  The fallback model `training-fallback` points to `MOCK_FALLBACK_BASE_URL`; `apps/litellm/mock_fallback.py` is a
+  small stand-in server for it. How to host that fallback in CAI is not decided yet.
+- Validate: `curl -i https://<litellm-app-url>/health/liveliness`, then `/v1/models`, then a chat request with the
+  alias `qwen-primary`.
+- When it works, switch the Portal to `PORTAL_LLM_ROUTE=litellm`, `LITELLM_BASE_URL=https://<litellm-app-url>/v1`,
+  `PORTAL_LITELLM_MODEL=qwen-primary`.
+- Status: not yet tried as a CAI Application.
+
+## 4. Check and start order
+
+| Step | Do | Pass when |
+|---|---|---|
+| 1 | Create vLLM, wait for startup | `/health` is 200 and `/v1/models` lists `qwen3.5-9b` |
+| 2 | Run lab 03 against it | `LAB_STATUS` passes in `cai` mode |
+| 3 | Create Qdrant | `/readyz` is 200; a collection survives a restart |
+| 4 | Create Phoenix | `/healthz` is 200 |
+| 5 | Run labs 07 and 09 | retrieval returns your group; a trace shows in Phoenix |
+| 6 | Create the Portal | `/_stcore/health` is 200; a sample question completes |
+| 7 | Run lab 12 | a saved answer exists for your group |
+| 8 | Day 2: stop Phoenix if needed, create LiteLLM | `/health/liveliness` is 200; lab 10 passes |
+
+Test one service at a time. A failure then has one obvious cause.
+
+## 5. Errors we have seen, and the fix
+
+| Log message | Cause | Fix |
+|---|---|---|
+| `No such file or directory: '/home/cdsw/tools/qdrant/qdrant'` | The binary was never prepared | Step 2.4, then restart |
+| `unrecognized arguments: --host ... --port ...` (Phoenix) | `phoenix serve` has no such options | Use the current launcher (`git pull`), restart |
+| `File does not exist: apps/workshop-portal/app.py` | The Application starts in `/home/cdsw` | Use the current launcher (`git pull`), restart |
+| FlashInfer or `nvcc` error at vLLM start | No CUDA Toolkit in the runtime | `VLLM_USE_FLASHINFER_SAMPLER=0` |
+| Port 8100 unavailable | A Session may not use it | Applications use `CDSW_APP_PORT`; Sessions can use 8101 |
+| Thinking text in answers, short or empty answers | Qwen3.5 thinking uses the token budget | Send `chat_template_kwargs.enable_thinking=false` |
+| `pip` retries and `Connection broken` | Unstable proxy | Keep the retry flags; pip resumes the download |
+
+If an Application fails, copy the last 30 lines of its Logs (no secrets) before changing anything.
+
+## 6. Known gaps (do not treat as validated)
+
+- **Access between Applications and from other Sessions.** CAI Application URLs may require authentication. How
+  notebooks and the Portal reach vLLM, Qdrant, Phoenix and LiteLLM is not yet validated.
+- **Portal and Qwen thinking.** The notebooks disable Qwen3.5 thinking; the Portal's own LLM calls do not yet.
+  Answers may show thinking text and use the token budget until that is changed.
+- **Embedding model.** The sentence-transformers model for Qdrant retrieval is not yet prepared on NFS.
+- **LiteLLM fallback.** The mock fallback endpoint has no CAI deployment plan yet.
+- **GPU locks.** `requirements/gpu-*.lock` are stubs; resolve them on the target runtime.
+- **Capacity.** The 40-participant Portal capacity, the single replica setting and Session quota are unmeasured.
+- **Isolation is operational.** Group IDs separate data by application logic; they are not a security boundary.
+
+Record every result in `PROJECT_STATE.md` and `config/cai-validation-pending.yaml`.
