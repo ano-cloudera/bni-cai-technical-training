@@ -344,6 +344,56 @@ env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python -c "import os; from qdran
 
 A single group only: add `--group-id group_04` to the command.
 
+## 5c. After indexing: check another group, rotate the key, smoke-test the load
+
+Confirmed at BNI: all ten groups hold 6 points each in `bni_training_knowledge` (section 5b).
+
+### 5c.1 Portal for another group
+
+Open the Portal in a new tab, choose `group_05`, open the panel "Related glossary and scenario notes", type
+`outstanding balance` and press Enter. Pass: notes appear, and the mission note is the mission of `group_05`, not of
+`group_03`.
+
+### 5c.2 Rotate the LiteLLM master key (after a key was partly visible in a screenshot)
+
+Create the key into a file (nothing is printed; the length must be 67):
+
+```bash
+python3 -c "import secrets; print('sk-' + secrets.token_hex(32))" > /home/cdsw/LITELLM_MASTER_KEY.txt && chmod 600 /home/cdsw/LITELLM_MASTER_KEY.txt && echo "length: $(tr -d '\n' < /home/cdsw/LITELLM_MASTER_KEY.txt | wc -c)"
+```
+
+Open the file in JupyterLab, copy its content into `LITELLM_MASTER_KEY` of the `bni-litellm-gateway` Application (never screenshot
+the value column) and click **Update Application**. Then use the new key in the Session:
+
+```bash
+export LITELLM_API_KEY="$(tr -d '\n' < /home/cdsw/LITELLM_MASTER_KEY.txt)"; echo "${#LITELLM_API_KEY}"
+```
+
+Test (must print `models=200`; the old key now gives 401):
+
+```bash
+curl -s -o /dev/null -w "models=%{http_code}\n" -H "Authorization: Bearer $LITELLM_API_KEY" "$LITELLM_URL/v1/models"
+```
+
+Delete the file and close its JupyterLab tab:
+
+```bash
+rm -f /home/cdsw/LITELLM_MASTER_KEY.txt
+```
+
+### 5c.3 vLLM concurrency smoke test
+
+`scripts/vllm_concurrency_test.py` sends one small request (16 tokens) per group at the same time and prints the highest latency.
+It is a smoke test, not a load test (its `requests_per_second` is not a real throughput, and it does not switch Qwen
+thinking off). Run it from the repository folder with `VLLM_URL` set:
+
+```bash
+env -u PYTHONPATH /home/cdsw/.venvs/bni-rag/bin/python scripts/vllm_concurrency_test.py --url "$VLLM_URL/v1" --api-key EMPTY --groups 10
+```
+
+Send the one-line result. A realistic test (40 parallel requests of about 200 tokens, thinking off, correct throughput,
+p50 and p95 latency) is still to be written.
+
 ## 6. Whole-service check (read only)
 
 ```bash
