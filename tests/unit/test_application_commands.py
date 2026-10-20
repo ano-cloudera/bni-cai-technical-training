@@ -99,3 +99,17 @@ def test_litellm_main_fails_clearly_when_the_config_is_missing(monkeypatch) -> N
     monkeypatch.setenv("LITELLM_CONFIG", "/nonexistent/litellm.yaml")
     with pytest.raises(FileNotFoundError, match="LiteLLM config not found"):
         litellm_app.main()
+
+
+def test_litellm_requires_a_master_key_and_explains_how_to_create_one(monkeypatch) -> None:
+    from deployments.cai.litellm import app as litellm_app
+
+    for env in ({}, {"LITELLM_MASTER_KEY": ""}, {"LITELLM_MASTER_KEY": "   "}):
+        with pytest.raises(ValueError, match="LITELLM_MASTER_KEY is not set") as error:
+            litellm_app.require_master_key(env)
+        assert "secrets.token_hex" in str(error.value) and "never commit" in str(error.value)
+    litellm_app.require_master_key({"LITELLM_MASTER_KEY": "sk-example"})
+    monkeypatch.setenv("CDSW_APP_PORT", "8123")
+    monkeypatch.delenv("LITELLM_MASTER_KEY", raising=False)
+    with pytest.raises(ValueError, match="LITELLM_MASTER_KEY"):
+        litellm_app.main()

@@ -23,6 +23,16 @@ def missing_config_variables(config: Path, env: Mapping[str, str]) -> list[str]:
     return [name for name in names if not env.get(name)]
 
 
+def require_master_key(env: Mapping[str, str]) -> None:
+    """LiteLLM refuses to start without a master key. Fail early with the fix, not after a long traceback."""
+    if not env.get("LITELLM_MASTER_KEY", "").strip():
+        raise ValueError(
+            "LITELLM_MASTER_KEY is not set. Create a strong key, for example with "
+            "python -c \"import secrets; print('sk-' + secrets.token_hex(32))\", set it in the Application "
+            "environment and never commit it."
+        )
+
+
 def build_command(env: Mapping[str, str]) -> list[str]:
     return [
         env.get("LITELLM_EXECUTABLE", "litellm"),
@@ -43,6 +53,7 @@ def main() -> int:
         raise FileNotFoundError(
             f"LiteLLM config not found: {config}. Check LITELLM_CONFIG and the repository path."
         )
+    require_master_key(env)
     missing = missing_config_variables(config, env)
     if missing:
         print(

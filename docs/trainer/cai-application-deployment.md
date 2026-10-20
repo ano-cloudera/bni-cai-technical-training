@@ -284,12 +284,21 @@ PORTAL_ENFORCE_SINGLE_INSTANCE=true
 PYTHONPATH=/home/cdsw/bni-cai-technical-training/src:/home/cdsw/bni-cai-technical-training
 LITELLM_EXECUTABLE=/home/cdsw/.venvs/bni-litellm/bin/litellm
 LITELLM_CONFIG=/home/cdsw/bni-cai-technical-training/config/litellm.yaml
+LITELLM_MASTER_KEY=<a strong key you create; see below>
 VLLM_BASE_URL=https://<vllm-app-url>/v1
 VLLM_API_KEY=<value from a CAI secret, or a placeholder if vLLM has no key>
 MOCK_FALLBACK_BASE_URL=<fallback endpoint; see the note>
 APP_STARTUP_TIMEOUT_MINUTES=5
 ```
 
+- **`LITELLM_MASTER_KEY` is required.** LiteLLM refuses to start without it (`UnsafeMasterKeyError`), because every
+  request would otherwise be accepted. Create one in a Session and paste it into the Application environment; do not
+  commit it, screenshot it or share it in chat:
+  `python -c "import secrets; print('sk-' + secrets.token_hex(32))"`. Do not use
+  `LITELLM_DANGEROUSLY_PERMIT_WEAK_OR_UNSET_MASTER_KEY`; it is for local development only.
+- The master key is an admin key. Clients (the Portal as `LITELLM_API_KEY`, notebooks) must send it as a Bearer token
+  or use a virtual key. How participants get a key is not decided yet.
+- The warning `trusted_proxy_ranges is not set` is harmless for now.
 - `LITELLM_CONFIG` should be an absolute path. A relative `config/litellm.yaml` also works with the current launcher,
   which resolves it from the repository; with an older launcher it fails with `Config file not found`.
 - `config/litellm.yaml` reads `VLLM_BASE_URL`, `VLLM_API_KEY` and `MOCK_FALLBACK_BASE_URL`. Define all three; the
@@ -331,6 +340,7 @@ Test one service at a time. A failure then has one obvious cause.
 | `NameError: name '__file__' is not defined` (Portal) | CAI runs the script in a kernel without `__file__` | Use the current launcher (`git pull`), restart |
 | FlashInfer or `nvcc` error at vLLM start | No CUDA Toolkit in the runtime | `VLLM_USE_FLASHINFER_SAMPLER=0` |
 | `Config file not found: config/litellm.yaml` (LiteLLM) | The Application starts in `/home/cdsw` | Set `LITELLM_CONFIG` to the absolute path, or use the current launcher (`git pull`) |
+| `UnsafeMasterKeyError: ... no master key is set` (LiteLLM) | `LITELLM_MASTER_KEY` is missing | Create a key and set it (see section 3.5); the launcher now says so before starting |
 | `WARNING: litellm.yaml reads variables that are not set` | The config uses `os.environ/NAME` | Define `VLLM_BASE_URL`, `VLLM_API_KEY` and `MOCK_FALLBACK_BASE_URL` |
 | Port 8100 unavailable | A Session may not use it | Applications use `CDSW_APP_PORT`; Sessions can use 8101 |
 | Thinking text in answers, short or empty answers | Qwen3.5 thinking uses the token budget | Send `chat_template_kwargs.enable_thinking=false` |
@@ -345,6 +355,8 @@ If an Application fails, copy the last 30 lines of its Logs (no secrets) before 
 - **Portal and Qwen thinking.** The notebooks disable Qwen3.5 thinking; the Portal's own LLM calls do not yet.
   Answers may show thinking text and use the token budget until that is changed.
 - **Embedding model.** The sentence-transformers model for Qdrant retrieval is not yet prepared on NFS.
+- **LiteLLM keys.** How the Portal and participants authenticate to LiteLLM (master key versus virtual keys) is not
+  decided; the master key must not be handed to participants.
 - **LiteLLM fallback.** The mock fallback endpoint has no CAI deployment plan yet.
 - **GPU locks.** `requirements/gpu-*.lock` are stubs; resolve them on the target runtime.
 - **Capacity.** The 40-participant Portal capacity, the single replica setting and Session quota are unmeasured.

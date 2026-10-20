@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased (litellm master key)
+
+- LiteLLM launcher: fails early with instructions when `LITELLM_MASTER_KEY` is not set (LiteLLM refuses to start
+  without it). The deployment guide documents the key, its handling and the open question of client keys.
+
 ## Unreleased (litellm launcher)
 
 - LiteLLM launcher: a relative `LITELLM_CONFIG` is resolved from the repository (the Application starts in
