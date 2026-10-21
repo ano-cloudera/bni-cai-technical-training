@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased (LiteLLM Admin UI demo)
+
+- `docs/trainer/litellm-ui-demo/`: a trainer-only Docker Compose file that runs the LiteLLM gateway with Postgres on a laptop, so the
+  Admin UI can be shown (the CAI Application has no database). Participants and CAI are unchanged. Validated with `docker compose
+  config`; it was not started here.
+
 ## Unreleased (notebook redesign, Lab 03)
 
 - Lab 03 follows the guided pattern: the request as two tables, thinking switched off (the reason stays in a code comment), a bounded retry,
