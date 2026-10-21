@@ -226,7 +226,8 @@ supports CUDA 13.
 - `VLLM_CHAT_TEMPLATE=/home/cdsw/bni-cai-technical-training/config/vllm/qwen3_5_chat_template.jinja` is needed only when **Agent Studio**
   (or any CrewAI-style client) calls the model. The original Qwen3.5 template answers HTTP 400 `System message must be at the
   beginning.` when a system message is not the first message, and Agent Studio sends one. The repository template changes only that
-  rule. It was checked with the Jinja renderer in tests, **not yet on a running vLLM**. Changing it restarts vLLM (several minutes);
+  rule. It was checked with the Jinja renderer in tests, and at BNI it fixed the Agent Studio request: the workflow `test` answered a
+  greeting after vLLM restarted with it (Agent Studio provider "OpenAI compatible", identifier `qwen-primary` through LiteLLM). Changing it restarts vLLM (several minutes);
   after Update Application check that **Number of GPUs is still 1**. The notebooks and the Portal do not need it.
 - `PIP_USER=false` only matters when you run `pip`; it is not needed in the Application.
 - The names `VLLM_MAX_MODEL_LEN` and `VLLM_GPU_MEMORY_UTILIZATION` are **ignored**; use `MAX_MODEL_LEN` and
