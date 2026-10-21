@@ -18,9 +18,9 @@ Terminal variables come from section 0b of `BNI-TESTING-COMMANDS.md` (`APPS_DOMA
 | 3 | Register the kernel `bni-rag` (section 3) | "BNI rag (py3.10)" is in the kernel list after a browser reload |
 | 4 | Check the Applications (section 4): vLLM has **1 GPU** and `VLLM_TOOL_CALL_PARSER`; Portal has `WORKSHOP_RUNTIME_DIR`; LiteLLM has `SSL_CERT_FILE` | the five health checks of `BNI-TESTING-COMMANDS.md` section 2 print 200 |
 | 5 | Set the **project** variables of section 5 (`APPS_DOMAIN`, `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`, `RUNTIME_PROFILE`), then restart the Session | a notebook cell `import os; print(os.getenv("APPS_DOMAIN"))` prints the domain (if `None`, participants type the domain in the Service addresses cell) |
-| 6 | Refresh the group workspaces (section 2) | `grep -c "proved" .../group_03/notebooks/05_semantic_layer.ipynb` prints 1 or more (the guided notebooks 04 to 08 arrived) and `grep -c load_group_env` on the same file prints 1 or more |
+| 6 | Refresh the group workspaces (section 2) | `grep -c "proved" .../group_03/notebooks/05_semantic_layer.ipynb` prints 1 or more (the guided notebooks arrived) and `grep -c load_group_env` on the same file prints 1 or more. Then run the all-groups check of section 2: the same result for `group_01` to `group_10` |
 | 7 | Ask one sample question in the Portal for `group_03` (wait for Completed) | "My outputs (1)" appears |
-| 8 | **Day 1 notebooks.** Run, from `group_03/notebooks`, with the kernel BNI rag, in this order: 00, 03, 04, 05, 06, 07, 08, 09. Lab 07 needs `QDRANT_URL` and `EMBEDDING_MODEL_PATH`; Lab 09 needs `PHOENIX_COLLECTOR_ENDPOINT` and `PHOENIX_UI_URL` (project variables, step 5) | each prints `LAB_STATUS: ... mode=cai status=PASS`. The line must say `mode=cai`, never `mode=local`. Lab 04 shows `group_03` in its first step, not `group_01`. After Lab 09 a trace for `group_03` is visible in the Phoenix UI |
+| 8 | **Day 1 notebooks.** Run, from `group_03/notebooks`, with the kernel BNI rag, in this order: 00, 03, 04, 05, 06, 07, 08, 09. Labs 00, 07 and 09 start with a "Service addresses" cell that builds the Qdrant and Phoenix addresses from `APPS_DOMAIN` (step 5; if the project variable did not arrive, type the domain in that cell and, in Lab 00, the profile `bni-h200`) | each prints `LAB_STATUS: ... mode=cai status=PASS`. The line must say `mode=cai`, never `mode=local`. Lab 04 shows `group_03` in its first step, not `group_01`. After Lab 09 a trace for `group_03` is visible in the Phoenix UI |
 | 9 | **Day 2 notebooks**, if time: 10, 11, 12 (12 needs step 7 first; 10 needs a key and the LiteLLM Application, section 5) | same |
 | 10 | Clean the test group so participants start clean: delete any `*_v2.ipynb` copy in `group_03/notebooks`, then reset (dry run first, then `--yes`): `scripts/reset_group_workspace.py --group-id group_03`, add `--include-notebooks` to restore the notebooks | the dry run lists only `group_03`, and `ls group_03/notebooks` shows the 13 standard names only |
 | 11 | Rotate `LITELLM_MASTER_KEY` and decide Lab 10 (section 5, last paragraph) | `models=200` with the new key |
@@ -37,7 +37,8 @@ What participants do (put this on a slide or in the guide):
 
 1. Open **Lab 00** from `workshop-runtime/groups/group_XX/notebooks/` (their own group folder, never `notebooks/templates`).
 2. **Kernel, Change Kernel, BNI rag (py3.10)** in every notebook.
-3. Run all cells from the top. Do not edit the setup cell.
+3. In Labs 00, 07 and 09: if the trainer did not set `APPS_DOMAIN`, paste the Applications domain in the "Service addresses" cell (and, in Lab 00, the profile name). Never paste a key.
+4. Run all cells from the top. Do not edit the setup cell. Every lab ends with a list of what they proved: show it to the trainer.
 
 ## 1. Repository changes the notebooks need (`git pull` at BNI)
 
@@ -51,7 +52,8 @@ All of these are on `main` after the push. Without them the notebooks run the lo
 | CrewAI `LLM` sends `enable_thinking=false` | Labs 08 and 09 showed `0 data tool call(s)` |
 | vLLM launcher option `VLLM_TOOL_CALL_PARSER` | CrewAI needs tool calling (`400 "auto" tool choice requires ...`) |
 | `scripts/index_all_groups.py` | Indexes glossary and mission notes of all ten groups with bge-m3 |
-| Labs 04 to 09 rewritten as guided lessons | One setup cell, explained steps with a prediction, pandas tables, a real exercise, a closing list of what the participant proved. File names and saved outputs are unchanged. They replace the old notebooks of the same names in the templates, so a workspace refresh (section 2) is what delivers them |
+| Labs 03 to 09 rewritten as guided lessons | One setup cell, explained steps with a prediction, pandas tables, a real exercise, a closing list of what the participant proved. File names and saved outputs are unchanged. They replace the old notebooks of the same names in the templates, so a workspace refresh (section 2) is what delivers them |
+| Labs 00, 07, 09, 10 and 12 start with a "Service addresses" cell | The participant pastes the Applications domain once (or the trainer sets `APPS_DOMAIN`); see section 5 |
 
 After `git pull`, if git says local changes would be overwritten (a notebook was run inside the repository), stash them:
 
@@ -74,6 +76,15 @@ export WORKSHOP_RUNTIME_DIR=/home/cdsw/workshop-runtime; cd /home/cdsw/bni-cai-t
 `VLLM_URL` must be set in that terminal (section 0b of `BNI-TESTING-COMMANDS.md`); without it the script stops with `REFUSED`.
 Check a refreshed notebook: `grep -c "load_group_env" /home/cdsw/workshop-runtime/groups/group_03/notebooks/04_csv_data_access.ipynb`
 must print 1 or more. Close old notebook tabs in JupyterLab without saving, and reopen from the group folder.
+
+**All-groups check** (the refresh must reach all ten groups; ten lines, all alike: `notebooks=13`, `terpandu=1` or more, `mode=LAB_MODE=cai`):
+
+```bash
+for g in group_01 group_02 group_03 group_04 group_05 group_06 group_07 group_08 group_09 group_10; do d=/home/cdsw/workshop-runtime/groups/$g; echo "$g notebooks=$(ls $d/notebooks/*.ipynb | wc -l) terpandu=$(grep -c proved $d/notebooks/05_semantic_layer.ipynb) mode=$(grep -h '^LAB_MODE=' $d/config/group.env)"; done
+```
+
+A group with `terpandu=0` or `LAB_MODE=local` was not refreshed. Never run the refresh after participants have started: it replaces
+notebooks they edited (the old ones are backed up first).
 
 ## 3. Add the notebook kernel at BNI (to do)
 
@@ -141,7 +152,8 @@ notebook and the trainer rotates the key right after class. Do not put the key i
 
 - Glossary and mission notes of all ten groups: BNI done (`index_all_groups.py`, 6 points per group). The sandbox is done too.
 - Embedding model `bge-m3` on NFS: BNI done. Sandbox: downloaded in a Session; `Stale file handle` on NFS once, rerun fixed it.
-- Run notebooks 00, 03 and one heavy lab (07 or 08) for one group at BNI before the workshop (to do).
+- Run all Day 1 notebooks (00, 03 to 09) for one group at BNI before the workshop (step 8; to do).
+- Phoenix must be running on Day 1 (Lab 09 sends a trace); LiteLLM is only needed from Day 2.
 
 ## 7. Sandbox results of the notebooks (kernel BNI rag, group_03, `mode=cai`)
 
@@ -160,5 +172,7 @@ with it. None of the notebooks has run at BNI yet: do step 8 there.
 
 - Lab 12 prints `'group_locked': False, 'identity_verified': False` in `cai` mode (values are only computed locally).
 - Each Session loads the 2 GB bge-m3 model on CPU for Lab 07; memory and load time for 40 Sessions are not measured.
-- Notebook redesign (explained steps, pandas tables): a draft of Lab 04 is in `notebooks/drafts/`. Renumbering the labs is postponed.
+- Notebook redesign: Labs 03 to 09 are guided lessons. Labs 00, 10, 11 and 12 still have the original wording (they work). Renumbering the labs is postponed.
+- Lab 10, 12 and the Lab 00 profile: the Service addresses cell was not run in Labs 10 and 12; Lab 10 still needs the key decision (section 5).
+- The Portal start-up logging change (`ui.py` and one test) is not committed.
 - `.ipynb_checkpoints` folders are not in `.gitignore`.
