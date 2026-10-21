@@ -241,7 +241,9 @@ second_task = Task(
 second_output = kickoff_blocking(
     Crew(agents=[second_agent], tasks=[second_task], process=Process.sequential, verbose=False), {"question": question}
 )
-display(pd.DataFrame({"agent": ["first (original goal)", "second (your goal)"], "answer": [str(crew_output), str(second_output)]}))
+answers_table = pd.DataFrame({"agent": ["first (original goal)", "second (your goal)"], "answer": [str(crew_output), str(second_output)]})
+with pd.option_context("display.max_colwidth", None):  # show each answer in full, not cut with "..."
+    display(answers_table)
 if len(recording_tool.calls) == calls_before:
     print("The second agent answered without the tool. Strengthen the task wording and run again.")
 proved.append("I changed the agent's goal and compared two answers")
