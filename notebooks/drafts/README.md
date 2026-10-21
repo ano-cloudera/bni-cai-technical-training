@@ -21,3 +21,12 @@ Guided version of Lab 03 (the request as two tables, thinking switched off, a bo
 to the first piece, two temperatures, a max_tokens cut-off with finish_reason, an exercise, a closing list). It keeps the saved
 `03_llm_api_result.json`. Executed locally (mock model) for group_03, group_05 and group_09: PASS. Not yet run against the shared vLLM.
 Copy the `.ipynb` into a group workspace and open the copy there; Lab 03 needs no service-address cell.
+
+## 10_litellm_routing_v2, 11_guardrails_v2 and 12_end_to_end_portal_v2
+
+Guided versions of Labs 10 to 12 (Day 2), same pattern as Labs 03 to 09. Lab 10 explains aliases, retry versus fallback, and never prints the key
+(in `cai` mode it asks for the key with `getpass` when `LITELLM_API_KEY` is not set); Lab 11 shows the three rules, a real wrapped model call and
+the limit of a phrase rule (a reworded injection passes); Lab 12 walks the Portal states and compares the Portal SQL with the Lab 05 path, and shows
+"see the Portal sidebar" for the lock in `cai` mode instead of `False`. The Service addresses cell now also accepts a pasted `https://...` address.
+All three were executed locally (mock services) for group_03, group_05, group_09, group_10, group_04 and group_06. Not yet run against the real
+services. To try one, copy the `.ipynb` into a group workspace and open the copy there.
