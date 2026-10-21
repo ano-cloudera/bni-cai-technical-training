@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased (Agent Studio chat template)
+
+- `config/vllm/qwen3_5_chat_template.jinja`: the Qwen3.5 chat template with one change. A system message that is not the first message is
+  rendered as a system turn instead of failing the request. Agent Studio registered the model through LiteLLM and got `System message must
+  be at the beginning.` (HTTP 400 from vLLM). Used through the existing `VLLM_CHAT_TEMPLATE` setting. Tested with the Jinja renderer;
+  not yet run on a live vLLM.
+
 ## Unreleased (LiteLLM Admin UI demo)
 
 - `docs/trainer/litellm-ui-demo/`: a trainer-only Docker Compose file that runs the LiteLLM gateway with Postgres on a laptop, so the

@@ -223,6 +223,11 @@ supports CUDA 13.
   (CrewAI) sends `tool_choice="auto"`, and without these options vLLM answers `400 "auto" tool choice requires
   --enable-auto-tool-choice and --tool-call-parser to be set`. `qwen3_coder` is the parser the official vLLM recipe for
   Qwen3.5 names; confirm it with Lab 08 after the restart. Restarting vLLM reloads the model.
+- `VLLM_CHAT_TEMPLATE=/home/cdsw/bni-cai-technical-training/config/vllm/qwen3_5_chat_template.jinja` is needed only when **Agent Studio**
+  (or any CrewAI-style client) calls the model. The original Qwen3.5 template answers HTTP 400 `System message must be at the
+  beginning.` when a system message is not the first message, and Agent Studio sends one. The repository template changes only that
+  rule. It was checked with the Jinja renderer in tests, **not yet on a running vLLM**. Changing it restarts vLLM (several minutes);
+  after Update Application check that **Number of GPUs is still 1**. The notebooks and the Portal do not need it.
 - `PIP_USER=false` only matters when you run `pip`; it is not needed in the Application.
 - The names `VLLM_MAX_MODEL_LEN` and `VLLM_GPU_MEMORY_UTILIZATION` are **ignored**; use `MAX_MODEL_LEN` and
   `GPU_MEMORY_UTILIZATION`. Without them the profile supplies the defaults (`h200`: 8192, 0.75, 32; `l40s`: 8192,
