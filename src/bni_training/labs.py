@@ -15,6 +15,7 @@ import argparse
 import json
 import os
 import sys
+import tempfile
 import traceback
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
@@ -198,7 +199,20 @@ def build_data_tool(settings):
     return DataQueryTool(create_backend(settings), SemanticCatalog.load(SEMANTIC_MODEL))
 
 
+def isolate_crewai_storage() -> str:
+    """Give this process its own CrewAI SQLite folder.
+
+    CrewAI keeps a database in a folder named after the current directory, which is `notebooks` for every group, so ten groups
+    on one CAI home share one file and fail with "database is locked". A private folder in the local temp directory avoids that.
+    """
+    if not os.environ.get("CREWAI_STORAGE_DIR"):
+        group = os.environ.get("GROUP_ID", "local")
+        os.environ["CREWAI_STORAGE_DIR"] = os.path.join(tempfile.gettempdir(), f"bni-crewai-{group}-{os.getpid()}")
+    return os.environ["CREWAI_STORAGE_DIR"]
+
+
 def crewai_llm(base_url: str, api_key: str, model: str = "qwen3.5-9b"):
+    isolate_crewai_storage()
     try:
         from crewai import LLM
     except ImportError as exc:
