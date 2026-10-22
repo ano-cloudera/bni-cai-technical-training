@@ -158,12 +158,12 @@ from bni_training.crew import kickoff_blocking
 
 evidence_text = json.dumps(evidence, default=str)
 analyst_task = Task(
-    description=f"Question: {question}\nAnalyze this validated group-scoped evidence and draft an answer: {evidence_text}",
+    description=f"Question: {question}\nAnalyze this validated group-scoped evidence and draft an answer. Write plain sentences. Use a number only exactly as it appears in the evidence rows: do not round it, convert it, number your points, or add counts, ranks, percentages or years. Evidence: {evidence_text}",
     expected_output="SQL, bounded rows, and a factual draft",
     agent=analyst_agent,
 )
 reviewer_task = Task(
-    description=f"Question: {question}\nReview the draft against this same evidence; add no unsupported number: {evidence_text}",
+    description=f"Question: {question}\nReview the draft against this same evidence; add no unsupported number. Write plain sentences. Use a number only exactly as it appears in the evidence rows: do not round it, convert it, number your points, or add counts, ranks, percentages or years. Evidence: {evidence_text}",
     expected_output="A concise grounded final answer",
     agent=reviewer_agent,
     context=[analyst_task],
@@ -224,15 +224,22 @@ proved.append("I listed the numbers in the final answer and compared them with t
 #
 # **Why it matters:** a rule in code does not get tired and does not trust the model. It is the last gate before an answer is shown.
 #
-# **Look for:** `grounding: PASS`.
+# **Look for:** `grounding: PASS`. If it says `BLOCKED`, that is not an error: the answer contains a number that is not in your rows. The line
+# lists those numbers. A model often adds a list number ("1."), a rounded value, a rank or a year. Run Step 4 again, or tighten the task wording.
 
 # %%
 from bni_training.guardrails import GuardrailError, validate_grounded_answer
 
-grounded_answer = validate_grounded_answer(reviewer_output, known_numbers)
-assert grounded_answer.strip()
-print({"grounding": "PASS"})
-proved.append("The final answer passed the grounding rule")
+try:
+    grounded_answer = validate_grounded_answer(reviewer_output, known_numbers)
+    assert grounded_answer.strip()
+    print({"grounding": "PASS"})
+    proved.append("The final answer passed the grounding rule")
+except GuardrailError as exc:
+    unsupported = [value for value in mentioned if round(value, 4) not in allowed]
+    print({"grounding": "BLOCKED", "reason": str(exc), "numbers_not_in_the_evidence": unsupported})
+    print("The rule did its job. Run Step 4 again, or tell the agents to use only the numbers in the rows.")
+    proved.append("The grounding rule checked the final answer and blocked a number that is not in the data")
 
 # %% [markdown]
 # ## Step 7. A made-up number is rejected
@@ -279,7 +286,7 @@ custom_reviewer = Agent(
     verbose=False,
 )
 custom_task = Task(
-    description=f"Question: {question}\nAnalyst draft: {analyst_output}\nReview it against this evidence: {evidence_text}",
+    description=f"Question: {question}\nAnalyst draft: {analyst_output}\nReview it against this evidence. Write plain sentences. Use a number only exactly as it appears in the evidence rows: do not round it, convert it, number your points, or add counts, ranks, percentages or years. Evidence: {evidence_text}",
     expected_output="A concise grounded final answer",
     agent=custom_reviewer,
 )

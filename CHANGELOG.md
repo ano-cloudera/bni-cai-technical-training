@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased (Lab 08 grounding step)
+
+- Lab 08: the analyst and reviewer tasks now say to use numbers only as they appear in the evidence rows (no rounding, numbered points, ranks or years), and
+  Step 6 reports `BLOCKED` with the unsupported numbers instead of failing the notebook. A real model run for group_04 (Branch Performance) raised
+  `GuardrailError` because the reviewer wrote numbers that were not in the rows.
+
 ## Unreleased (Labs 10 to 12 guided, certificate fallback, domain cleaning)
 
 - Labs 10, 11 and 12 follow the guided pattern of Labs 03 to 09 (explained steps with a prediction, pandas tables, an exercise, a closing list of what
