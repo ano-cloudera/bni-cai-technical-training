@@ -10,6 +10,7 @@ The data is fully synthetic. The tool cannot change anything and cannot read tab
 import argparse
 import csv
 import json
+import os
 import re
 import sqlite3
 from pathlib import Path
@@ -50,13 +51,39 @@ class ToolParameters(BaseModel):
 
 def _bundle(config: UserParameters) -> tuple[dict, Path]:
     csv_dir = Path(config.csv_dir).expanduser().resolve()
-    bundles_path = Path(config.bundles_file).expanduser() if config.bundles_file else csv_dir.parent / "scenarios" / "dataset_bundles.yaml"
-    if not bundles_path.is_file():
+    if config.bundles_file:
+        candidates = [Path(config.bundles_file).expanduser()]
+    else:
+        candidates = [csv_dir.parent / "scenarios" / "dataset_bundles.yaml", csv_dir / "dataset_bundles.yaml"]
+    bundles_path = next((path for path in candidates if path.is_file()), None)
+    if bundles_path is None:
         raise FileNotFoundError("dataset_bundles.yaml was not found; set bundles_file in the tool configuration")
     bundles = yaml.safe_load(bundles_path.read_text(encoding="utf-8")).get("bundles", {})
     if config.bundle_id not in bundles:
         raise ValueError("Unknown bundle_id. Choose one of: " + ", ".join(sorted(bundles)))
     return bundles[config.bundle_id], csv_dir
+
+
+def _names(path: str, limit: int = 25) -> Any:
+    """Entry names of a folder, or why it cannot be listed. Names only; no file content."""
+    try:
+        return sorted(os.listdir(path))[:limit]
+    except OSError as exc:
+        return f"not readable: {type(exc).__name__}"
+
+
+def _diagnostics(config: UserParameters) -> dict:
+    """What this sandbox can see, so a missing-file error can be fixed without guessing."""
+    csv_dir = Path(config.csv_dir).expanduser()
+    return {
+        "working_directory": os.getcwd(),
+        "csv_dir": str(csv_dir),
+        "csv_dir_exists": csv_dir.is_dir(),
+        "csv_dir_entries": _names(str(csv_dir)) if csv_dir.is_dir() else "missing",
+        "root_entries": _names("/"),
+        "working_directory_entries": _names(os.getcwd()),
+        "workspace_entries": _names("/workspace") if os.path.isdir("/workspace") else "missing",
+    }
 
 
 def _load(spec: dict, csv_dir: Path) -> sqlite3.Connection:
@@ -114,8 +141,11 @@ def run_tool(config: UserParameters, args: ToolParameters) -> Any:
     """
     Main tool logic. Anything returned from this method is returned to the calling agent.
     """
-    spec, csv_dir = _bundle(config)
-    connection = _load(spec, csv_dir)
+    try:
+        spec, csv_dir = _bundle(config)
+        connection = _load(spec, csv_dir)
+    except (OSError, ValueError, yaml.YAMLError) as exc:
+        return {"error": f"{type(exc).__name__}: {exc}", "diagnostics": _diagnostics(config)}
     try:
         if args.query.strip().lower() in {"schema", "describe", "tables"}:
             return _schema(connection, spec)
