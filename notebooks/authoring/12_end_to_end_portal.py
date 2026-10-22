@@ -238,9 +238,11 @@ if LAB_MODE == "cai":
     output_root = (context.workspace / "output").resolve()
     answer_paths = sorted(output_root.glob("*/answer-*.json"))
     assert answer_paths, "Ask the sample question in the Portal first, then rerun this cell."
-    selected_answer = answer_paths[-1].resolve()
-    assert selected_answer.is_relative_to(output_root), "Refusing an answer outside this group output folder."
-    portal_answer = json.loads(selected_answer.read_text(encoding="utf-8"))
+    saved_answers = [json.loads(path.read_text(encoding="utf-8")) for path in answer_paths if path.resolve().is_relative_to(output_root)]
+    saved_answers = [item for item in saved_answers if item.get("group_id") == context.group_id]
+    assert saved_answers, "No saved answer belongs to your group. Ask the sample question in the Portal, then rerun this cell."
+    # Prefer the newest answer to the sample question; otherwise the newest answer of any question.
+    portal_answer = next((item for item in reversed(saved_answers) if item.get("question") == question), saved_answers[-1])
     assert portal_answer.get("group_id") == context.group_id
 with pd.option_context("display.max_colwidth", None):
     display(
@@ -262,7 +264,9 @@ proved.append("I found my group's saved answer and it belongs to my group")
 # **Look for:** `sql_matches: True` and `rows_match: True`.
 
 # %%
-reference_sql, reference_result = context.data_tool().bind(context.request()).query(question)
+# Compare with the question the Portal actually answered, so a different question asked earlier cannot cause a false mismatch.
+answered_question = portal_answer.get("question") or question
+reference_sql, reference_result = context.data_tool().bind(context.request()).query(answered_question)
 assert portal_answer["sql"].upper().startswith("SELECT")
 assert portal_answer["sql"] == reference_sql
 assert portal_answer["row_count"] == reference_result.row_count
