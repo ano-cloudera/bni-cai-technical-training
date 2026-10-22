@@ -295,6 +295,51 @@ display(pd.DataFrame([{"span": span.name, **dict(span.attributes)} for span in e
 proved.append("I added a label of my own to a span")
 
 # %% [markdown]
+# ## Step 8. Watch an agent in Phoenix
+# **What it does:** runs one small CrewAI agent (no tool, one question) while CrewAI is instrumented with the same tracer. Every
+# agent, task and model call becomes a span. The cell then lists the span kinds that were recorded.
+#
+# **Why it matters:** the manual spans above show the idea. This step shows what a real agent looks like to an operator: a `Crew`
+# parent, a task, the agent and the model call inside it, with the prompt and the answer.
+#
+# **Look for:** span kinds `CHAIN`, `AGENT` and `LLM` in the table. In Phoenix, open project `bni-credit-insight-lab09`, switch from
+# **Root Spans** to **All**, or click the `Crew_` trace to see its children. In `local` mode the model is a mock.
+
+# %%
+from bni_training.crew import kickoff_blocking
+from bni_training.labs import crewai_llm
+from bni_training.mock_llm import MockOpenAIServer
+from crewai import Agent, Crew, Process, Task
+from openinference.instrumentation.crewai import CrewAIInstrumentor
+
+CrewAIInstrumentor().instrument(tracer_provider=provider)
+mock_server = MockOpenAIServer(reply="NPL means non-performing loans: loans whose payments are overdue.").start() if LAB_MODE == "local" else None
+agent_base_url = mock_server.base_url if mock_server else os.environ.get("VLLM_BASE_URL", "")
+assert agent_base_url, "VLLM_BASE_URL is required in CAI mode."
+agent_llm = crewai_llm(agent_base_url, os.getenv("VLLM_API_KEY", "local-placeholder"))
+explainer = Agent(
+    role="Banking Explainer",
+    goal="Explain one banking term in a single sentence",
+    backstory="You explain terms for a synthetic workshop.",
+    llm=agent_llm,
+    verbose=False,
+)
+explain_task = Task(description="Explain this term: {term}.", expected_output="One sentence", agent=explainer)
+before_agent_spans = len(memory_exporter.get_finished_spans())
+kickoff_blocking(Crew(agents=[explainer], tasks=[explain_task], process=Process.sequential, verbose=False), {"term": "NPL"})
+provider.force_flush()
+agent_spans = memory_exporter.get_finished_spans()[before_agent_spans:]
+assert agent_spans, "No agent spans were recorded; ask the trainer to check the CrewAI instrumentation."
+display(
+    pd.DataFrame(
+        [{"span": span.name, "kind": span.attributes.get("openinference.span.kind")} for span in agent_spans]
+    )
+)
+if mock_server:
+    mock_server.stop()
+proved.append("I watched a CrewAI agent appear as spans")
+
+# %% [markdown]
 # ## Save your checkpoint
 # **What it does:** writes your group, your participant label and the span names to your group's output folder.
 #
@@ -315,7 +360,7 @@ proved.append("I saved a trace summary with no endpoint or header")
 # The next cell prints one line for every step you completed. If a line is missing, a step did not run: scroll up and run it.
 #
 # ## Expected result
-# Nine lines. The parent and its two children are visible, the children point to the parent, your trace is found, your group id is searchable,
+# Ten lines. The parent and its two children are visible, the children point to the parent, your trace is found, your group id is searchable,
 # and the deliberate secret is absent.
 #
 # ## Common errors
