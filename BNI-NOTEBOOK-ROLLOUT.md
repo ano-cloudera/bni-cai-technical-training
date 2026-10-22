@@ -52,8 +52,10 @@ All of these are on `main` after the push. Without them the notebooks run the lo
 | CrewAI `LLM` sends `enable_thinking=false` | Labs 08 and 09 showed `0 data tool call(s)` |
 | vLLM launcher option `VLLM_TOOL_CALL_PARSER` | CrewAI needs tool calling (`400 "auto" tool choice requires ...`) |
 | `scripts/index_all_groups.py` | Indexes glossary and mission notes of all ten groups with bge-m3 |
-| Labs 03 to 09 rewritten as guided lessons | One setup cell, explained steps with a prediction, pandas tables, a real exercise, a closing list of what the participant proved. File names and saved outputs are unchanged. They replace the old notebooks of the same names in the templates, so a workspace refresh (section 2) is what delivers them |
+| Labs 03 to 12 rewritten as guided lessons (10 to 12 not yet run against the real services) | One setup cell, explained steps with a prediction, pandas tables, a real exercise, a closing list of what the participant proved. File names and saved outputs are unchanged. They replace the old notebooks of the same names in the templates, so a workspace refresh (section 2) is what delivers them |
 | Labs 00, 07, 09, 10 and 12 start with a "Service addresses" cell | The participant pastes the Applications domain once (or the trainer sets `APPS_DOMAIN`); see section 5 |
+| Every notebook that calls a service sets the system CA file as `SSL_CERT_FILE` when it exists and the project variable is missing | `CERTIFICATE_VERIFY_FAILED` seen in Labs 03, 06 and 07 when the variable did not reach the kernel |
+| The Service addresses cell removes a pasted `scheme://` and slashes | `APPS_DOMAIN` was pasted as a full address and built `bni-qdrant.<scheme>://...` |
 
 After `git pull`, if git says local changes would be overwritten (a notebook was run inside the repository), stash them:
 

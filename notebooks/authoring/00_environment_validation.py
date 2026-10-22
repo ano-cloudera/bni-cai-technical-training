@@ -22,8 +22,15 @@
 # %%
 import os
 
+# Trust the platform's certificate authority if the project did not set it. A value that is already set is never replaced.
+_ca_file = "/etc/ssl/certs/ca-certificates.crt"
+if os.path.isfile(_ca_file):
+    os.environ.setdefault("SSL_CERT_FILE", _ca_file)
+    os.environ.setdefault("REQUESTS_CA_BUNDLE", _ca_file)
+
 APPS_DOMAIN = ""  # paste the Applications domain from your trainer between the quotes
 APPS_DOMAIN = APPS_DOMAIN or os.getenv("APPS_DOMAIN", "")
+APPS_DOMAIN = APPS_DOMAIN.strip().split("://")[-1].strip("/")  # also accepts a pasted address
 
 
 def service_url(app, path="", port=""):

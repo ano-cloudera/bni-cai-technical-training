@@ -40,6 +40,13 @@ from pathlib import Path
 import pandas as pd
 from IPython.display import display
 
+# Trust the platform's certificate authority if the project did not set it. A value that is already set is never replaced.
+_ca_file = "/etc/ssl/certs/ca-certificates.crt"
+if os.path.isfile(_ca_file):
+    os.environ.setdefault("SSL_CERT_FILE", _ca_file)
+    os.environ.setdefault("REQUESTS_CA_BUNDLE", _ca_file)
+
+
 def _repo_root() -> Path:
     # A generated group workspace records the repository in config/group.env, so no setup is needed.
     env_file = Path.cwd().parent / "config" / "group.env"

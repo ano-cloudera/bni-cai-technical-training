@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased (Labs 10 to 12 guided, certificate fallback, domain cleaning)
+
+- Labs 10, 11 and 12 follow the guided pattern of Labs 03 to 09 (explained steps with a prediction, pandas tables, an exercise, a closing list of what
+  was proved). They were run locally for six groups with mock services; they have **not** run with the real services. Lab 10 asks for the gateway key
+  with `getpass` in `cai` mode when `LITELLM_API_KEY` is not set (the key is neither shown nor saved). Lab 12 shows "see the Portal sidebar" for the
+  session lock in `cai` mode instead of `False`.
+- Every notebook that calls a service over the network (00, 03, 06 to 12) sets `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` to the system CA file when the
+  file exists and the variable is not set. Python clients no longer fail with `CERTIFICATE_VERIFY_FAILED` when the project variable is missing. This does not
+  address a proxy.
+- The "Service addresses" cell of Labs 00, 07, 09, 10 and 12 accepts a pasted address: a leading `scheme://` and trailing slashes are removed, so
+  `bni-qdrant.<scheme>://...` can no longer happen.
+- Lab 07 builds its Qdrant client with a 60 second timeout and turns a failed count into a readable message.
+
 ## Unreleased (Agent Studio chat template)
 
 - `config/vllm/qwen3_5_chat_template.jinja`: the Qwen3.5 chat template with one change. A system message that is not the first message is

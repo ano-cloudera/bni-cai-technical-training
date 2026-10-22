@@ -33,8 +33,15 @@
 # %%
 import os
 
+# Trust the platform's certificate authority if the project did not set it. A value that is already set is never replaced.
+_ca_file = "/etc/ssl/certs/ca-certificates.crt"
+if os.path.isfile(_ca_file):
+    os.environ.setdefault("SSL_CERT_FILE", _ca_file)
+    os.environ.setdefault("REQUESTS_CA_BUNDLE", _ca_file)
+
 APPS_DOMAIN = ""  # paste the Applications domain from your trainer between the quotes
 APPS_DOMAIN = APPS_DOMAIN or os.getenv("APPS_DOMAIN", "")
+APPS_DOMAIN = APPS_DOMAIN.strip().split("://")[-1].strip("/")  # also accepts a pasted address
 
 
 def service_url(app, path="", port=""):
@@ -93,7 +100,7 @@ if LAB_MODE == "local":
     client = QdrantClient(":memory:")
 else:
     assert os.getenv("QDRANT_URL"), "QDRANT_URL is required in CAI mode; no local fallback is allowed."
-    client = QdrantClient(url=os.environ["QDRANT_URL"], api_key=os.getenv("QDRANT_API_KEY") or None)
+    client = QdrantClient(url=os.environ["QDRANT_URL"], api_key=os.getenv("QDRANT_API_KEY") or None, timeout=60)
 # Local mode uses the hashing stand-in. In CAI the trainer stored the texts with bge-m3, so the question must use the same model.
 if LAB_MODE == "local":
     embedder = HashingEmbedder()
@@ -178,7 +185,13 @@ if LAB_MODE == "local":
 else:
     print("CAI MODE: the trainer stored the texts before the workshop; you only search.")
 my_filter = models.Filter(must=[models.FieldCondition(key="group_id", match=models.MatchValue(value=context.group_id))])
-stored = client.count(collection_name=COLLECTION, count_filter=my_filter, exact=True).count
+try:
+    stored = client.count(collection_name=COLLECTION, count_filter=my_filter, exact=True).count
+except Exception as exc:  # a friendly message instead of a long traceback
+    raise AssertionError(
+        f"Qdrant did not return a valid answer ({type(exc).__name__}). Check that QDRANT_URL ends with :443 and that the "
+        "Qdrant Application is running, then ask your trainer."
+    ) from exc
 print(f"Texts stored for {context.group_id}: {stored}")
 assert stored > 0, "No texts are stored for your group; ask the trainer to verify the shared index."
 proved.append(f"I confirmed {stored} texts are stored for my group")
