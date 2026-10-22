@@ -33,10 +33,11 @@ def test_demo_is_stripped_clean_and_valid_python(path: Path) -> None:
             ast.parse("".join(cell["source"]))
 
 
-def test_the_download_demo_never_prints_the_token_and_names_a_demo_folder() -> None:
+def test_the_download_demo_is_one_short_code_cell_that_never_prints_the_token() -> None:
     source = Path("notebooks/demos/hf_model_download.py").read_text()
+    document = json.loads(Path("notebooks/demos/hf_model_download.ipynb").read_text())
+    assert sum(cell["cell_type"] == "code" for cell in document["cells"]) == 1
     for call in ast.walk(ast.parse("\n".join(line for line in source.splitlines() if not line.startswith("#")))):
         if isinstance(call, ast.Call) and getattr(call.func, "id", "") == "print":
-            text = ast.unparse(call).replace("bool(HF_TOKEN)", "")
-            assert "HF_TOKEN" not in text, "the token must never be printed"
-    assert "hf-demo-models" in source and "TARGET.parent == DEMO_ROOT" in source
+            assert "HF_TOKEN" not in ast.unparse(call), "the token must never be printed"
+    assert "hf-demo-models" in source and "snapshot_download" in source and "allow_patterns" in source
