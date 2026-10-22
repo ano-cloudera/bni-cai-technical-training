@@ -7,7 +7,7 @@ import types
 
 import streamlit as st
 
-from bni_training.guardrails import GuardrailError, PiiDetectedError
+from bni_training.guardrails import GuardrailError, PiiDetectedError, detect_pii
 from bni_training.workshop.group_registry import GroupAccessError, UnknownGroupError
 from bni_training.workshop.portal.gate import TicketState
 from bni_training.workshop.portal.service import (
@@ -162,6 +162,7 @@ def render() -> None:
     if service.mode == "local":
         st.warning("LOCAL MODE: answers come from a mock model. Use PORTAL_MODE=cai on CAI.")
     ctx = _choose_group(service)
+    _pii_tryout()
     if ctx is None:
         st.info("Choose your group in the sidebar to begin.")
         return
@@ -220,6 +221,20 @@ def render() -> None:
             except RetrievalUnavailable as exc:
                 st.caption(f"SKIPPED: {exc}")
     _sidebar_status(service, state)
+
+
+def _pii_tryout() -> None:
+    """Stateless PII check that needs no group: nothing is queued, stored or sent to the model."""
+    with st.expander("PII guardrail try-out (no group needed, synthetic data only)"):
+        text = st.text_input("Type a message with fake personal data", key="pii-tryout-text")
+        for label, example in PII_EXAMPLES:
+            if st.button(label, key=f"pii-tryout::{label}"):
+                text = example
+        kinds = detect_pii(text) if text else []
+        if kinds:
+            st.error("Blocked by the PII guardrail: " + ", ".join(kinds) + " detected. Remove it and ask again.")
+        elif text:
+            st.success("No personal data detected. This message would be sent to the model.")
 
 
 def _ask(service: PortalService, state, question: str) -> None:

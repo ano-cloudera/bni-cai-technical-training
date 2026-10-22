@@ -147,7 +147,15 @@ def key_for_or_none(at: AppTest, suffix: str):
 
 def test_pii_is_blocked_visibly_without_echoing_the_value() -> None:
     at = join(session(), "group_01")
-    next(b for b in at.button if b.label == "KTP number").click().run()
+    next(b for b in at.button if b.key == "pii::KTP number").click().run()
     assert not at.exception, at.exception
     text = " ".join(m.markdown[0].value for m in at.chat_message)
     assert "Blocked by the PII guardrail" in text and "3171234567890002" not in text
+
+
+def test_pii_tryout_works_before_a_group_is_chosen() -> None:
+    at = session()
+    next(b for b in at.button if b.label == "Email address").click().run()
+    assert not at.exception, at.exception
+    assert any("Blocked by the PII guardrail" in e.value and "email" in e.value for e in at.error)
+    assert not at.chat_input
