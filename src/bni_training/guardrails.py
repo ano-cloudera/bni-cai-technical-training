@@ -7,6 +7,59 @@ class GuardrailError(ValueError):
     pass
 
 
+class PiiDetectedError(GuardrailError):
+    """Raised when text holds personal data; `kinds` names the types found, never the values."""
+
+    def __init__(self, kinds: list[str]):
+        self.kinds = kinds
+        super().__init__("Personal data detected (" + ", ".join(kinds) + "). Remove it and try again.")
+
+
+_EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+")
+_NIK = re.compile(r"(?<!\d)\d{2}[ .-]?\d{2}[ .-]?\d{2}[ .-]?\d{6}[ .-]?\d{4}(?!\d)")
+_CARD = re.compile(r"(?<!\d)(?:\d[ -]?){12,18}\d(?!\d)")
+_IBAN = re.compile(r"\b[A-Z]{2}\d{2}(?: ?[A-Z0-9]{4}){2,7}(?: ?[A-Z0-9]{1,3})?\b")
+_PHONE = re.compile(r"(?<![\w])(?:\+62|62|0)8\d{8,11}(?!\d)")
+
+
+def _luhn(digits: str) -> bool:
+    total = 0
+    for index, char in enumerate(reversed(digits)):
+        number = int(char)
+        if index % 2:
+            number = number * 2 - 9 if number > 4 else number * 2
+        total += number
+    return total % 10 == 0
+
+
+def detect_pii(text: str) -> list[str]:
+    """Return the PII types found in text (KTP/NIK, card, IBAN, email, phone). Values are never returned."""
+    kinds: list[str] = []
+    if _EMAIL.search(text):
+        kinds.append("email address")
+    for match in _NIK.finditer(text):
+        if not _luhn(re.sub(r"\D", "", match.group())):  # a Luhn-valid 16-digit number is reported as a card
+            kinds.append("KTP/NIK number")
+            break
+    for match in _CARD.finditer(text):
+        digits = re.sub(r"\D", "", match.group())
+        if 13 <= len(digits) <= 19 and _luhn(digits):
+            kinds.append("card number")
+            break
+    if _IBAN.search(text):
+        kinds.append("IBAN / account number")
+    if _PHONE.search(re.sub(r"(?<=\d)[ -](?=\d)", "", text)):
+        kinds.append("phone number")
+    return kinds
+
+
+def validate_no_pii(text: str) -> str:
+    kinds = detect_pii(text)
+    if kinds:
+        raise PiiDetectedError(kinds)
+    return text
+
+
 _TABLE_PATTERN = re.compile(r"\b(?:from|join)\s+([a-zA-Z_][\w.]*)", re.IGNORECASE)
 _FORBIDDEN = re.compile(
     r"\b(insert|update|delete|drop|alter|create|truncate|grant|revoke|merge|call)\b", re.I

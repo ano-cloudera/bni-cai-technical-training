@@ -14,7 +14,7 @@ from bni_training.data.bundles import GroupBundle
 from bni_training.data.engine import CsvEngine
 from bni_training.data.semantic_layer import SemanticModel
 from bni_training.data.tool import DataRequest, WorkshopDataTool
-from bni_training.guardrails import validate_input
+from bni_training.guardrails import PiiDetectedError, detect_pii, validate_input
 from bni_training.llm_client import OpenAICompatibleClient, model_request_extras
 from bni_training.rag import HashingEmbedder, index_group_documents, search_group
 from bni_training.workshop import group_paths
@@ -309,6 +309,11 @@ class PortalService:
     def submit_question(self, state: PortalSessionState, question: str) -> Ticket:
         ctx = state.ctx
         question = validate_input(question)  # a rejected question never reaches the queue
+        kinds = detect_pii(question)
+        if kinds:  # personal data is blocked before the queue; the chat shows the block, never the value
+            state.add_message("user", "[message withheld: it contained personal data]")
+            state.add_message("assistant", "Blocked by the PII guardrail: " + ", ".join(kinds) + " detected. Remove it and ask again.")
+            raise PiiDetectedError(kinds)
         dataset = self.registry.require_dataset(ctx.group_id, state.dataset_id)
         scenario = self.registry.require_scenario(ctx.group_id, state.scenario_id)
         tool = self._tool_for(ctx.group_id, dataset)

@@ -143,3 +143,11 @@ def key_for_or_none(at: AppTest, suffix: str):
     return next(
         (k for k in at.session_state.to_dict() if k.endswith("::" + suffix) and at.session_state[k]), None
     )
+
+
+def test_pii_is_blocked_visibly_without_echoing_the_value() -> None:
+    at = join(session(), "group_01")
+    next(b for b in at.button if b.label == "KTP number").click().run()
+    assert not at.exception, at.exception
+    text = " ".join(m.markdown[0].value for m in at.chat_message)
+    assert "Blocked by the PII guardrail" in text and "3171234567890002" not in text

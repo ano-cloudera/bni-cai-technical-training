@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 import types
 
 import streamlit as st
 
-from bni_training.guardrails import GuardrailError
+from bni_training.guardrails import GuardrailError, PiiDetectedError
 from bni_training.workshop.group_registry import GroupAccessError, UnknownGroupError
 from bni_training.workshop.portal.gate import TicketState
 from bni_training.workshop.portal.service import (
@@ -16,6 +17,7 @@ from bni_training.workshop.portal.service import (
     RetrievalUnavailable,
 )
 
+LOGGER = logging.getLogger(__name__)
 PLACEHOLDER = "Select your group..."
 ICONS = types.MappingProxyType(
     {
@@ -30,7 +32,16 @@ ICONS = types.MappingProxyType(
 )
 
 
+PII_EXAMPLES = (
+    ("KTP number", "Show the risk of the customer with KTP 3171234567890002"),
+    ("Email address", "Send the portfolio summary to budi.test@example.com"),
+    ("Card number", "Check card 4111 1111 1111 1111 for fraud"),
+    ("Phone number", "Call the customer at 081234567890"),
+)
+
+
 @st.cache_resource(show_spinner="Starting the workshop portal...")
+
 def get_service() -> PortalService:
     """One shared, stateless-for-users service per Streamlit process."""
     return PortalService.from_env()
@@ -144,6 +155,8 @@ def render() -> None:
     try:
         service = get_service()
     except Exception as exc:  # noqa: BLE001 - show a safe message, never environment values
+        # The page stays generic for participants; the trainer reads the cause in the Application log.
+        LOGGER.error("Portal start-up failed: %s: %s", type(exc).__name__, exc, exc_info=True)
         st.error(f"The portal is not configured: {type(exc).__name__}. Tell the trainer.")
         return
     if service.mode == "local":
@@ -179,6 +192,11 @@ def render() -> None:
             "One shared synthetic dataset; your group sees only these tables. "
             "The separation is operational, not a security boundary."
         )
+    with st.expander("Try the PII guardrail (synthetic test values)"):
+        st.caption("Send one of these to see the Portal block personal data before it reaches the model.")
+        for label, text in PII_EXAMPLES:
+            if st.button(label, key=f"pii::{label}", disabled=state.active_ticket is not None):
+                _ask(service, state, text)
     st.markdown("**Sample questions**")
     for question in scenario.sample_questions:
         if st.button(question, key=f"sample::{question}", disabled=state.active_ticket is not None):
@@ -207,6 +225,8 @@ def render() -> None:
 def _ask(service: PortalService, state, question: str) -> None:
     try:
         service.submit_question(state, question)
+    except PiiDetectedError:
+        st.rerun()  # the chat already shows the block
     except GuardrailError as exc:
         st.warning(str(exc))
         return
