@@ -49,12 +49,28 @@ class ToolParameters(BaseModel):
     )
 
 
+def _data_roots(config: UserParameters) -> list[Path]:
+    """Folders that may hold the CSV files: the configured one first, then the places Agent Studio documents for a sandbox."""
+    configured = Path(config.csv_dir).expanduser()
+    workflow_data = Path(os.environ.get("WORKFLOW_DATA_DIRECTORY", "/workflow_data"))
+    session = Path(os.environ.get("SESSION_DIRECTORY", "/workspace"))
+    roots = [configured, workflow_data / "data" / "raw", workflow_data / "raw", workflow_data, session]
+    return [root for root in roots if root.is_dir()]
+
+
 def _bundle(config: UserParameters) -> tuple[dict, Path]:
-    csv_dir = Path(config.csv_dir).expanduser().resolve()
-    if config.bundles_file:
+    roots = _data_roots(config)
+    if not roots:
+        raise FileNotFoundError("The CSV folder was not found; set csv_dir, or mount the data folder (see the diagnostics)")
+    csv_dir = next((root for root in roots if (root / "loans.csv").is_file()), roots[0])
+    if config.bundles_file and Path(config.bundles_file).expanduser().is_file():
         candidates = [Path(config.bundles_file).expanduser()]
     else:
-        candidates = [csv_dir.parent / "scenarios" / "dataset_bundles.yaml", csv_dir / "dataset_bundles.yaml"]
+        candidates = [
+            csv_dir.parent / "scenarios" / "dataset_bundles.yaml",
+            csv_dir.parent.parent / "scenarios" / "dataset_bundles.yaml",
+            csv_dir / "dataset_bundles.yaml",
+        ]
     bundles_path = next((path for path in candidates if path.is_file()), None)
     if bundles_path is None:
         raise FileNotFoundError("dataset_bundles.yaml was not found; set bundles_file in the tool configuration")
@@ -73,16 +89,20 @@ def _names(path: str, limit: int = 25) -> Any:
 
 
 def _diagnostics(config: UserParameters) -> dict:
-    """What this sandbox can see, so a missing-file error can be fixed without guessing."""
+    """What this sandbox can see, so a missing-file error can be fixed without guessing. Names only; no file content."""
     csv_dir = Path(config.csv_dir).expanduser()
+    workflow_data = os.environ.get("WORKFLOW_DATA_DIRECTORY", "/workflow_data")
     return {
         "working_directory": os.getcwd(),
         "csv_dir": str(csv_dir),
         "csv_dir_exists": csv_dir.is_dir(),
         "csv_dir_entries": _names(str(csv_dir)) if csv_dir.is_dir() else "missing",
+        "workflow_data_directory": workflow_data,
+        "workflow_data_entries": _names(workflow_data) if os.path.isdir(workflow_data) else "missing",
+        "tool_entries": _names("/tool") if os.path.isdir("/tool") else "missing",
         "root_entries": _names("/"),
-        "working_directory_entries": _names(os.getcwd()),
         "workspace_entries": _names("/workspace") if os.path.isdir("/workspace") else "missing",
+        "home_entries": _names("/home") if os.path.isdir("/home") else "missing",
     }
 
 

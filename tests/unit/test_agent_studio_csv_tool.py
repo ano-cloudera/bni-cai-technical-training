@@ -68,3 +68,24 @@ def test_the_bundle_file_may_sit_in_the_same_folder_as_the_csv_files(tmp_path):
     config = tool.UserParameters(csv_dir=str(tmp_path), bundle_id="loan_monitoring_bundle")
     result = tool.run_tool(config, tool.ToolParameters(query="SELECT COUNT(*) AS n FROM loans"))
     assert result["rows"] == [[5000]]
+
+
+def test_the_workflow_data_mount_is_used_when_the_configured_folder_is_missing(tmp_path, monkeypatch):
+    import shutil
+
+    data = tmp_path / "workflow_data" / "data"
+    (data / "raw").mkdir(parents=True)
+    (data / "scenarios").mkdir()
+    for name in ("loans.csv", "customers.csv", "accounts.csv"):
+        shutil.copy(ROOT / "data/raw" / name, data / "raw" / name)
+    shutil.copy(ROOT / "data/scenarios/dataset_bundles.yaml", data / "scenarios" / "dataset_bundles.yaml")
+    monkeypatch.setenv("WORKFLOW_DATA_DIRECTORY", str(tmp_path / "workflow_data"))
+    config = tool.UserParameters(csv_dir="/does/not/exist/raw", bundle_id="loan_monitoring_bundle")
+    result = tool.run_tool(config, tool.ToolParameters(query="SELECT COUNT(*) AS n FROM loans"))
+    assert result["rows"] == [[5000]]
+
+
+def test_diagnostics_list_the_mount_points_a_sandbox_can_have():
+    config = tool.UserParameters(csv_dir="/does/not/exist/raw", bundle_id="x")
+    keys = tool._diagnostics(config).keys()
+    assert {"workflow_data_entries", "tool_entries", "root_entries", "home_entries", "workspace_entries"} <= set(keys)
